@@ -1,0 +1,24 @@
+[Unit]
+Description=Trip app (PocketBase)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=trip
+Group=trip
+WorkingDirectory=/opt/trip
+EnvironmentFile=/opt/trip/trip.env
+ExecStart=/opt/trip/pocketbase serve --http=127.0.0.1:8090 --dir=/opt/trip/pb_data --migrationsDir=/opt/trip/pb_migrations --publicDir=/opt/trip/pb_public
+Restart=always
+RestartSec=3
+LimitNOFILE=4096
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/trip/pb_data
+
+[Install]
+WantedBy=multi-user.target
