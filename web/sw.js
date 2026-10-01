@@ -18,6 +18,8 @@ self.addEventListener("fetch", (e) => {
   const isFont = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname);
   if (url.origin !== location.origin && !isFont) return;
   if (url.pathname.includes("/api/") || url.pathname.includes("/_/")) return;
+  // The new app at /next/ has its own service worker; never serve it this shell.
+  if (url.pathname === "/next" || url.pathname.startsWith("/next/")) return;
   // Network first, so a deploy shows up on the next open; cache as fallback.
   e.respondWith(
     fetch(req).then((res) => {
