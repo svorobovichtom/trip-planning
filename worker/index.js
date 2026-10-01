@@ -2,16 +2,22 @@
 // assets layer; only /scan (see run_worker_first in wrangler.jsonc) and paths
 // with no matching file reach this code.
 //
-// POST /scan  (multipart/form-data, header X-Trip-Key)
+// POST /scan  (header X-Trip-Key), either
+//  multipart/form-data (the app):
 //   image        JPEG/PNG/WebP, <= 6 MB
 //   items        optional JSON [{id, name, pl}] of unchecked shopping-list items
 //   model        optional: pins one allow-listed vision model (step 1)
 //   match_model  optional: pins one allow-listed text model (step 2)
+//  or application/json (server-side hook):
+//   {"image_url": "https://trip-api.svorobovich.com/api/files/...", "items"?, "model"?, "match_model"?}
+//   The Worker fetches the image itself: that prefix only, no redirects,
+//   10 s timeout, same size and format checks.
 // -> { provider, model, total, currency, store, date, category,
 //      lines: [{text, qty, unit, price, category, item_id}],
-//      lines_sum, lines_ok, matched, timings: {vision_ms, match_ms}, ... }
+//      lines_sum, lines_ok, matched, timings: {vision_ms, match_ms},
+//      match_model, neurons (estimate), fallback?, notes?, match_error? }
 //
-// Two steps, both on Workers AI:
+// Two steps, both on Workers AI (~400 neurons for a 31-line receipt):
 //  1. Vision: the photo alone (no shopping list, so nothing to "find") ->
 //     store, date, total and printed rows [name, qty, unit, amount], with
 //     discount rows as their own negative rows. Code folds each discount into
@@ -67,6 +73,10 @@ const NEURONS = {
 };
 
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+const MAX_JSON_BYTES = 256 * 1024;
+const IMAGE_URL_HOST = "trip-api.svorobovich.com";
+const IMAGE_URL_PREFIX = `https://${IMAGE_URL_HOST}/api/files/`;
+const IMAGE_FETCH_TIMEOUT_MS = 10000;
 const MAX_ITEMS = 200;
 const MAX_LINES = 100;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -102,48 +112,16 @@ async function handleScan(request, env) {
   const key = request.headers.get("X-Trip-Key") || "";
   if (!(await keyIsValid(key))) return json({ error: "invalid trip key" }, 401);
 
-  const ctype = request.headers.get("Content-Type") || "";
-  if (!ctype.toLowerCase().startsWith("multipart/form-data")) {
-    return json({ error: "expected multipart/form-data" }, 415);
-  }
-  const declared = Number(request.headers.get("Content-Length") || 0);
-  if (declared > MAX_IMAGE_BYTES + 512 * 1024) return json({ error: "image too large (max 6 MB)" }, 413);
-
-  let form;
-  try {
-    form = await request.formData();
-  } catch (_) {
-    return json({ error: "bad multipart body" }, 400);
-  }
-
-  const image = form.get("image");
-  if (!image || typeof image === "string") return json({ error: "missing image file" }, 400);
-  if (image.size > MAX_IMAGE_BYTES) return json({ error: "image too large (max 6 MB)" }, 413);
-  if (image.size === 0) return json({ error: "empty image" }, 400);
-  const bytes = new Uint8Array(await image.arrayBuffer());
-  const mime = sniffImage(bytes) || (image.type || "").toLowerCase();
-  if (!IMAGE_TYPES.has(mime)) return json({ error: "image must be JPEG, PNG or WebP" }, 415);
-
-  let items = [];
-  const rawItems = form.get("items");
-  if (typeof rawItems === "string" && rawItems.trim()) {
-    try {
-      items = parseItems(JSON.parse(rawItems));
-    } catch (_) {
-      return json({ error: "items must be a JSON array of {id, name, pl}" }, 400);
-    }
-  }
-
-  const pinned = form.get("model");
-  const matchPinned = form.get("match_model");
+  const ctype = (request.headers.get("Content-Type") || "").toLowerCase();
+  const input = ctype.startsWith("multipart/form-data") ? await readMultipart(request)
+    : ctype.startsWith("application/json") ? await readJsonBody(request)
+    : { error: json({ error: "expected multipart/form-data or application/json" }, 415) };
+  if (input.error) return input.error;
+  const { bytes, mime, items, pinned, matchPinned } = input;
 
   // ---- step 1: vision ----
   const t0 = Date.now();
-  // TEMP (evaluation only, still behind the key): skip vision with given rows.
-  const given = form.get("rows_json");
-  const v = typeof given === "string" && given
-    ? { ok: true, result: normalise(JSON.parse(given), "given", "given"), usage: [] }
-    : await recognise(env, mime, toBase64(bytes), VISION_MODELS.includes(pinned) ? pinned : null);
+  const v = await recognise(env, mime, toBase64(bytes), VISION_MODELS.includes(pinned) ? pinned : null);
   const visionMs = Date.now() - t0;
   if (!v.ok) return json({ error: "recognition failed", details: v.errors }, 502);
   const r = v.result;
@@ -206,8 +184,135 @@ async function handleScan(request, env) {
   if (v.fallback) out.fallback = v.fallback;
   if (r.notes.length) out.notes = r.notes;
   if (matchError) out.match_error = matchError;
-  if (form.get("debug") === "1") out.debug = { usage, match_raw: match && match.raw }; // TEMP
   return json(out);
+}
+
+// ---------- input modes ----------
+
+// Multipart: image file + optional items/model/match_model fields (the app).
+async function readMultipart(request) {
+  const fail = (body, status) => ({ error: json(body, status) });
+  const declared = Number(request.headers.get("Content-Length") || 0);
+  if (declared > MAX_IMAGE_BYTES + 512 * 1024) return fail({ error: "image too large (max 6 MB)" }, 413);
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch (_) {
+    return fail({ error: "bad multipart body" }, 400);
+  }
+
+  const image = form.get("image");
+  if (!image || typeof image === "string") return fail({ error: "missing image file" }, 400);
+  if (image.size > MAX_IMAGE_BYTES) return fail({ error: "image too large (max 6 MB)" }, 413);
+  if (image.size === 0) return fail({ error: "empty image" }, 400);
+  const bytes = new Uint8Array(await image.arrayBuffer());
+  const mime = sniffImage(bytes) || (image.type || "").toLowerCase();
+  if (!IMAGE_TYPES.has(mime)) return fail({ error: "image must be JPEG, PNG or WebP" }, 415);
+
+  let items = [];
+  const rawItems = form.get("items");
+  if (typeof rawItems === "string" && rawItems.trim()) {
+    try {
+      items = parseItems(JSON.parse(rawItems));
+    } catch (_) {
+      return fail({ error: "items must be a JSON array of {id, name, pl}" }, 400);
+    }
+  }
+  return { bytes, mime, items, pinned: form.get("model"), matchPinned: form.get("match_model") };
+}
+
+// JSON: {"image_url", "items"?, "model"?, "match_model"?} (the server-side
+// cron hook). The image is fetched from PocketBase's file API only.
+async function readJsonBody(request) {
+  const fail = (body, status) => ({ error: json(body, status) });
+  const declared = Number(request.headers.get("Content-Length") || 0);
+  if (declared > MAX_JSON_BYTES) return fail({ error: "body too large" }, 413);
+  let body;
+  try {
+    const text = await request.text();
+    if (text.length > MAX_JSON_BYTES) return fail({ error: "body too large" }, 413);
+    body = JSON.parse(text);
+  } catch (_) {
+    return fail({ error: "bad JSON body" }, 400);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return fail({ error: "bad JSON body" }, 400);
+
+  let items = [];
+  if (body.items != null) {
+    try {
+      items = parseItems(body.items);
+    } catch (_) {
+      return fail({ error: "items must be a JSON array of {id, name, pl}" }, 400);
+    }
+  }
+
+  const url = imageUrlAllowed(body.image_url);
+  if (!url) return fail({ error: `image_url must start with ${IMAGE_URL_PREFIX}` }, 400);
+  const got = await fetchImage(url);
+  if (got.error) return fail({ error: got.error }, got.status);
+  return {
+    bytes: got.bytes, mime: got.mime, items,
+    pinned: typeof body.model === "string" ? body.model : null,
+    matchPinned: typeof body.match_model === "string" ? body.match_model : null,
+  };
+}
+
+// Parsed-URL check against the one allowed origin and path prefix (dot
+// segments and %2e are resolved by the parser before the check).
+function imageUrlAllowed(raw) {
+  if (typeof raw !== "string" || raw.length > 2048) return null;
+  let u;
+  try {
+    u = new URL(raw);
+  } catch (_) {
+    return null;
+  }
+  if (u.protocol !== "https:" || u.username || u.password || u.port) return null;
+  if (u.hostname !== IMAGE_URL_HOST || !u.pathname.startsWith("/api/files/")) return null;
+  u.hash = "";
+  return u.href.startsWith(IMAGE_URL_PREFIX) ? u.href : null;
+}
+
+async function fetchImage(url) {
+  let res;
+  try {
+    res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS) });
+  } catch (e) {
+    return { error: `could not fetch image: ${String(e.message || e).slice(0, 100)}`, status: 502 };
+  }
+  if (res.status >= 300 && res.status < 400) return { error: "image_url redirects (not allowed)", status: 400 };
+  if (res.status === 404) return { error: "image not found", status: 404 };
+  if (!res.ok) return { error: `could not fetch image: HTTP ${res.status}`, status: 502 };
+  if (Number(res.headers.get("Content-Length") || 0) > MAX_IMAGE_BYTES) {
+    res.body && res.body.cancel();
+    return { error: "image too large (max 6 MB)", status: 413 };
+  }
+  // Read with a hard cap: Content-Length may be missing.
+  const chunks = [];
+  let size = 0;
+  try {
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > MAX_IMAGE_BYTES) {
+        reader.cancel();
+        return { error: "image too large (max 6 MB)", status: 413 };
+      }
+      chunks.push(value);
+    }
+  } catch (e) {
+    return { error: `could not fetch image: ${String(e.message || e).slice(0, 100)}`, status: 502 };
+  }
+  if (!size) return { error: "empty image", status: 400 };
+  const bytes = new Uint8Array(size);
+  let off = 0;
+  for (const c of chunks) { bytes.set(c, off); off += c.length; }
+  const mime = sniffImage(bytes);
+  if (!mime) return { error: "image must be JPEG, PNG or WebP", status: 415 };
+  return { bytes, mime };
 }
 
 // ---------- step 1: vision ----------
@@ -682,7 +787,7 @@ async function matchLines(ai, model, lines, items) {
     const m = toInt(r.m);
     if (m != null && m >= 1 && m <= items.length) ids[i] = items[m - 1].id;
   }
-  return { cats, ids, usage: { model, ...raw.usage }, raw: raw.json };
+  return { cats, ids, usage: { model, ...raw.usage } };
 }
 
 // ---------- Workers AI ----------
