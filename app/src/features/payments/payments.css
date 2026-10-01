@@ -322,6 +322,10 @@
   margin: 0 calc(-1 * max(16px, var(--safe-r))) 0 calc(-1 * max(16px, var(--safe-l)));
   padding: 4px max(16px, var(--safe-r)) 4px max(16px, var(--safe-l));
   overflow-x: auto;
+  /* Sideways only. With overflow-x: auto the browser also made the row scroll
+     vertically (the pills' 4px hit areas overflow it a little), so a vertical
+     swipe over the chips moved the row instead of the sheet. */
+  overflow-y: hidden;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
   scroll-padding: 0 16px;

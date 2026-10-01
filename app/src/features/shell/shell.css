@@ -177,6 +177,7 @@
   margin-top: 6px;
   padding-bottom: 8px;
   overflow-x: auto;
+  overflow-y: hidden; /* sideways only (see .pills-x in payments.css) */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
