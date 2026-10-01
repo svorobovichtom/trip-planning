@@ -123,8 +123,12 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 22px;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.sh-x svg {
+  width: 16px;
+  height: 16px;
 }
 .sh-content p.lead {
   margin: 4px 0 20px;

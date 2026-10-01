@@ -2,6 +2,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import type { ReactNode, RefObject } from "react";
 import { forwardRef, useRef } from "react";
 import "./ui.css";
+import { CloseIcon } from "./icons";
 import "./fullsheet.css";
 
 /**
@@ -69,8 +70,8 @@ export function FullSheet({
                   <span className="fs-sp" />
                   {head}
                   <Drawer.Close className="sh-x" aria-label="Закрыть">
-                    ×
-                  </Drawer.Close>
+                      <CloseIcon />
+                    </Drawer.Close>
                 </div>
               </div>
               {children}

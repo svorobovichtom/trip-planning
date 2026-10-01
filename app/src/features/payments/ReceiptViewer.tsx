@@ -1,5 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { useRef, useState } from "react";
+import { CloseIcon } from "../../ui/icons";
 import { closeViewer, useViewer } from "./state";
 
 /** Full-screen dark receipt viewer. Tap toggles fit / 2x at the tapped spot; pinch is the browser's own. */
@@ -42,7 +43,7 @@ export function ReceiptViewer() {
               {shown?.meta && <span>{shown.meta}</span>}
             </div>
             <Dialog.Close className="sh-x vw-x" aria-label="Закрыть">
-              ×
+              <CloseIcon />
             </Dialog.Close>
           </div>
           <div className={`vw-box${zoom ? " zoom" : ""}`} ref={box} tabIndex={-1}>

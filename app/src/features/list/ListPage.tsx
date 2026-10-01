@@ -128,7 +128,7 @@ function SectionView(props: {
     <section id={secDomId(index)} className={t > 0 && d === t ? "all-done" : undefined} aria-labelledby={`sh${index}`}>
       <div className="sec-h">
         <h2 id={`sh${index}`}>{s.name}</h2>
-        <Morph className="sec-n">{`${d} / ${t}`}</Morph>
+        <Morph className="sec-n">{`${d}/${t}`}</Morph>
       </div>
       <div className="card">
         {open.length > 0 && (

@@ -1,5 +1,6 @@
 import { Drawer } from "@base-ui/react/drawer";
 import { type ReactNode, type RefObject, useRef } from "react";
+import { CloseIcon } from "./icons";
 import "./ui.css";
 
 /**
@@ -54,7 +55,7 @@ export function Sheet({
                   <div className="sh-head">
                     <Drawer.Title className="sh-title">{title}</Drawer.Title>
                     <Drawer.Close className="sh-x" aria-label="Закрыть">
-                      ×
+                      <CloseIcon />
                     </Drawer.Close>
                   </div>
                   {children}
