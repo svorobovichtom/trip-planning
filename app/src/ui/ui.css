@@ -1,71 +1,104 @@
-/* Bottom sheets (Base UI Drawer).
-   Mirrors Base UI's own bottom-drawer demo (docs/…/drawer/demos/position)
-   rule for rule; only colours, radius and max width are ours. Don't add
-   transitions on other properties or swipe-specific overrides: Base UI
-   drives the swipe itself, and every extra rule we tried made it jumpy. */
+/* Bottom sheets (Base UI Drawer for swipe/dismiss/focus; layout after the
+   QIC design-system sheet, which behaves on real iOS Safari):
+   - the fixed viewport clips (overflow: clip), so a sheet parked below the
+     screen never creates anything Safari can pan or scroll to;
+   - the sheet is pinned with position:absolute; bottom:0 (no flex, no
+     negative-margin "bleed"); an ::after strip continues its background
+     below the edge for over-drag;
+   - it enters with a keyframe animation (doesn't depend on the browser
+     painting a "starting style" frame first); Base UI's transitions handle
+     swipe snap-back and the exit;
+   - the inner box scrolls, the moving element itself never does. */
 .sh-backdrop {
   position: fixed;
-  min-height: 100dvh;
   inset: 0;
+  min-height: 100dvh;
   background: var(--backdrop);
   opacity: calc(1 - var(--drawer-swipe-progress));
-  transition-duration: 450ms;
-  transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  transition: opacity 300ms ease-in;
 }
-.sh-backdrop[data-starting-style],
-.sh-backdrop[data-ending-style] {
-  opacity: 0;
+.sh-backdrop[data-open] {
+  animation: sh-fade-in 450ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 .sh-backdrop[data-swiping] {
   transition-duration: 0ms;
 }
 .sh-backdrop[data-ending-style] {
+  opacity: 0;
   transition-duration: calc(var(--drawer-swipe-strength) * 400ms);
 }
 .sh-viewport {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  overflow: clip;
 }
 .sh-popup {
-  --bleed: 3rem;
-  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   max-width: 540px;
-  max-height: calc(80vh + var(--bleed));
-  margin-bottom: calc(-1 * var(--bleed));
-  padding: 1rem max(16px, var(--safe-r)) 1.5rem max(16px, var(--safe-l));
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--bleed));
-  border-radius: 14px 14px 0 0;
-  background: var(--bg);
-  color: var(--text);
+  margin-inline: auto;
   outline: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1);
+  color: var(--text);
   will-change: transform;
   transform: translateY(var(--drawer-swipe-movement-y));
+  transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-.sh-popup[data-starting-style],
-.sh-popup[data-ending-style] {
-  transform: translateY(calc(100% - var(--bleed) + 2px));
+.sh-popup[data-open] {
+  animation: sh-slide-in 450ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 .sh-popup[data-ending-style] {
+  transform: translateY(calc(100% + 2px));
   transition-duration: calc(var(--drawer-swipe-strength) * 400ms);
 }
+.sh-popup::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 100%;
+  background: var(--bg);
+  pointer-events: none;
+}
+.sh-box {
+  display: flex;
+  flex-direction: column;
+  max-height: min(85dvh, calc(100dvh - var(--safe-t) - 24px));
+  overflow: hidden;
+  border-radius: 14px 14px 0 0;
+  background: var(--bg);
+}
+.sh-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 max(16px, var(--safe-r)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) max(16px, var(--safe-l));
+}
 /* Opt-in for sheets with forms: lift content above the on-screen keyboard. */
-.sh-popup.sh-kb {
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--bleed) + var(--drawer-keyboard-inset, 0px));
+.sh-kb .sh-content {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--drawer-keyboard-inset, 0px));
+}
+@keyframes sh-slide-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sh-fade-in {
+  from {
+    opacity: 0;
+  }
 }
 .sh-grab {
   display: block;
+  flex: none;
   width: 3rem;
   height: 0.25rem;
-  margin: 0 auto 1rem;
+  margin: 8px auto 10px;
   border-radius: 2px;
   background: var(--surface-2);
 }

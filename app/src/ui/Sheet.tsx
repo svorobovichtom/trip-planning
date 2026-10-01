@@ -40,24 +40,26 @@ export function Sheet({
     return false;
   };
   return (
-    // Same structure as Base UI's bottom-drawer demo. VirtualKeyboardProvider
-    // only for sheets with text fields (`keyboard`), as in their keyboard demo.
+    // VirtualKeyboardProvider only for sheets with text fields (`keyboard`).
+    // Layout: see ui.css (clipping viewport, pinned popup, scrolling box).
     <Drawer.Root open={open} onOpenChange={(o) => onOpenChange(o)}>
       <KeyboardWrap on={keyboard}>
         <Drawer.Portal>
           <Drawer.Backdrop className="sh-backdrop" />
           <Drawer.Viewport className="sh-viewport">
             <Drawer.Popup className={`sh-popup${keyboard ? " sh-kb" : ""}${className ? ` ${className}` : ""}`} ref={popup} initialFocus={focus}>
-              <i className="sh-grab" aria-hidden="true" />
-              <Drawer.Content className="sh-content">
-                <div className="sh-head">
-                  <Drawer.Title className="sh-title">{title}</Drawer.Title>
-                  <Drawer.Close className="sh-x" aria-label="Закрыть">
-                    ×
-                  </Drawer.Close>
-                </div>
-                {children}
-              </Drawer.Content>
+              <div className="sh-box">
+                <i className="sh-grab" aria-hidden="true" />
+                <Drawer.Content className="sh-content">
+                  <div className="sh-head">
+                    <Drawer.Title className="sh-title">{title}</Drawer.Title>
+                    <Drawer.Close className="sh-x" aria-label="Закрыть">
+                      ×
+                    </Drawer.Close>
+                  </div>
+                  {children}
+                </Drawer.Content>
+              </div>
             </Drawer.Popup>
           </Drawer.Viewport>
         </Drawer.Portal>

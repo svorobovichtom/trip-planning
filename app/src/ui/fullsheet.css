@@ -1,45 +1,53 @@
-/* Full-height sheet (FullSheet.tsx). Mirrors Base UI's keyboard-aware
-   drawer demo (header, scrolling content, pinned footer) rule for rule for
-   the popup's size and motion; only colours, radius, width and paddings are
-   ours. The backdrop is the shared .sh-backdrop. Don't add transitions or
-   swipe overrides here (see ui.css). */
+/* Full-height sheet (FullSheet.tsx): header, scrolling body, pinned footer.
+   Same layout rules as .sh-popup in ui.css (clipping viewport, popup pinned
+   with absolute/bottom, ::after strip instead of a negative-margin bleed,
+   keyframe entrance). The backdrop is the shared .sh-backdrop. */
 .fs-viewport {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  overflow: clip;
   touch-action: none;
 }
 .fs-popup {
-  --bleed: 3rem;
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 540px;
-  height: calc(100% - var(--safe-t) - 0.75rem + var(--bleed));
-  max-height: calc(100% - var(--safe-t) - 0.75rem + var(--bleed));
-  margin-bottom: calc(-1 * var(--bleed));
+  margin-inline: auto;
+  height: calc(100% - var(--safe-t) - 0.75rem);
   border-radius: 14px 14px 0 0;
   background: var(--bg);
   color: var(--text);
   outline: 0;
   overflow: visible;
   touch-action: none;
-  transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform;
   transform: translateY(var(--drawer-swipe-movement-y));
+  transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-.fs-popup[data-starting-style],
-.fs-popup[data-ending-style] {
-  transform: translateY(calc(100% - var(--bleed) + 2px));
+.fs-popup[data-open] {
+  animation: sh-slide-in 450ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 .fs-popup[data-ending-style] {
+  transform: translateY(calc(100% + 2px));
   transition-duration: calc(var(--drawer-swipe-strength) * 400ms);
+}
+.fs-popup::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 100%;
+  background: var(--bg);
+  pointer-events: none;
 }
 .fs-popup[data-swiping] {
   user-select: none;
@@ -49,6 +57,10 @@
 @media (prefers-reduced-motion: reduce) {
   .fs-popup.fs-popup.fs-popup {
     transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    animation: sh-slide-in 450ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+  .fs-popup.fs-popup.fs-popup:not([data-open]) {
+    animation: none !important;
   }
   .fs-popup.fs-popup.fs-popup[data-ending-style] {
     transition-duration: calc(var(--drawer-swipe-strength) * 400ms) !important;
@@ -80,7 +92,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px max(16px, var(--safe-r)) calc(10px + env(safe-area-inset-bottom, 0px) + var(--bleed)) max(16px, var(--safe-l));
+  padding: 10px max(16px, var(--safe-r)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, var(--safe-l));
   border-top: 1px solid var(--line);
   background: var(--bg);
 }
