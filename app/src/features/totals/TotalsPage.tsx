@@ -87,7 +87,7 @@ function ForMe({ me, L, tx, name }: { me: Person; L: Ledger; tx: Transfer[]; nam
   const owes = L.owes.get(me.id) ?? 0;
   const out = tx.filter((t) => t.from === me.id);
   const inc = tx.filter((t) => t.to === me.id);
-  const label = b < 0 ? "Ты должен" : b > 0 ? "Тебе должны" : "Ты в расчёте";
+  const label = b < 0 ? "Ты должен" : b > 0 ? "Ты получишь" : "Ты в расчёте";
   const nobody = !paid ? "никто — ты ничего не оплачивал" : b < 0 ? "никто — твоя доля больше, чем ты оплатил" : "все рассчитались";
   return (
     <>
