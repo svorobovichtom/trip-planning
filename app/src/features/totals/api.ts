@@ -23,20 +23,37 @@ export async function addSettlement(from: string, to: string, g: number, done: s
     toast("Нет связи — перевод не отмечен");
     return false;
   }
-  const tmp: Settlement = { id: `tmp${Math.random().toString(36).slice(2)}`, tmp: true, from, to, amount: g, note: "", created: new Date().toISOString() };
+  // The record id is chosen here, so a lost reply can be checked instead of
+  // the user tapping again and recording the transfer twice.
+  const id = pbId();
+  const tmp: Settlement = { id: `tmp${id}`, tmp: true, from, to, amount: g, note: "", created: new Date().toISOString() };
   upsertLocal("settlements", tmp);
   haptic();
   toast(done);
   try {
-    const rec = await pb.collection("settlements").create<Settlement>({ from, to, amount: g });
+    const rec = await pb.collection("settlements").create<Settlement>({ id, from, to, amount: g });
     removeLocal("settlements", tmp.id);
     upsertLocal("settlements", rec);
     return true;
   } catch (e) {
     removeLocal("settlements", tmp.id);
+    if (isNetErr(e)) {
+      const saved = await pb.collection("settlements").getOne<Settlement>(id).catch(() => null);
+      if (saved) {
+        upsertLocal("settlements", saved);
+        return true;
+      }
+    }
     toast(isNetErr(e) ? "Нет связи — перевод не отмечен" : `Не отметилось: ${errMsg(e)}`);
     return false;
   }
+}
+
+/** A PocketBase record id: 15 characters of [a-z0-9]. */
+function pbId(): string {
+  const abc = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const b = crypto.getRandomValues(new Uint8Array(15));
+  return Array.from(b, (x) => abc[x % abc.length]).join("");
 }
 
 export async function deleteSettlement(t: Settlement): Promise<boolean> {

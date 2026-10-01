@@ -50,7 +50,7 @@ export interface DataState {
   loadFailed: boolean;
   /** the server has payments (claims collection etc.) */
   v2: boolean;
-  /** sorted by sort, created */
+  /** sorted by sort, created, id (same order on every phone) */
   people: Person[];
   items: Map<string, Item>;
   expenses: Map<string, Expense>;
@@ -82,7 +82,7 @@ export const dataStore = createStore<DataState>({
 });
 
 export const sortPeople = (people: Person[]): Person[] =>
-  [...people].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || String(a.created ?? "").localeCompare(String(b.created ?? "")));
+  [...people].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || String(a.created ?? "").localeCompare(String(b.created ?? "")) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
 export const useData = <U>(selector: (s: DataState) => U): U => useStore(dataStore, selector);
 export const usePeople = () => useData((s) => s.people);
