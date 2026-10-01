@@ -26,7 +26,10 @@ trip-api.svorobovich.com ── Cloudflare Tunnel "trip" ──► VM Oracle
 
 Коллекции: `people` (участники), `items` (покупки), `expenses` (расходы, чек —
 файл), `claims` («я брал эту строку чека»: `expense`, `line` — индекс в
-`expenses.lines`, `person`; уникально по тройке, удаляются вместе с расходом). Правила: `list`/`view` открыты, `create`/`update`/`delete` требуют
+`expenses.lines`, `person`; уникально по тройке, удаляются вместе с расходом),
+`settlements` («переведено»: `from`, `to` — люди, `amount` — **в грошах**, целое ≥ 1,
+в отличие от `expenses.amount` в злотых; `note`, `created`; не редактируются —
+неверный удаляют и отмечают заново; в балансе считаются как платёж от `from` к `to`). Правила: `list`/`view` открыты, `create`/`update`/`delete` требуют
 `@request.headers.x_trip_key = "<ключ>"`. Ключ подставляется из переменной
 окружения `TRIP_KEY` в момент миграции, поэтому в репозитории его нет.
 
@@ -145,7 +148,8 @@ http://127.0.0.1:8099/#<ключ> работает с тем же origin.
 2. Админка (`./admin.sh`) → Collections → `people` → ⚙ →
    API Rules: в Create, Update и Delete заменить ключ в
    `@request.headers.x_trip_key = "..."`. Повторить для `items`, `expenses` и
-   `claims` (у `claims` только Create и Delete).
+   `claims` (у `claims` только Create и Delete) и `settlements` (Create — там ещё
+   `&& @request.body.from != @request.body.to`, — и Delete).
 3. Разослать новую ссылку `https://trip-planning.svorobovichtom.workers.dev/#<новый ключ>`.
    Старая ссылка продолжит читать, но записывать уже не сможет.
 

@@ -8,7 +8,7 @@ import { errMsg, isNetErr, pb } from "./pb";
 import { type PendingOp, WriteQueue } from "./queue";
 import { type DataState, dataStore, setOnline, sortPeople } from "./stores";
 import { LS, readJSON } from "./storage";
-import type { Claim, Expense, Item, Person } from "./types";
+import type { Claim, Expense, Item, Person, Settlement } from "./types";
 
 export const SNAP_KEY = "trip.next.snap";
 const LEGACY_SNAP_KEY = "trip.snap";
@@ -42,6 +42,7 @@ interface Snapshot {
   items?: Item[];
   expenses?: Expense[];
   claims?: Claim[] | null;
+  settlements?: Settlement[] | null;
 }
 
 function applySnapshot(snap: Snapshot): boolean {
@@ -53,6 +54,8 @@ function applySnapshot(snap: Snapshot): boolean {
     items: new Map(overlayAll("items", snap.items!).map((r) => [r.id, r])),
     expenses: new Map((snap.expenses ?? []).map((r) => [r.id, r])),
     claims: new Map((snap.claims ?? []).map((r) => [r.id, r])),
+    hasSettlements: Array.isArray(snap.settlements),
+    settlements: new Map((snap.settlements ?? []).map((r) => [r.id, r])),
   }));
   return true;
 }
@@ -66,6 +69,7 @@ function saveSnapSoon(s: DataState) {
       items: [...s.items.values()],
       expenses: [...s.expenses.values()],
       claims: [...s.claims.values()].filter((c) => !c.tmp),
+      settlements: s.hasSettlements ? [...s.settlements.values()].filter((t) => !t.tmp) : null,
     };
     try {
       LS.set(SNAP_KEY, JSON.stringify(snap));
@@ -101,7 +105,7 @@ export function reloadAll(): Promise<boolean> {
 async function doReload(): Promise<boolean> {
   during = { touched: new Set(), removed: new Set() };
   try {
-    const [people, items, expenses, claims] = await Promise.all([
+    const [people, items, expenses, claims, settlements] = await Promise.all([
       pb.collection("people").getFullList<Person>({ sort: "sort,created" }),
       pb.collection("items").getFullList<Item>({ sort: "sort,created" }),
       pb.collection("expenses").getFullList<Expense>({ sort: "-created" }),
@@ -109,6 +113,14 @@ async function doReload(): Promise<boolean> {
       pb
         .collection("claims")
         .getFullList<Claim>({ fields: "id,expense,line,person" })
+        .catch((e: unknown) => {
+          if ((e as { status?: number })?.status === 404) return null;
+          throw e;
+        }),
+      // No settlements collection = a server from before «переведено».
+      pb
+        .collection("settlements")
+        .getFullList<Settlement>({ sort: "created", fields: "id,from,to,amount,note,created" })
         .catch((e: unknown) => {
           if ((e as { status?: number })?.status === 404) return null;
           throw e;
@@ -132,7 +144,14 @@ async function doReload(): Promise<boolean> {
         // optimistic claims the server hasn't echoed yet
         ...[...s.claims.values()].filter((c) => c.tmp).map((c) => [c.id, c] as const),
       ]),
+      hasSettlements: settlements !== null,
+      settlements: new Map([
+        ...mergeList("settlements", (settlements ?? []).map(slimSettlement), s.settlements.values()).map((t) => [t.id, t] as const),
+        // optimistic ones the server hasn't echoed yet
+        ...[...s.settlements.values()].filter((t) => t.tmp).map((t) => [t.id, t] as const),
+      ]),
     }));
+    ensureSettlementsSub();
     setOnline(true);
     return true;
   } catch (e) {
@@ -146,9 +165,14 @@ async function doReload(): Promise<boolean> {
 
 // ---------- local record updates (also used by optimistic writes) ----------
 
-type Coll = "people" | "items" | "expenses" | "claims";
+type Coll = "people" | "items" | "expenses" | "claims" | "settlements";
 
-export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expense | Claim): void {
+const slimSettlement = (r: Settlement): Settlement => ({
+  id: r.id, from: r.from, to: r.to, amount: r.amount, note: r.note ?? "", created: r.created,
+  ...(r.tmp ? { tmp: true } : {}),
+});
+
+export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expense | Claim | Settlement): void {
   during?.touched.add(rk(coll, rec.id));
   during?.removed.delete(rk(coll, rec.id));
   dataStore.set((s) => {
@@ -179,6 +203,21 @@ export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expen
         claims.set(c.id, c.tmp ? c : { id: c.id, expense: c.expense, line: c.line, person: c.person });
         return { ...s, claims };
       }
+      case "settlements": {
+        const t = slimSettlement(rec as Settlement);
+        const settlements = new Map(s.settlements);
+        // the server's copy of our own transfer replaces one optimistic twin
+        if (!t.tmp && !s.settlements.has(t.id)) {
+          for (const o of s.settlements.values()) {
+            if (o.tmp && o.from === t.from && o.to === t.to && o.amount === t.amount) {
+              settlements.delete(o.id);
+              break;
+            }
+          }
+        }
+        settlements.set(t.id, t);
+        return { ...s, settlements };
+      }
     }
   });
 }
@@ -208,6 +247,12 @@ export function removeLocal(coll: Coll, id: string): void {
         claims.delete(id);
         return { ...s, claims };
       }
+      case "settlements": {
+        if (!s.settlements.has(id)) return s;
+        const settlements = new Map(s.settlements);
+        settlements.delete(id);
+        return { ...s, settlements };
+      }
     }
   });
 }
@@ -220,10 +265,22 @@ const handler = (coll: Coll) => (e: RecordSubscription<RecordModel>) => {
 };
 
 let everConnected = false;
+let connecting = false;
+let settlementsSub = false;
+
+/** Subscribes to settlements once the server is known to have them. */
+function ensureSettlementsSub(): void {
+  if (!connecting || settlementsSub || !dataStore.get().hasSettlements) return;
+  settlementsSub = true;
+  pb.collection("settlements")
+    .subscribe("*", handler("settlements"))
+    .catch(() => (settlementsSub = false));
+}
 let connectT: ReturnType<typeof setTimeout> | undefined;
 
 async function connect(): Promise<void> {
   clearTimeout(connectT);
+  connecting = true;
   try {
     await pb.realtime.subscribe("PB_CONNECT", () => {
       setOnline(true);
@@ -236,6 +293,7 @@ async function connect(): Promise<void> {
     await pb.collection("people").subscribe("*", handler("people"));
     await pb.collection("expenses").subscribe("*", handler("expenses"));
     if (dataStore.get().v2) await pb.collection("claims").subscribe("*", handler("claims"));
+    ensureSettlementsSub();
   } catch {
     setOnline(false);
     connectT = setTimeout(() => void connect(), 4000);

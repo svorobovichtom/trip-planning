@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byOrder, computeLedger, expenseCats, expenseShares, indexClaims, linesOk, settle, sortedCats, splitEven } from "./ledger";
+import { byOrder, computeLedger, expenseCats, expenseShares, indexClaims, linesOk, settle, sortedCats, splitEven, splitModeOf } from "./ledger";
 import type { Expense } from "./types";
 
 const order = ["a", "b", "c"];
@@ -257,5 +257,68 @@ describe("computeLedger: categories and the 8-person trip", () => {
     expect(L.cats.size).toBe(0);
     expect([...L.bal.values()].every((v) => v === 0)).toBe(true);
     expect(settle(L.bal)).toEqual([]);
+  });
+});
+
+describe("computeLedger: settlements («переведено»)", () => {
+  // a paid 90 for everyone: b and c owe a 30,00 each
+  const expenses = [X({ id: "1", amount: 90, paid_by: "a" })];
+  const L = (settlements: { from: string; to: string; amount: number }[]) => computeLedger({ people, expenses, claims: [], settlements });
+
+  it("without transfers nothing changes", () => {
+    const l = L([]);
+    expect(obj(l.bal)).toEqual({ a: 6000, b: -3000, c: -3000 });
+    expect(obj(l.settled)).toEqual({ a: 0, b: 0, c: 0 });
+  });
+  it("partial transfer: only the rest is left to settle", () => {
+    const l = L([{ from: "b", to: "a", amount: 1000 }]);
+    expect(obj(l.bal)).toEqual({ a: 5000, b: -2000, c: -3000 });
+    expect(obj(l.paid)).toEqual({ a: 9000, b: 0, c: 0 });
+    expect(obj(l.owes)).toEqual({ a: 3000, b: 3000, c: 3000 });
+    expect(obj(l.sent)).toEqual({ a: 0, b: 1000, c: 0 });
+    expect(obj(l.received)).toEqual({ a: 1000, b: 0, c: 0 });
+    expect(obj(l.settled)).toEqual({ a: -1000, b: 1000, c: 0 });
+    expect(settle(l.bal)).toEqual([
+      { from: "c", to: "a", g: 3000 },
+      { from: "b", to: "a", g: 2000 },
+    ]);
+  });
+  it("full transfers: everyone «в расчёте», nothing to settle", () => {
+    const l = L([
+      { from: "b", to: "a", amount: 3000 },
+      { from: "c", to: "a", amount: 1000 },
+      { from: "c", to: "a", amount: 2000 },
+    ]);
+    expect(obj(l.bal)).toEqual({ a: 0, b: 0, c: 0 });
+    expect(settle(l.bal)).toEqual([]);
+  });
+  it("over-transfer reverses the debt", () => {
+    const l = L([
+      { from: "b", to: "a", amount: 5000 },
+      { from: "c", to: "a", amount: 3000 },
+    ]);
+    expect(obj(l.bal)).toEqual({ a: -2000, b: 2000, c: 0 });
+    expect(settle(l.bal)).toEqual([{ from: "a", to: "b", g: 2000 }]);
+  });
+  it("ignores unknown people, self-transfers and bad amounts; balances still add up to 0", () => {
+    const l = L([
+      { from: "zz", to: "a", amount: 500 },
+      { from: "b", to: "b", amount: 500 },
+      { from: "b", to: "a", amount: 0 },
+      { from: "b", to: "a", amount: -100 },
+      { from: "b", to: "a", amount: Number.NaN },
+    ]);
+    expect(obj(l.bal)).toEqual({ a: 6000, b: -3000, c: -3000 });
+    expect(sum(L([{ from: "c", to: "b", amount: 777 }]).bal)).toBe(0);
+  });
+});
+
+describe("splitModeOf", () => {
+  it("reports the mode expenseShares really used", () => {
+    expect(splitModeOf(X({ amount: 1 }), order)).toBe("equal");
+    expect(splitModeOf(X({ amount: 1, split_mode: "amounts", split_amounts: { b: 50 } }), order)).toBe("amounts");
+    expect(splitModeOf(X({ amount: 1, split_mode: "amounts", split_amounts: { zz: 50 } }), order)).toBe("equal");
+    expect(splitModeOf(X({ amount: 1, split_mode: "claims", lines: [{ text: "x", price: 1 }] }), order)).toBe("claims");
+    expect(splitModeOf(X({ amount: 1, split_mode: "claims", lines: [{ text: "x", price: 1 }], scan_error: "lines_mismatch" }), order)).toBe("equal");
   });
 });

@@ -76,6 +76,22 @@ export interface Claim {
   tmp?: boolean;
 }
 
+/**
+ * A money transfer between two people, marked as done («переведено»).
+ * Counts like a payment from `from` to `to` in the ledger.
+ */
+export interface Settlement {
+  id: string;
+  from: string;
+  to: string;
+  /** GROSZE (integer >= 1), unlike Expense.amount which is PLN */
+  amount: number;
+  note?: string;
+  created?: string;
+  /** optimistic copy not yet confirmed by the server */
+  tmp?: boolean;
+}
+
 export const CATEGORIES = [
   "Мясо и рыба", "Молочка и яйца", "Овощи и зелень", "Фрукты", "Бакалея",
   "Снеки", "Гриль и быт", "Напитки и алкоголь", "Жильё",

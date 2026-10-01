@@ -3,15 +3,19 @@ import { useMemo } from "react";
 import { computeLedger, type Ledger } from "./ledger";
 import { grosze } from "./money";
 import { aggregateLines } from "./receipt";
-import { useClaims, useExpenses, useItems, usePeople } from "./stores";
+import { useClaims, useExpenses, useItems, usePeople, useSettlements } from "./stores";
 import type { Expense, Item } from "./types";
 
-/** Full ledger (balances, shares per expense, categories). */
+/** Full ledger (balances after transfers, shares per expense, categories). */
 export function useLedger(): Ledger {
   const people = usePeople();
   const expenses = useExpenses();
   const claims = useClaims();
-  return useMemo(() => computeLedger({ people, expenses: expenses.values(), claims: claims.values() }), [people, expenses, claims]);
+  const settlements = useSettlements();
+  return useMemo(
+    () => computeLedger({ people, expenses: expenses.values(), claims: claims.values(), settlements: settlements.values() }),
+    [people, expenses, claims, settlements],
+  );
 }
 
 /** Sum of all expense amounts, grosze. */

@@ -12,9 +12,14 @@
 // Rounding: leftover grosze go one each to the first people in list order,
 // so the parts always add up to the amount exactly. Amount 0 (still being
 // scanned) counts for nobody. Unknown person ids are ignored.
+//
+// Settlements (transfers marked «переведено», grosze) count like a payment
+// between two people: bal[from] += g, bal[to] −= g. paid/owes stay trip
+// spending; sent/received/settled show the transfers, so settle(bal) is
+// what's left to transfer.
 
 import { grosze } from "./money";
-import type { Claim, Expense, Person } from "./types";
+import type { Claim, Expense, Person, Settlement } from "./types";
 
 export type Shares = Map<string, number>;
 
@@ -103,6 +108,15 @@ export function expenseShares(x: Expense, order: readonly string[], claims?: Map
   return out;
 }
 
+/** How expenseShares actually split it (claims without readable lines and
+ *  amounts without known people fall back to equal). */
+export function splitModeOf(x: Expense, order: readonly string[]): "equal" | "amounts" | "claims" {
+  const sa = x.split_amounts;
+  if (x.split_mode === "amounts" && sa && typeof sa === "object" && !Array.isArray(sa) && byOrder(Object.keys(sa), order).length) return "amounts";
+  if (x.split_mode === "claims" && linesOk(x)) return "claims";
+  return "equal";
+}
+
 export const OTHER = "Другое";
 
 /**
@@ -167,9 +181,16 @@ export function sortedCats(cats: Map<string, number>): [string, number][] {
 export interface Ledger {
   /** sum of all amounts */
   total: number;
+  /** trip spending: what each person paid for expenses (transfers not included) */
   paid: Map<string, number>;
+  /** trip spending: each person's share of the expenses */
   owes: Map<string, number>;
-  /** paid − owes: > 0 gets money back, < 0 owes */
+  /** money transfers marked as done («переведено»): sent / received per person */
+  sent: Map<string, number>;
+  received: Map<string, number>;
+  /** sent − received */
+  settled: Map<string, number>;
+  /** paid − owes + settled: > 0 gets money back, < 0 owes; settle(bal) = what's left */
   bal: Map<string, number>;
   /** category -> total, from receipt lines when an expense has them (expenseCats) */
   cats: Map<string, number>;
@@ -181,6 +202,8 @@ export function computeLedger(input: {
   people: readonly Pick<Person, "id">[];
   expenses: Iterable<Expense>;
   claims: Iterable<Pick<Claim, "expense" | "line" | "person">>;
+  /** transfers between people, amount in grosze; count like a payment from → to */
+  settlements?: Iterable<Pick<Settlement, "from" | "to" | "amount">>;
 }): Ledger {
   const order = input.people.map((p) => p.id);
   const idx = indexClaims(input.claims, order);
@@ -198,8 +221,18 @@ export function computeLedger(input: {
     shares.set(x.id, s);
     for (const [id, v] of s) if (owes.has(id)) owes.set(id, owes.get(id)! + v);
   }
-  const bal = new Map(order.map((id) => [id, paid.get(id)! - owes.get(id)!]));
-  return { total, paid, owes, bal, cats, shares };
+  const sent = new Map(order.map((id) => [id, 0]));
+  const received = new Map(order.map((id) => [id, 0]));
+  for (const t of input.settlements ?? []) {
+    const g = Math.round(Number(t.amount));
+    // unknown people, self-transfers and junk amounts count for nothing
+    if (!Number.isFinite(g) || g <= 0 || t.from === t.to || !sent.has(t.from) || !received.has(t.to)) continue;
+    sent.set(t.from, sent.get(t.from)! + g);
+    received.set(t.to, received.get(t.to)! + g);
+  }
+  const settled = new Map(order.map((id) => [id, sent.get(id)! - received.get(id)!]));
+  const bal = new Map(order.map((id) => [id, paid.get(id)! - owes.get(id)! + settled.get(id)!]));
+  return { total, paid, owes, sent, received, settled, bal, cats, shares };
 }
 
 export interface Transfer {
