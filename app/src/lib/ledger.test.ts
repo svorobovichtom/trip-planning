@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byOrder, computeLedger, expenseShares, indexClaims, linesOk, settle, splitEven } from "./ledger";
+import { byOrder, computeLedger, expenseCats, expenseShares, indexClaims, linesOk, settle, sortedCats, splitEven } from "./ledger";
 import type { Expense } from "./types";
 
 const order = ["a", "b", "c"];
@@ -161,5 +161,101 @@ describe("computeLedger + settle", () => {
       { from: "c", to: "a", g: 500 },
       { from: "c", to: "b", g: 300 },
     ]);
+  });
+});
+
+describe("expenseCats", () => {
+  it("no lines: the expense's category, or «Другое»", () => {
+    expect(obj(expenseCats(X({ amount: 12.5, category: "Жильё" })))).toEqual({ Жильё: 1250 });
+    expect(obj(expenseCats(X({ amount: 12.5 })))).toEqual({ Другое: 1250 });
+    expect(obj(expenseCats(X({ amount: 3, lines: [] })))).toEqual({ Другое: 300 });
+  });
+  it("amount 0 counts for nothing", () => {
+    expect(expenseCats(X({ amount: 0, lines: [{ text: "A", price: 5, category: "Фрукты" }] })).size).toBe(0);
+  });
+  it("lines by their category; a line without one and the remainder go to the expense's category", () => {
+    const x = X({
+      amount: 100,
+      category: "Бакалея",
+      lines: [
+        { text: "Шея", price: 40, category: "Мясо и рыба" },
+        { text: "Пиво", price: 30.5, category: "Напитки и алкоголь" },
+        { text: "Пакет", price: 0.5 },
+        { text: "?", price: null, category: "Снеки" },
+        { text: "", price: 9, category: "Снеки" },
+      ],
+    });
+    expect(obj(expenseCats(x))).toEqual({ "Мясо и рыба": 4000, "Напитки и алкоголь": 3050, Бакалея: 2950 });
+  });
+  it("remainder goes to «Другое» when the expense has no category", () => {
+    const x = X({ amount: 10, lines: [{ text: "Сыр", price: 7, category: "Молочка и яйца" }] });
+    expect(obj(expenseCats(x))).toEqual({ "Молочка и яйца": 700, Другое: 300 });
+  });
+  it("a discount folds into the line above it", () => {
+    const x = X({
+      amount: 25,
+      lines: [
+        { text: "Шея", price: 20, category: "Мясо и рыба" },
+        { text: "Rabat", price: -5, category: "Другое" },
+        { text: "Сок", price: 10, category: "Напитки и алкоголь" },
+      ],
+    });
+    expect(obj(expenseCats(x))).toEqual({ "Мясо и рыба": 1500, "Напитки и алкоголь": 1000 });
+  });
+  it("lines above the amount: spread in proportion, adds up exactly", () => {
+    const x = X({
+      amount: 10,
+      lines: [
+        { text: "A", price: 10, category: "Фрукты" },
+        { text: "B", price: 10, category: "Снеки" },
+        { text: "C", price: 10, category: "Бакалея" },
+      ],
+    });
+    const c = expenseCats(x);
+    expect(sum(c)).toBe(1000);
+    expect([...c.values()].sort()).toEqual([333, 333, 334]);
+  });
+  it("only discounts: all to the expense's category", () => {
+    expect(obj(expenseCats(X({ amount: 5, category: "Снеки", lines: [{ text: "Rabat", price: -1 }] })))).toEqual({ Снеки: 500 });
+  });
+  it("sortedCats: biggest first, zeros dropped", () => {
+    expect(sortedCats(new Map([["Б", 5], ["А", 5], ["В", 9], ["Г", 0]]))).toEqual([["В", 9], ["А", 5], ["Б", 5]]);
+  });
+});
+
+describe("computeLedger: categories and the 8-person trip", () => {
+  const eight = ["t", "b", "c", "d", "e", "f", "g", "h"].map((id) => ({ id }));
+  it("categories come from lines and add up to the total", () => {
+    const L = computeLedger({
+      people: eight,
+      expenses: [
+        X({
+          id: "lidl",
+          amount: 352.35,
+          paid_by: "t",
+          lines: [
+            { text: "Шея", price: 150.2, category: "Мясо и рыба" },
+            { text: "Rabat", price: -10.2, category: "Мясо и рыба" },
+            { text: "Пиво", price: 120, category: "Напитки и алкоголь" },
+            { text: "Хлеб", price: 50, category: "Бакалея" },
+          ],
+        }),
+      ],
+      claims: [],
+    });
+    expect(L.total).toBe(35235);
+    expect(sum(L.cats)).toBe(L.total);
+    expect(obj(L.cats)).toEqual({ "Мясо и рыба": 14000, "Напитки и алкоголь": 12000, Бакалея: 5000, Другое: 4235 });
+    expect(L.bal.get("t")).toBe(30830);
+    const tx = settle(L.bal);
+    expect(tx.every((t) => t.to === "t")).toBe(true);
+    expect(tx.reduce((s, t) => s + t.g, 0)).toBe(30830);
+  });
+  it("no expenses: zeros everywhere, nothing to settle", () => {
+    const L = computeLedger({ people: eight, expenses: [], claims: [] });
+    expect(L.total).toBe(0);
+    expect(L.cats.size).toBe(0);
+    expect([...L.bal.values()].every((v) => v === 0)).toBe(true);
+    expect(settle(L.bal)).toEqual([]);
   });
 });

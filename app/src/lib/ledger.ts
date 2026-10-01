@@ -103,6 +103,67 @@ export function expenseShares(x: Expense, order: readonly string[], claims?: Map
   return out;
 }
 
+export const OTHER = "Другое";
+
+/**
+ * What an expense was spent on, by category; the parts add up to the amount.
+ *   no receipt lines — all of it to the expense's category («Другое» if none)
+ *   receipt lines    — each priced line to its category (a line without one
+ *                      to the expense's category); a discount (negative line)
+ *                      folds into the line above it; amount − sum(lines) to
+ *                      the expense's category. When that doesn't work out
+ *                      (lines add up to more than the amount, or a category
+ *                      goes negative) the amount is spread in proportion to
+ *                      the lines instead.
+ */
+export function expenseCats(x: Pick<Expense, "amount" | "category" | "lines">): Map<string, number> {
+  const out = new Map<string, number>();
+  const g = grosze(x.amount);
+  if (!g) return out;
+  const own = x.category || OTHER;
+  const add = (m: Map<string, number>, c: string, v: number) => m.set(c, (m.get(c) ?? 0) + v);
+  const byLine = new Map<string, number>();
+  let prev: string | null = null;
+  let sum = 0;
+  for (const l of Array.isArray(x.lines) ? x.lines : []) {
+    if (!l || !l.text) continue;
+    const lg = grosze(l.price);
+    if (!lg) continue;
+    const c: string = lg < 0 && prev !== null ? prev : l.category || own;
+    if (lg > 0) prev = c;
+    add(byLine, c, lg);
+    sum += lg;
+  }
+  if (!byLine.size) return out.set(own, g);
+  const rest = g - sum;
+  if (rest >= 0 && [...byLine.values()].every((v) => v >= 0)) {
+    for (const [c, v] of byLine) if (v) add(out, c, v);
+    if (rest) add(out, own, rest);
+    return out;
+  }
+  // Proportional, largest remainder first so the parts add up exactly.
+  const pos = [...byLine].filter(([, v]) => v > 0);
+  const base = pos.reduce((s, [, v]) => s + v, 0);
+  if (!base) return out.set(own, g);
+  const parts = pos.map(([c, v], i) => {
+    const exact = (g * v) / base;
+    return { c, i, n: Math.floor(exact), f: exact - Math.floor(exact) };
+  });
+  let left = g - parts.reduce((s, p) => s + p.n, 0);
+  for (const p of [...parts].sort((a, b) => b.f - a.f || a.i - b.i)) {
+    if (left <= 0) break;
+    p.n++;
+    left--;
+  }
+  for (const p of parts) if (p.n) add(out, p.c, p.n);
+  return out;
+}
+
+/** Categories biggest first (ties by name), zeros dropped. */
+export function sortedCats(cats: Map<string, number>): [string, number][] {
+  return [...cats].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ru"));
+}
+
 export interface Ledger {
   /** sum of all amounts */
   total: number;
@@ -110,7 +171,7 @@ export interface Ledger {
   owes: Map<string, number>;
   /** paid − owes: > 0 gets money back, < 0 owes */
   bal: Map<string, number>;
-  /** category ("Другое" when empty) -> total */
+  /** category -> total, from receipt lines when an expense has them (expenseCats) */
   cats: Map<string, number>;
   /** expense id -> shares */
   shares: Map<string, Shares>;
@@ -131,8 +192,7 @@ export function computeLedger(input: {
   for (const x of input.expenses) {
     const g = grosze(x.amount);
     total += g;
-    const cat = x.category || "Другое";
-    cats.set(cat, (cats.get(cat) ?? 0) + g);
+    for (const [c, v] of expenseCats(x)) cats.set(c, (cats.get(c) ?? 0) + v);
     if (paid.has(x.paid_by)) paid.set(x.paid_by, paid.get(x.paid_by)! + g);
     const s = expenseShares(x, order, idx.get(x.id));
     shares.set(x.id, s);

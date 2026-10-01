@@ -1,48 +1,292 @@
-/* PLACEHOLDER styles for the read-only totals */
-.hero {
+/* «Итоги»: cards on --surface, numbers tabular, no accent colours. */
+.t-card {
   margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--r);
+  background: var(--surface);
 }
-.k {
+.t-k {
   font-size: 13px;
   color: var(--muted);
 }
-.hero .v {
+.t-big {
   margin-top: 2px;
   color: var(--ink);
   font-size: 34px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
 }
-.kv > li {
+.t-big.zero {
+  color: var(--muted);
+}
+.t-s {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+.t-card p {
+  margin: 6px 0 14px;
+  font-size: 14px;
+}
+.t-empty .t-big {
+  color: var(--muted);
+}
+
+/* my transfers, inside the card */
+.t-rows {
+  list-style: none;
+  margin: 12px -14px -14px;
+  padding: 0;
+}
+.t-rows > li,
+.list.t-list > li,
+.t-all > li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   min-height: 48px;
-  padding: 10px 14px;
+  padding: 6px 14px;
 }
-.kv .l {
+.t-rows > li {
+  border-top: 1px solid var(--line);
+  padding-right: 6px;
+}
+.t-who {
+  flex: 1;
   min-width: 0;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
-.kv .l i {
+.t-who i {
   font-style: normal;
   color: var(--muted);
   padding: 0 6px;
 }
-.kv .r {
+.t-rows .t-who i {
+  padding-left: 0;
+}
+.t-amt {
   flex: none;
   color: var(--ink);
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.kv .s {
+.t-copy {
+  flex: none;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  transition: transform 0.12s var(--ease);
+}
+.t-copy:active {
+  transform: scale(0.96);
+}
+.t-none {
+  padding: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.list.t-list > li.t-none {
+  display: block;
+  min-height: 0;
+}
+
+/* trip: two stats, then category bars */
+.t-stats {
+  display: flex;
+  gap: 32px;
+}
+.t-stats b {
   display: block;
   margin-top: 2px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.t-bars {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+}
+.t-bars > li + li {
+  margin-top: 10px;
+}
+.t-bl {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.t-bl span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.t-bl b {
+  flex: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.t-track {
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.t-track i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ink);
+  transform-origin: left center;
+  transition: transform 0.5s var(--ease);
+}
+@starting-style {
+  .t-track i {
+    transform: scaleX(0);
+  }
+}
+
+/* spoilers: everyone's transfers, the balance table, CSV */
+.t-more {
+  margin-top: 20px;
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+.t-trig {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+}
+.t-more > :not(:first-child) {
+  border-top: 1px solid var(--line);
+}
+.t-trig:active {
+  background: var(--surface-2);
+}
+.t-trig:focus-visible {
+  outline-offset: -2px;
+}
+.t-n {
+  color: var(--muted);
+}
+.t-trig svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+  transition: transform 0.3s var(--sheet-ease);
+}
+.t-trig[data-panel-open] svg {
+  transform: rotate(180deg);
+}
+.t-panel {
+  height: var(--collapsible-panel-height);
+  overflow: hidden;
+  transition: height 0.34s var(--sheet-ease);
+}
+.t-panel[data-starting-style],
+.t-panel[data-ending-style] {
+  height: 0;
+}
+.t-panel[hidden]:not([hidden="until-found"]) {
+  display: none;
+}
+.t-pin {
+  padding-bottom: 8px;
+}
+.t-all {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.t-all > li {
+  min-height: 40px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.t-all .t-who,
+.t-all .t-amt {
+  color: var(--text);
+  font-weight: 400;
+}
+.t-all .t-amt {
+  font-weight: 500;
+}
+.t-all .mine .t-who,
+.t-all .mine .t-amt {
+  color: var(--ink);
+}
+.t-pin > .t-none {
+  margin: 0;
+  padding: 4px 14px 8px;
+}
+
+.t-tbl {
+  width: calc(100% - 28px);
+  margin: 0 14px;
+  border-collapse: collapse;
   font-size: 13px;
+}
+.t-tbl th,
+.t-tbl td {
+  padding: 7px 0;
+  text-align: right;
+  white-space: nowrap;
+}
+.t-tbl th + th,
+.t-tbl td {
+  padding-left: 10px;
+}
+.t-tbl thead th {
+  padding-top: 0;
+  color: var(--muted);
+  font-weight: 400;
+}
+.t-tbl tbody th {
+  width: 100%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  font-weight: 400;
+  text-align: left;
+}
+.t-tbl tbody tr + tr > * {
+  border-top: 1px solid var(--line);
+}
+.t-tbl td {
+  color: var(--text);
+}
+.t-tbl .t-bal {
+  color: var(--ink);
+  font-weight: 500;
+}
+.t-tbl .mine th {
+  font-weight: 500;
+}
+.t-foot {
+  margin: 6px 14px 4px;
+  font-size: 12px;
   color: var(--muted);
 }
