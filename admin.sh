@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Open the PocketBase admin UI. It is not reachable from the internet (blocked
-# in the tunnel and in Caddy); this forwards it over SSH to http://localhost:8091/_/.
+# in the tunnel); this forwards it over SSH to http://localhost:8091/_/.
 # Ctrl+C closes the tunnel. Login is in deploy/.secrets (PB_ADMIN_*).
 set -euo pipefail
 HOST="${TRIP_HOST:-ubuntu@89.168.118.89}"

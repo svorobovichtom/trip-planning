@@ -199,11 +199,10 @@ function morph(el, text) {
   m.update(text);
 }
 // ---------- config ----------
-// The page is served by Cloudflare (workers.dev); the API is PocketBase on the VM,
-// reached through a Cloudflare Tunnel. Served from PocketBase itself (local dev)
-// the page talks to its own origin.
+// The page is served by Cloudflare; the API is PocketBase on the VM, reached
+// through a Cloudflare Tunnel. Run locally from PocketBase, it uses its own origin.
 const SERVER = "https://trip-api.svorobovich.com";
-const API = /\.(workers|pages)\.dev$|\.github\.io$/.test(location.hostname) || location.protocol === "file:" ? SERVER : location.origin;
+const API = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? location.origin : SERVER;
 const pb = new PocketBase(API);
 pb.autoCancellation(false);
 
@@ -212,7 +211,9 @@ const LS = {
   set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
 };
 
-const hashKey = (location.hash.match(/[#&]k=([A-Za-z0-9_-]+)/) || [])[1];
+// Share link: https://<site>/#<key>  (the old #k=<key> form still works).
+// The part after # never leaves the phone: browsers don't send it to any server.
+const hashKey = (location.hash.match(/^#(?:k=)?([A-Za-z0-9_-]{12,64})$/) || [])[1];
 if (hashKey) LS.set("trip.key", hashKey);
 const KEY = LS.get("trip.key");
 pb.beforeSend = (url, options) => {
@@ -590,7 +591,7 @@ $("#rename").addEventListener("click", () => {
   queueUpdate("people", p.id, { name });
 });
 $("#share").addEventListener("click", async () => {
-  const url = location.origin + location.pathname + "#k=" + KEY;
+  const url = location.origin + location.pathname + "#" + KEY;
   try {
     if (navigator.share) await navigator.share({ title: "Покупки и расходы поездки", url });
     else { await navigator.clipboard.writeText(url); toast("Ссылка скопирована"); }

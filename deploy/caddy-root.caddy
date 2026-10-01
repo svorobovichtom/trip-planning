@@ -1,5 +1,0 @@
-# /etc/caddy/root.caddy - the config Caddy actually runs (see 20-sites.conf).
-# The Flatsy file stays untouched and is imported first, so any global options
-# block it may grow still comes first. Each app adds one file to sites.d/.
-import /etc/caddy/Caddyfile
-import /etc/caddy/sites.d/*.caddy
