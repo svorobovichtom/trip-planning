@@ -117,6 +117,7 @@ export function MoreSheet() {
           </button>
         </li>
       </ul>
+      <p className="build">новая версия · сборка {__BUILD__}</p>
     </Sheet>
   );
 }

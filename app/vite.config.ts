@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
@@ -68,8 +69,18 @@ self.addEventListener("fetch", (e) => {
 `;
 }
 
+// Short commit (or build time) shown in «Ещё», to tell which build a phone runs.
+const BUILD = (() => {
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return new Date().toISOString().slice(0, 16).replace("T", " ");
+  }
+})();
+
 export default defineConfig({
   base: "/next/",
+  define: { __BUILD__: JSON.stringify(BUILD) },
   plugins: [react(), serviceWorker()],
   server: { port: 5196, strictPort: true, proxy },
   preview: { port: 5197, strictPort: true, proxy },

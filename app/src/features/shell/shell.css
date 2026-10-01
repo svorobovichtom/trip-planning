@@ -367,3 +367,10 @@ body.typing .nav {
   flex: 1;
   min-width: 0;
 }
+
+.sh-content p.build {
+  margin: 14px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
