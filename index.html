@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A16" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Поездка">
+<meta name="description" content="Общий список покупок и расходы поездки">
+<title>Покупки в Ашан</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232F6B45'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#F2F4EE; --paper:#FFFFFF; --ink:#1E2A21; --muted:#6B776C; --line:#DEE3D8;
+  --accent:#C9541F; --accent-soft:#F7E3D8; --done:#9AA59C; --check:#2F6B45; --check-soft:#E2EEE4;
+  --bad:#B4372B; --shadow:0 1px 2px rgba(30,42,33,.06),0 8px 24px rgba(30,42,33,.08);
+  --display:"Unbounded","Onest",system-ui,sans-serif;
+  --body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --nav-h:0px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141A16; --paper:#1C241F; --ink:#E7ECE4; --muted:#93A095; --line:#2C3830;
+  --accent:#F0874F; --accent-soft:#3A2519; --done:#5E6B62; --check:#6FBF8C; --check-soft:#1F3326;
+  --bad:#F07A6E; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141A16; --paper:#1C241F; --ink:#E7ECE4; --muted:#93A095; --line:#2C3830;
+  --accent:#F0874F; --accent-soft:#3A2519; --done:#5E6B62; --check:#6FBF8C; --check-soft:#1F3326;
+  --bad:#F07A6E; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4;margin:0;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:0 calc(48px + var(--nav-h) + env(safe-area-inset-bottom,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:12px;border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:0;text-wrap:balance;line-height:1.15;padding-top:4px}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+.me{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;max-width:46%;padding:4px 12px 4px 4px;border-radius:999px;border:1px solid var(--line);background:var(--paper)}
+.me .av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font:600 .9rem var(--body)}
+.me .nm{font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me.empty .av{background:var(--line);color:var(--muted)}
+.prog{display:flex;align-items:center;gap:12px;margin-top:12px}
+.bar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--check);transition:width .25s}
+.count{font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;font:500 .875rem var(--body);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sync{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.sync[data-s="ok"] i{background:var(--check)}
+.sync[data-s="busy"] i{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+.sync[data-s="off"] i{background:var(--bad)}
+.sync[data-s="off"]{color:var(--bad)}
+@keyframes pulse{50%{opacity:.35}}
+.ro{margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--accent-soft);font-size:.9rem}
+section{margin-top:22px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+h2{font-family:var(--display);font-weight:500;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin:0;color:var(--accent)}
+.sec-n{font-family:var(--mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.list{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list>li+li{border-top:1px solid var(--line)}
+.list>li{display:flex;align-items:stretch}
+.row{flex:1;min-width:0;display:grid;grid-template-columns:26px 1fr auto;gap:12px;align-items:center;min-height:56px;padding:12px 14px;background:none;border:0;text-align:left;color:inherit;font:inherit}
+.row:active{background:var(--bg)}
+.box{width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;display:grid;place-items:center;transition:background .15s,border-color .15s,transform .15s}
+.box svg{width:14px;height:14px;opacity:0;transition:opacity .15s}
+.txt{min-width:0}
+.name{font-weight:500;overflow-wrap:anywhere}
+.pl{display:block;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.by{display:block;font-size:.75rem;color:var(--check);font-weight:500;margin-top:2px}
+.by:empty{display:none}
+.qty{font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink);max-width:9em;overflow:hidden;text-overflow:ellipsis}
+.done .box{background:var(--check);border-color:var(--check)}
+.done .box svg{opacity:1}
+.done .name,.done .qty{color:var(--done);text-decoration:line-through}
+.row:active .box{transform:scale(.9)}
+.del{flex:none;width:44px;border:0;border-left:1px solid var(--line);background:none;color:var(--muted);font-size:1.2rem}
+.hide-done li.is-done{display:none}
+.hide-done section.all-done{display:none}
+.add-btn{width:100%;min-height:48px;border:0;background:none;color:var(--accent);font-weight:500;text-align:left;padding:0 14px}
+.add-form{display:grid;grid-template-columns:1fr 5.5em;gap:8px;padding:10px;width:100%}
+.add-form .act{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+.in{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px}
+.in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.btn{min-height:44px;padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-weight:500}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.menu{margin-top:28px;background:var(--accent-soft);border-radius:12px;padding:14px 16px}
+.menu h2{margin-bottom:8px}
+.menu dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.92rem}
+.menu dt{font-family:var(--mono);font-size:.8rem;color:var(--muted);padding-top:2px;white-space:nowrap}
+.menu dd{margin:0;min-width:0}
+.note{margin-top:14px;font-size:.85rem;color:var(--muted)}
+.skel{margin-top:22px;height:280px;border-radius:12px;background:var(--paper);border:1px solid var(--line);opacity:.6}
+/* dialog */
+dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%;margin:0;color:var(--ink)}
+dialog::backdrop{background:rgba(10,14,11,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:88vh;overflow:auto;background:var(--paper);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow)}
+.sheet h2{font-size:1rem;letter-spacing:-.01em;text-transform:none;color:var(--ink);font-weight:700}
+.sheet p{margin:6px 0 14px;color:var(--muted);font-size:.9rem}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.person{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 12px 6px 6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);text-align:left}
+.person .av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600}
+.person[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.person span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet details{margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+.sheet summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:500;color:var(--accent)}
+.names{display:grid;gap:8px;margin-top:4px}
+.sheet .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + var(--nav-h) + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;z-index:50;max-width:calc(100vw - 32px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow);transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <div class="top">
+      <div>
+        <h1 id="title">Покупки в Ашан</h1>
+        <div class="sub">9 человек · ужин пт → завтрак вс · гриль</div>
+      </div>
+      <button class="me empty" id="meBtn" type="button" aria-haspopup="dialog"><span class="av" id="meAv">?</span><span class="nm" id="meName">Кто ты?</span></button>
+    </div>
+    <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span></div>
+    <div class="tools">
+      <button class="chip" id="hide" type="button" aria-pressed="false">Скрыть купленное</button>
+      <button class="chip" id="reset" type="button">Снять все отметки</button>
+    </div>
+    <div class="sync" id="sync" role="status" aria-live="polite"><i></i><span>подключаюсь…</span></div>
+  </header>
+
+  <div class="ro" id="ro" hidden>Только просмотр. Чтобы отмечать, попроси ссылку с ключом.</div>
+
+  <main id="list"><div class="skel"></div></main>
+
+  <div class="menu">
+    <h2>Меню</h2>
+    <dl>
+      <dt>Пт ужин</dt><dd>Гриль: шея, курица, колбаски, картошка, салат. Для одного: лосось</dd>
+      <dt>Сб завтрак</dt><dd>Сырники со сметаной, яйца, хлеб, сыр, нарезка, овощи</dd>
+      <dt>Сб обед</dt><dd>Лёгкий перекус перед выездом: бутерброды, овощи, фрукты</dd>
+      <dt>Сб ужин</dt><dd>Лосось на гриле, немного шеи, пюре, овощи гриль, салат</dd>
+      <dt>Вс завтрак</dt><dd>Без готовки: йогурт с гранолой и фруктами, бутерброды, кофе</dd>
+    </dl>
+  </div>
+  <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
+</div>
+
+<dialog id="who" aria-labelledby="whoH">
+  <div class="sheet">
+    <h2 id="whoH">Кто ты?</h2>
+    <p>Твоё имя будет видно рядом с тем, что ты отметил.</p>
+    <div class="people" id="whoList"></div>
+    <details id="namesBox">
+      <summary>Изменить имена</summary>
+      <div class="names" id="names"></div>
+    </details>
+    <div class="foot">
+      <button class="btn" type="button" id="share">Скопировать ссылку для группы</button>
+      <button class="btn pri" type="button" id="whoClose">Готово</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="assertive"></div>
+
+<script src="vendor/pocketbase.umd.js"></script>
+<script>
+"use strict";
+// ---------- config ----------
+const SERVER = "https://89-168-118-89.sslip.io";
+const API = /\.github\.io$/.test(location.hostname) || location.protocol === "file:" ? SERVER : location.origin;
+const pb = new PocketBase(API);
+pb.autoCancellation(false);
+
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+};
+
+const hashKey = (location.hash.match(/[#&]k=([A-Za-z0-9_-]+)/) || [])[1];
+if (hashKey) LS.set("trip.key", hashKey);
+const KEY = LS.get("trip.key");
+pb.beforeSend = (url, options) => {
+  if (KEY) options.headers = Object.assign({}, options.headers, { "X-Trip-Key": KEY });
+  return { url, options };
+};
+
+// ---------- state ----------
+const S = {
+  people: [],                 // sorted
+  items: new Map(),           // id -> record
+  me: LS.get("trip.me"),
+  online: false,
+  loaded: false,
+  hide: LS.get("trip.hide") === "1",
+};
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const AV_COLORS = ["#C9541F", "#2F6B45", "#3B5BA5", "#8A4FB0", "#B0386A", "#2F8A8A", "#9A7A12", "#5C6B2E", "#6B4A3A"];
+const parseDate = (s) => (s ? new Date(String(s).replace(" ", "T")) : null);
+const fmtTime = new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" });
+const person = (id) => S.people.find((p) => p.id === id);
+const initial = (name) => (String(name || "?").trim()[0] || "?").toUpperCase();
+const avColor = (id) => { const i = S.people.findIndex((p) => p.id === id); return AV_COLORS[(i < 0 ? 0 : i) % AV_COLORS.length]; };
+
+// ---------- toast ----------
+let toastT;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+// ---------- write queue (survives offline and reloads) ----------
+const pending = new Map(Object.entries(JSON.parse(LS.get("trip.pending") || "{}")));
+const savePending = () => LS.set("trip.pending", pending.size ? JSON.stringify(Object.fromEntries(pending)) : null);
+let flushing = false, retryT;
+
+function queueUpdate(coll, id, data) {
+  const k = coll + ":" + id;
+  const prev = pending.get(k);
+  pending.set(k, { coll, id, data: Object.assign({}, prev && prev.data, data) });
+  savePending();
+  flush();
+}
+const isNetErr = (e) => !e || e.status === 0 || e.isAbort;
+
+async function flush() {
+  if (flushing || !pending.size) { renderSync(); return; }
+  flushing = true; renderSync();
+  let netFail = false;
+  for (const [k, op] of [...pending]) {
+    try {
+      await pb.collection(op.coll).update(op.id, op.data);
+      if (pending.get(k) === op) pending.delete(k);
+    } catch (e) {
+      if (isNetErr(e)) { netFail = true; break; }
+      pending.delete(k);
+      toast("Не сохранилось: " + errMsg(e));
+      reloadAll();
+    }
+  }
+  savePending();
+  flushing = false;
+  clearTimeout(retryT);
+  if (netFail) { setOnline(false); retryT = setTimeout(flush, 4000); }
+  else if (pending.size) flush();
+  renderSync();
+}
+function errMsg(e) {
+  if (e && (e.status === 403 || e.status === 404) && KEY) return "ключ не подошёл, попроси новую ссылку";
+  if (e && e.status === 403) return "нужна ссылка с ключом";
+  return (e && e.message) || "ошибка";
+}
+
+// ---------- sync status ----------
+function setOnline(v) { if (S.online !== v) { S.online = v; renderSync(); } }
+function renderSync() {
+  const el = $("#sync"), txt = el.lastElementChild;
+  const n = pending.size;
+  if (!S.online) { el.dataset.s = "off"; txt.textContent = "нет связи" + (n ? ` · ${n} ${plural(n, "отметка ждёт", "отметки ждут", "отметок ждут")} отправки` : ""); }
+  else if (n || flushing) { el.dataset.s = "busy"; txt.textContent = "сохраняю…"; }
+  else { el.dataset.s = "ok"; txt.textContent = "онлайн, всё синхронизируется"; }
+}
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? few : many;
+}
+
+// ---------- data ----------
+async function reloadAll() {
+  try {
+    const [people, items] = await Promise.all([
+      pb.collection("people").getFullList({ sort: "sort,created" }),
+      pb.collection("items").getFullList({ sort: "sort,created" }),
+    ]);
+    S.people = people;
+    S.items = new Map(items.map((r) => [r.id, r]));
+    // keep optimistic values for writes that are still queued
+    for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
+    if (S.me && !person(S.me)) S.me = null;
+    S.loaded = true;
+    renderAll();
+    return true;
+  } catch (e) {
+    if (isNetErr(e)) setOnline(false);
+    if (!S.loaded) $("#list").innerHTML = '<p class="note">Не получилось загрузить список. Проверь интернет — страница попробует снова.</p>';
+    return false;
+  }
+}
+
+function onItemEvent(e) {
+  const r = e.record;
+  if (e.action === "delete") S.items.delete(r.id);
+  else {
+    const op = pending.get("items:" + r.id);
+    if (op) Object.assign(r, op.data);
+    S.items.set(r.id, r);
+  }
+  renderList();
+}
+function onPeopleEvent(e) {
+  const r = e.record;
+  if (e.action === "delete") S.people = S.people.filter((p) => p.id !== r.id);
+  else {
+    const i = S.people.findIndex((p) => p.id === r.id);
+    if (i >= 0) S.people[i] = r; else S.people.push(r);
+    S.people.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  }
+  renderAll();
+}
+
+let everConnected = false;
+async function connect() {
+  try {
+    await pb.realtime.subscribe("PB_CONNECT", async () => {
+      setOnline(true);
+      if (everConnected) await reloadAll();   // catch up on anything missed
+      everConnected = true;
+      flush();
+    });
+    await pb.collection("items").subscribe("*", onItemEvent);
+    await pb.collection("people").subscribe("*", onPeopleEvent);
+  } catch (e) { setOnline(false); setTimeout(connect, 4000); }
+}
+pb.realtime.onDisconnect = () => setOnline(false);
+addEventListener("online", () => { reloadAll(); flush(); });
+addEventListener("offline", () => setOnline(false));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") { reloadAll().then((ok) => ok && setOnline(pb.realtime.isConnected)); flush(); }
+});
+
+// ---------- render: header ----------
+function renderAll() { renderMe(); renderList(); renderWho(); }
+function renderMe() {
+  const p = person(S.me), b = $("#meBtn");
+  b.classList.toggle("empty", !p);
+  $("#meName").textContent = p ? p.name : "Кто ты?";
+  $("#meAv").textContent = p ? initial(p.name) : "?";
+  $("#meAv").style.background = p ? avColor(p.id) : "";
+  b.setAttribute("aria-label", p ? `Ты: ${p.name}. Сменить` : "Выбрать, кто ты");
+}
+
+// ---------- render: list ----------
+let listSig = "";
+function sectionsOf() {
+  const order = [], by = new Map();
+  const items = [...S.items.values()].sort((a, b) => (a.sort - b.sort) || String(a.created).localeCompare(String(b.created)));
+  for (const it of items) {
+    if (!by.has(it.section)) { by.set(it.section, []); order.push(it.section); }
+    by.get(it.section).push(it);
+  }
+  return order.map((name) => ({ name, items: by.get(name) }));
+}
+function renderList() {
+  if (!S.loaded) return;
+  const secs = sectionsOf();
+  const sig = secs.map((s) => s.name + ":" + s.items.map((i) => i.id).join(",")).join("|");
+  const main = $("#list");
+  if (sig !== listSig || !main.querySelector("section")) {
+    listSig = sig;
+    const open = main.querySelector(".add-form");
+    const openSec = open && open.closest("section").dataset.sec;
+    main.innerHTML = secs.map((s, si) => `
+      <section data-sec="${esc(s.name)}" aria-labelledby="sh${si}">
+        <div class="sec-h"><h2 id="sh${si}">${esc(s.name)}</h2><span class="sec-n"></span></div>
+        <ul class="list">${s.items.map((it) => `
+          <li data-id="${it.id}"><button class="row" type="button" aria-pressed="false">
+            <span class="box">${CHECK}</span>
+            <span class="txt"><span class="name"></span><span class="pl"></span><span class="by"></span></span>
+            <span class="qty"></span>
+          </button>${String(it.key).startsWith("c-") ? `<button class="del" type="button" aria-label="Удалить ${esc(it.name)}">×</button>` : ""}</li>`).join("")}
+          <li class="add-li"><button class="add-btn" type="button">+ добавить</button></li>
+        </ul>
+      </section>`).join("");
+    if (openSec) { const sec = [...main.querySelectorAll("section")].find((x) => x.dataset.sec === openSec); if (sec) openAdd(sec); }
+  }
+  let total = 0, done = 0;
+  for (const sec of main.querySelectorAll("section")) {
+    let t = 0, d = 0;
+    for (const li of sec.querySelectorAll("li[data-id]")) {
+      const it = S.items.get(li.dataset.id);
+      if (!it) continue;
+      t++; if (it.done) d++;
+      paintRow(li, it);
+    }
+    sec.querySelector(".sec-n").textContent = `${d} / ${t}`;
+    sec.classList.toggle("all-done", t > 0 && d === t);
+    total += t; done += d;
+  }
+  $("#count").textContent = `${done} / ${total}`;
+  $("#bar").style.width = total ? (done / total * 100) + "%" : "0";
+  main.classList.toggle("hide-done", S.hide);
+  $("#hide").setAttribute("aria-pressed", String(S.hide));
+}
+function paintRow(li, it) {
+  const row = li.firstElementChild;
+  li.classList.toggle("is-done", !!it.done);
+  row.classList.toggle("done", !!it.done);
+  row.setAttribute("aria-pressed", String(!!it.done));
+  row.querySelector(".name").textContent = it.name;
+  row.querySelector(".pl").textContent = it.pl || "";
+  row.querySelector(".qty").textContent = it.qty || "";
+  let by = "";
+  if (it.done) {
+    const p = person(it.done_by), at = parseDate(it.done_at);
+    by = "✓ " + (p ? p.name : "кто-то") + (at && !isNaN(at) ? " · " + fmtTime.format(at) : "");
+  }
+  row.querySelector(".by").textContent = by;
+}
+
+// ---------- actions ----------
+function canWrite() {
+  if (!KEY) { toast("Только просмотр — попроси ссылку с ключом"); return false; }
+  if (!person(S.me)) { openWho(); return false; }
+  return true;
+}
+function toggle(id) {
+  const it = S.items.get(id);
+  if (!it || !canWrite()) return;
+  const patch = it.done
+    ? { done: false, done_by: "", done_at: "" }
+    : { done: true, done_by: S.me, done_at: new Date().toISOString() };
+  Object.assign(it, patch);
+  if (navigator.vibrate) navigator.vibrate(8);
+  renderList();
+  queueUpdate("items", id, patch);
+}
+function resetAll() {
+  if (!canWrite()) return;
+  const done = [...S.items.values()].filter((i) => i.done);
+  if (!done.length) return toast("Отметок нет");
+  if (!confirm(`Снять все отметки (${done.length})?`)) return;
+  const patch = { done: false, done_by: "", done_at: "" };
+  for (const it of done) { Object.assign(it, patch); pending.set("items:" + it.id, { coll: "items", id: it.id, data: { ...patch } }); }
+  savePending();
+  renderList();
+  flush();
+}
+
+function openAdd(sec) {
+  const li = sec.querySelector(".add-li");
+  li.innerHTML = `<form class="add-form">
+      <input class="in" name="name" placeholder="Что купить" aria-label="Что купить" required maxlength="120" autocomplete="off" enterkeyhint="done">
+      <input class="in" name="qty" placeholder="Сколько" aria-label="Сколько" maxlength="40" autocomplete="off">
+      <div class="act"><button class="btn" type="button" data-cancel>Отмена</button><button class="btn pri" type="submit">Добавить</button></div>
+    </form>`;
+  li.querySelector("input").focus();
+}
+async function submitAdd(form) {
+  const sec = form.closest("section").dataset.sec;
+  const name = form.name.value.trim(), qty = form.qty.value.trim();
+  if (!name) return;
+  const inSec = [...S.items.values()].filter((i) => i.section === sec);
+  const sort = Math.max(0, ...inSec.map((i) => i.sort || 0)) + 1;
+  const btn = form.querySelector("[type=submit]");
+  btn.disabled = true;
+  try {
+    const r = await pb.collection("items").create({
+      key: "c-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      section: sec, name, qty, pl: "", sort, done: false,
+    });
+    S.items.set(r.id, r);
+    form.closest("li").innerHTML = '<button class="add-btn" type="button">+ добавить</button>';
+    renderList();
+  } catch (e) {
+    btn.disabled = false;
+    toast(isNetErr(e) ? "Нет связи — добавь, когда появится интернет" : "Не добавилось: " + errMsg(e));
+  }
+}
+async function deleteItem(id) {
+  const it = S.items.get(id);
+  if (!it || !canWrite() || !confirm(`Удалить «${it.name}»?`)) return;
+  try { await pb.collection("items").delete(id); S.items.delete(id); renderList(); }
+  catch (e) { toast(isNetErr(e) ? "Нет связи" : "Не удалилось: " + errMsg(e)); }
+}
+
+$("#list").addEventListener("click", (e) => {
+  const t = e.target;
+  const row = t.closest(".row");
+  if (row) return toggle(row.parentElement.dataset.id);
+  if (t.closest(".del")) return deleteItem(t.closest("li").dataset.id);
+  if (t.closest(".add-btn")) { if (canWrite()) openAdd(t.closest("section")); return; }
+  if (t.closest("[data-cancel]")) { t.closest("li").innerHTML = '<button class="add-btn" type="button">+ добавить</button>'; }
+});
+$("#list").addEventListener("submit", (e) => { e.preventDefault(); submitAdd(e.target); });
+$("#hide").addEventListener("click", () => { S.hide = !S.hide; LS.set("trip.hide", S.hide ? "1" : null); renderList(); });
+$("#reset").addEventListener("click", resetAll);
+
+// ---------- who am I ----------
+const who = $("#who");
+function openWho() { renderWho(); if (!who.open) who.showModal(); }
+function renderWho() {
+  $("#whoList").innerHTML = S.people.map((p) => `
+    <button class="person" type="button" data-id="${p.id}" aria-pressed="${p.id === S.me}">
+      <span class="av" style="background:${avColor(p.id)}">${esc(initial(p.name))}</span><span>${esc(p.name)}</span>
+    </button>`).join("");
+  $("#namesBox").hidden = !KEY;
+  $("#share").hidden = !KEY;
+  const box = $("#names");
+  if (!box.contains(document.activeElement)) {
+    box.innerHTML = S.people.map((p, i) => `<input class="in" data-id="${p.id}" value="${esc(p.name)}" maxlength="40" aria-label="Имя ${i + 1}" autocomplete="off">`).join("");
+  }
+}
+$("#meBtn").addEventListener("click", openWho);
+$("#whoClose").addEventListener("click", () => who.close());
+who.addEventListener("click", (e) => { if (e.target === who) who.close(); });
+$("#whoList").addEventListener("click", (e) => {
+  const b = e.target.closest(".person");
+  if (!b) return;
+  S.me = b.dataset.id; LS.set("trip.me", S.me);
+  renderAll();
+  who.close();
+});
+$("#names").addEventListener("change", (e) => {
+  const inp = e.target, p = person(inp.dataset.id), name = inp.value.trim();
+  if (!p || !name || name === p.name) { if (p) inp.value = p.name; return; }
+  p.name = name;
+  renderMe(); renderList(); renderWhoList();
+  queueUpdate("people", p.id, { name });
+});
+function renderWhoList() { const keep = $("#names").contains(document.activeElement); if (keep) { const a = document.activeElement; renderWho(); a.focus(); } else renderWho(); }
+$("#share").addEventListener("click", async () => {
+  const url = location.origin + location.pathname + "#k=" + KEY;
+  try {
+    if (navigator.share) await navigator.share({ title: "Покупки и расходы поездки", url });
+    else { await navigator.clipboard.writeText(url); toast("Ссылка скопирована"); }
+  } catch (e) { if (e && e.name !== "AbortError") prompt("Скопируй ссылку:", url); }
+});
+
+// ---------- boot ----------
+$("#ro").hidden = !!KEY;
+$("#reset").disabled = !KEY;
+renderSync();
+(async () => {
+  await reloadAll();
+  connect();
+  if (KEY && S.loaded && !person(S.me)) openWho();
+})();
+</script>
+</body>
+</html>
