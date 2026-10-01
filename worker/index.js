@@ -72,6 +72,7 @@ const KEYCHECK_TIMEOUT_MS = 5000;
 const VISION_TIMEOUT_MS = 50000;   // main model; a 31-line receipt takes ~25-30 s
 const PINNED_TIMEOUT_MS = 75000;   // a pinned model has no fallback, so wait longer
 const MATCH_TIMEOUT_MS = 15000;
+const HEDGE_MS = 30000;            // start the fallback vision model if the main one is this slow
 
 const validKeys = new Map(); // key -> expiry (ms), per isolate
 
@@ -202,6 +203,7 @@ async function handleScan(request, env) {
   if (v.fallback) out.fallback = v.fallback;
   if (r.notes.length) out.notes = r.notes;
   if (matchError) out.match_error = matchError;
+  if (form.get("debug") === "1") out.debug = { usage, match_raw: match && match.raw }; // TEMP
   return json(out);
 }
 
@@ -224,7 +226,7 @@ async function recognise(env, mime, b64, pinned) {
 
   const models = pinned ? [pinned] : VISION_MODELS;
   const timeout = pinned ? PINNED_TIMEOUT_MS : VISION_TIMEOUT_MS;
-  const runs = models.map((model) =>
+  const run = (model) =>
     withTimeout(callVision(env.AI, model, mime, b64), timeout)
       .then((raw) => {
         usage.push({ model, ...raw.usage });
@@ -234,14 +236,23 @@ async function recognise(env, mime, b64, pinned) {
         console.warn("vision failed", model, String(e).slice(0, 300));
         errors.push(`${model}: ${e.message || e}`);
         return null;
-      }));
+      });
 
-  // The main model reads names, prices and totals best. The fallback (run in
-  // parallel, so it costs no time) is only consulted when the main one fails
-  // or its lines don't add up to the total.
-  const main = await runs[0];
+  // The main model reads names, prices and totals best; the fallback is much
+  // weaker on long receipts. It is started only as a hedge: when the main
+  // model errors, or hasn't answered after HEDGE_MS (so a hung call still
+  // ends in time). Normal scans pay for one model.
+  const mainP = run(models[0]);
+  let altP = null, timer;
+  if (models[1]) {
+    const hedge = new Promise((res) => { timer = setTimeout(() => res("hedge"), HEDGE_MS); });
+    if (await Promise.race([mainP, hedge]) === "hedge") altP = run(models[1]);
+    clearTimeout(timer);
+  }
+  const main = await mainP;
   if (main && main.lines_ok) return { ok: true, result: main, usage, errors };
-  const alt = runs[1] ? await runs[1] : null;
+  if (!main && models[1] && !altP) altP = run(models[1]);
+  const alt = altP ? await altP : null;
 
   if (!main) {
     if (!alt) return { ok: false, errors, usage };
@@ -367,15 +378,16 @@ const VISION_PROMPT = `You read a photo of a shop receipt (usually Polish: Lidl,
 Return one JSON object:
 {"s": shop name (from the logo, header or company line, e.g. "Lidl", "Auchan") or null, "d": purchase date "YYYY-MM-DD" or null, "t": amount paid (SUMA / DO ZAPŁATY / RAZEM) as a number or null, "l": rows}
 
-"l" lists every product row of the receipt exactly once, top to bottom. Each row is an array [name, qty, unit, amount]:
-- name: product name as printed, without the quantity and unit price, e.g. "Banany luz".
+"l" lists every product row of the receipt exactly once, top to bottom. Each row is an array [name, qty, unit, unit_price, amount]:
+- name: product name as printed, without the quantity and prices, e.g. "Banany luz".
 - qty: the quantity as a number (weight for weighed goods, e.g. 2.476; piece count otherwise, e.g. 2), or null.
 - unit: "kg", "g", "l", "ml", "szt", or null.
+- unit_price: the price per kg or per piece printed next to the quantity ("2,476 * 3,76"), or null.
 - amount: the row amount (the right-hand number) as a number, e.g. 9.31.
-A discount row (OPUST, RABAT, PROMOCJA, Lidl Plus, upust...) is its own row with a negative amount, e.g. ["OPUST", null, null, -2.5]. If the same product is printed twice, list it twice; never repeat a row that is printed once.
+A discount row (OPUST, RABAT, PROMOCJA, Lidl Plus, upust...) is its own row with a negative amount, e.g. ["OPUST", null, null, null, -2.5]. If the same product is printed twice, list it twice; never repeat a row that is printed once.
 Do not include totals, subtotals, tax (PTU/VAT), payment, card or change rows.
 
-Example: {"s":"Lidl","d":"2026-09-30","t":24.79,"l":[["Banany luz",2.476,"kg",9.31],["Kiwi szt.",3,"szt",7.47],["OPUST",null,null,-1.5],["Folia alu.",1,"szt",9.51]]}
+Example: {"s":"Lidl","d":"2026-09-30","t":24.79,"l":[["Banany luz",2.476,"kg",3.76,9.31],["Kiwi szt.",3,"szt",2.49,7.47],["OPUST",null,null,null,-1.5],["Folia alu.",1,"szt",9.51,9.51]]}
 
 Answer with the JSON object only.`;
 
@@ -388,7 +400,7 @@ const VISION_SCHEMA = {
     s: { anyOf: [{ type: "string" }, { type: "null" }] },
     d: { anyOf: [{ type: "string" }, { type: "null" }] },
     t: { anyOf: [{ type: "number" }, { type: "null" }] },
-    l: { type: "array", items: { type: "array", items: CELL, minItems: 4, maxItems: 4 } },
+    l: { type: "array", items: { type: "array", items: CELL, minItems: 5, maxItems: 5 } },
   },
 };
 
@@ -450,19 +462,24 @@ function normalise(raw, provider, model) {
 
   const rows = [];
   for (const r of (Array.isArray(raw.l) ? raw.l : Array.isArray(raw.lines) ? raw.lines : []).slice(0, MAX_LINES * 2)) {
-    let name, qty, unit, price;
-    if (Array.isArray(r)) [name, qty, unit, price] = r;
+    let name, qty, unit, each, price;
+    if (Array.isArray(r)) [name, qty, unit, each, price] = r.length >= 5 ? r : [r[0], r[1], r[2], null, r[3]];
     else if (r && typeof r === "object") ({ text: name, qty, unit, price } = r);
     if (typeof name !== "string" || !name.trim()) continue;
     name = name.trim().slice(0, 120);
     if (NOT_A_PRODUCT_RE.test(name)) continue;
     price = toNumber(price);
+    if (price != null) price = round2(price);
+    qty = cleanQty(qty);
+    each = toNumber(each);
+    // qty x unit price is a second reading of the amount; kept to repair a
+    // misread amount when the lines don't add up.
+    const calc = qty != null && each != null && each > 0 ? round2(qty * each) : null;
+    const discount = DISCOUNT_RE.test(name) || (price != null && price < 0);
+    if (price == null && calc != null && !discount) price = calc;
     rows.push({
-      text: name,
-      qty: cleanQty(qty),
-      unit: cleanUnit(unit),
-      price: price == null ? null : round2(price),
-      discount: DISCOUNT_RE.test(name) || (price != null && price < 0),
+      text: name, qty, unit: cleanUnit(unit), price, discount,
+      calc: !discount && calc != null && price != null && Math.abs(calc - price) > 0.02 ? calc : null,
     });
   }
 
@@ -473,8 +490,12 @@ function normalise(raw, provider, model) {
   let pending = 0;
   for (const r of rows) {
     if (!r.discount) {
-      const l = { text: r.text, qty: r.qty, unit: r.unit, price: r.price };
-      if (pending && l.price != null) { l.price = round2(l.price + pending); pending = 0; }
+      const l = { text: r.text, qty: r.qty, unit: r.unit, price: r.price, calc: r.calc };
+      if (pending && l.price != null) {
+        l.price = round2(l.price + pending);
+        if (l.calc != null) l.calc = round2(l.calc + pending);
+        pending = 0;
+      }
       lines.push(l);
       continue;
     }
@@ -489,23 +510,36 @@ function normalise(raw, provider, model) {
       }
     }
     if (!target) for (let i = lines.length - 1; i >= 0; i--) if (lines[i].price != null) { target = lines[i]; break; }
-    if (target) target.price = round2(target.price + amount);
+    if (target) {
+      target.price = round2(target.price + amount);
+      if (target.calc != null) target.calc = round2(target.calc + amount);
+    }
     else pending = round2(pending + amount);
   }
   if (lines.length > MAX_LINES) lines.length = MAX_LINES;
 
   let linesSum = sumPrices(lines);
-  // Long receipts sometimes come back with a row (or a run of rows) repeated.
-  // Drop repeats only when that makes the lines add up to the total exactly.
   if (total != null && linesSum != null && !withinTolerance(linesSum, total)) {
-    const fixed = dropRepeats(lines, total);
-    if (fixed) {
+    // A misread amount: qty x unit price disagrees with it, and using the
+    // product instead makes the lines add up.
+    const byCalc = useCalc(lines, total);
+    // Long receipts sometimes come back with a row (or a run of rows)
+    // repeated: drop repeats only when that makes the sum match exactly.
+    const fixed = byCalc ? null : dropRepeats(lines, total);
+    if (byCalc) {
+      for (const i of byCalc) {
+        notes.push(`amount of "${lines[i].text}" ${lines[i].price} -> ${lines[i].calc} (qty x unit price)`);
+        lines[i].price = lines[i].calc;
+      }
+      linesSum = sumPrices(lines);
+    } else if (fixed) {
       notes.push(`dropped ${lines.length - fixed.length} repeated row(s)`);
       lines.length = 0;
       lines.push(...fixed);
       linesSum = sumPrices(lines);
     }
   }
+  for (const l of lines) delete l.calc;
 
   const store = typeof (raw.s ?? raw.store) === "string" && (raw.s ?? raw.store).trim()
     ? (raw.s ?? raw.store).trim().slice(0, 60) : null;
@@ -518,6 +552,24 @@ function normalise(raw, provider, model) {
     lines_ok: total != null && linesSum != null && withinTolerance(linesSum, total),
     notes,
   };
+}
+
+// Indexes of rows whose qty x unit price should replace the printed amount
+// so the sum lands within tolerance of the total (fewest changes, then
+// closest), or null.
+function useCalc(lines, total) {
+  const idx = lines.map((l, i) => (l.calc != null && l.price != null ? i : -1)).filter((i) => i >= 0);
+  if (!idx.length || idx.length > 8) return null;
+  const sum = sumPrices(lines);
+  let best = null;
+  for (let mask = 1; mask < 1 << idx.length; mask++) {
+    const pick = idx.filter((_, k) => mask & (1 << k));
+    const s = round2(sum + pick.reduce((t, i) => t + lines[i].calc - lines[i].price, 0));
+    if (!withinTolerance(s, total)) continue;
+    const off = Math.abs(s - total);
+    if (!best || pick.length < best.pick.length || (pick.length === best.pick.length && off < best.off)) best = { pick, off };
+  }
+  return best && best.off < Math.abs(sum - total) ? best.pick : null;
 }
 
 function sumPrices(lines) {
@@ -603,7 +655,7 @@ Return {"r":[{"i": row number, "c": category number, "m": shopping-list number o
 Rules for "m":
 - Use a list number only when the row is clearly that same product. Another size, variety, brand or the plural is fine ("Pomidory kiść 500g" is Помидоры, "Lay's Chipsy" is Чипсы, "Szczypiorek" is the herbs item when the list item mentions szczypiorek).
 - A different product is not a match even if related: cherry tomatoes are not Помидоры, potato chips are not Картофель, carrots are not Огурцы. When unsure, use null.
-- Names may have OCR errors (a wrong or missing letter). Check that the size fits the product: "60l" or "35l" is a bag size, "1kg" fits carrots or sugar, "500g" fits vegetables.
+- Names may have OCR errors (a wrong first letter, missing Polish accents). Check that the size fits the product: a non-drink row with litres ("60l", "35l") is bags, e.g. "Morki z tasma 60l" is "Worki z taśmą 60l" (bin bags), not carrots.
 - Several rows may match the same list number. Most rows match nothing; never pick a list item just because it is similar in category.
 
 Answer with the JSON object only.`;
@@ -627,7 +679,7 @@ async function matchLines(ai, model, lines, items) {
     const m = toInt(r.m);
     if (m != null && m >= 1 && m <= items.length) ids[i] = items[m - 1].id;
   }
-  return { cats, ids, usage: { model, ...raw.usage } };
+  return { cats, ids, usage: { model, ...raw.usage }, raw: raw.json };
 }
 
 // ---------- Workers AI ----------
