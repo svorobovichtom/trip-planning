@@ -1,7 +1,7 @@
 // Offline shell: the page and SDK open without network. API calls are never
 // cached here - the page keeps its own snapshot and write queue.
-const CACHE = "trip-shell-v1";
-const SHELL = ["./", "./index.html", "./vendor/pocketbase.umd.js"];
+const CACHE = "trip-shell-v2";
+const SHELL = ["./", "./index.html", "./vendor/pocketbase.umd.js", "./vendor/torph.mjs"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
