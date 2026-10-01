@@ -44,40 +44,38 @@ body{overflow:hidden;overscroll-behavior:none}
 .wrap,.hin{max-width:540px;margin:0 auto}
 .wrap{padding:0 16px calc(104px + env(safe-area-inset-bottom,0px))}
 
-/* header */
-header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
-header:has(.only-list:not([hidden])){padding-bottom:0}
+/* header: the same two rows on every tab (title + me + more; one-line summary);
+   the list adds section chips and a 2px progress line on the bottom edge. */
+header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+header.on-list{padding-bottom:0}
 @media (max-width:572px){header .secs{margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));scroll-padding:0 16px}}
-.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-.top>div{flex:1;min-width:0}
-h1{margin:0;color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-.005em}
-.sub{margin-top:2px;font-size:14px}
-.me{flex:none;position:relative;display:inline-flex;align-items:center;gap:5px;max-width:52%;height:32px;margin-top:-5px;padding:0 10px 0 12px;border:0;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:14px;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
-.me::before{content:"";position:absolute;inset:-6px -4px}
-.me .k{flex:none;font-size:13px;color:var(--muted)}
-.me .nm{min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.me svg{flex:none;width:10px;height:10px;color:var(--muted)}
+.top{display:flex;align-items:center;gap:8px;height:32px}
+h1{flex:0 1 auto;min-width:0;margin:0;overflow:hidden;color:var(--ink);font-size:18px;font-weight:500;line-height:24px;letter-spacing:-.012em;white-space:nowrap}
+.top .sp{flex:1 1 0;min-width:0}
+h1.clip{-webkit-mask-image:linear-gradient(to left,transparent,#000 20px);mask-image:linear-gradient(to left,transparent,#000 20px)}
+.net{flex:none;height:22px;padding:0 9px;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:500;line-height:22px;white-space:nowrap;animation:netin .3s cubic-bezier(.19,1,.22,1)}
+.net[data-s="off"]{background:var(--ink);color:var(--bg)}
+@keyframes netin{from{opacity:0;transform:scale(.92)}}
+.me{flex:none;position:relative;display:inline-flex;align-items:center;min-width:0;max-width:40%;height:32px;padding:0 12px;border:0;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:14px;font-weight:500;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
+.me::before,.dots::before{content:"";position:absolute;inset:-6px -3px}
+.me .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .me.empty{background:var(--ink);color:var(--bg)}
-.me.empty .k{display:none}
-.me.empty svg{color:var(--bg);opacity:.7}
 .me.flash{animation:flash .6s cubic-bezier(.19,1,.22,1)}
 @keyframes flash{from{transform:scale(1.06)}}
-.prog{display:flex;align-items:center;gap:12px;margin-top:12px}
-.bar{flex:1;height:2px;border-radius:1px;background:var(--surface-2);overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .4s cubic-bezier(.19,1,.22,1)}
-.count{color:var(--ink);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
-.more-b{flex:none;position:relative;height:28px;margin:-13px 0;padding:0 11px;border:0;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:13px;font-weight:500}
-.more-b::before{content:"";position:absolute;inset:-8px -6px}
+.dots{flex:none;position:relative;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:var(--surface-2);color:var(--ink)}
+.dots svg{width:16px;height:16px}
+.sub{margin-top:1px;overflow:hidden;color:var(--text);font-size:13px;line-height:18px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sub b{color:var(--ink);font-weight:500}
+.hbar{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:var(--ink);transition:width .5s cubic-bezier(.19,1,.22,1),opacity .2s}
+header:not(.on-list) .hbar{opacity:0}
 /* section chips: one row that scrolls sideways */
-.secs{display:flex;gap:6px;margin-top:10px;padding-bottom:10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.secs{display:flex;gap:6px;margin-top:6px;padding-bottom:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .secs::-webkit-scrollbar{display:none}
-.sc{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:500;white-space:nowrap;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
+.sc{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:500;white-space:nowrap;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
 .sc .n{color:var(--muted);font-variant-numeric:tabular-nums;transition:color .25s}
 .sc[aria-current="true"]{background:var(--ink);color:var(--bg)}
 .sc[aria-current="true"] .n{color:var(--bg);opacity:.6}
 .sc.full:not([aria-current="true"]){color:var(--muted)}
-.sync{color:var(--muted);white-space:nowrap}
-.sync[data-s="off"]{color:var(--bad)}
 .ro{margin-top:16px;padding:12px 14px;border-radius:var(--r);background:var(--surface);font-size:14px}
 
 /* list */
@@ -117,6 +115,22 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .done .box svg{opacity:1;transform:none}
 .done .name,.done .qty{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
 .del{flex:none;width:44px;border:0;background:none;color:var(--muted);font-size:18px}
+/* bought rows: one dense line - struck name, who, actual qty, price */
+.row .who,.row .pr{display:none}
+.got .row{grid-template-columns:18px minmax(0,1fr) auto auto auto;gap:10px;min-height:36px;padding:6px 14px;font-size:14px}
+.got .row .pl,.got .row .by{display:none}
+.got .row .name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.got .row .who{display:block;max-width:6.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
+.got .row .qty{max-width:6em;font-size:13px}
+.got .row .pr{display:block;min-width:4.2em;text-align:right;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.got .box{width:16px;height:16px;margin-left:1px;border-radius:4px}
+.got .box svg{width:10px;height:10px}
+.got .del{width:36px;font-size:16px}
+.bought .bs{color:var(--muted);font-variant-numeric:tabular-nums}
+/* lines bought beyond the list */
+.extra .row{cursor:default}
+.extra .row:active{background:none}
+.extra .row .box{border-style:dashed;opacity:.6}
 .add-li{display:flex}
 .add-btn{width:100%;min-height:44px;padding:0 14px 0 46px;border:0;background:none;color:var(--muted);font-size:14px;text-align:left}
 .add-form{display:grid;grid-template-columns:1fr 6em;gap:8px;width:100%;padding:10px}
@@ -131,13 +145,17 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 
 /* menu + note */
 .menu{margin-top:16px;padding:14px;border-radius:var(--r);background:var(--surface)}
-.menu h2{margin-bottom:10px;color:var(--ink)}
+.menu h2{margin-bottom:2px;color:var(--ink)}
+.menu .k{display:block;margin-bottom:12px}
+.acts{margin-top:16px}
+.acts .prow{color:var(--ink);font-size:15px}
+.acts .prow .cur{font-size:13px}
 .menu dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px}
 .menu dt{color:var(--muted);white-space:nowrap}
 .menu dd{margin:0;min-width:0}
 .note{margin:14px 2px 0;font-size:13px;color:var(--muted)}
 .sheet p.note{margin:12px 2px 0}
-.sheet .menu h2{margin:0 0 10px}
+.sheet .menu h2{margin:0 0 2px}
 
 /* sheet */
 dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%;margin:0;color:var(--text)}
@@ -293,19 +311,19 @@ dialog.viewer.out::backdrop{opacity:0}
 </head>
 <body>
 <div class="app" id="app">
-  <header><div class="hin">
+  <header id="hdr" class="on-list"><div class="hin">
     <div class="top">
-      <div>
-        <h1><span id="title">Покупки в Ашан</span></h1>
-        <div class="sub"><span id="sub">ужин пт → завтрак вс · гриль</span> · <span class="sync" id="sync" role="status" aria-live="polite">подключаюсь…</span></div>
-      </div>
-      <button class="me empty" id="meBtn" type="button" aria-haspopup="dialog"><span class="k">ты:</span><span class="nm" id="meName">Кто ты?</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>
+      <h1><span id="title">Покупки в Ашан</span></h1>
+      <span class="net" id="sync" role="status" aria-live="polite" hidden></span>
+      <span class="sp"></span>
+      <button class="me empty" id="meBtn" type="button" aria-haspopup="dialog"><span class="nm" id="meName">Кто ты?</span></button>
+      <button class="dots" id="moreBtn" type="button" aria-haspopup="dialog" aria-label="Ещё"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="12.5" cy="8" r="1.4"/></svg></button>
     </div>
+    <div class="sub"><span id="sub">&nbsp;</span></div>
     <div class="only-list">
-      <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span><button class="more-b" id="moreBtn" type="button" aria-haspopup="dialog">Ещё</button></div>
       <nav class="secs" id="secs" aria-label="Разделы списка"></nav>
     </div>
-  </div></header>
+  </div><i class="hbar" id="bar" aria-hidden="true"></i></header>
 
   <div class="scroll" id="scroll"><div class="wrap">
 
@@ -442,6 +460,7 @@ dialog.viewer.out::backdrop{opacity:0}
     <div class="sheet-h"><h3 id="moreH">Ещё</h3><button class="x" type="button" id="moreClose" aria-label="Закрыть">×</button></div>
     <div class="menu">
       <h2>Меню</h2>
+      <span class="k">ужин пт → завтрак вс · гриль</span>
       <dl>
         <dt>Пт ужин</dt><dd>Гриль: шея, курица, колбаски, картошка, салат. Для одного: лосось</dd>
         <dt>Сб завтрак</dt><dd>Сырники со сметаной, яйца, хлеб, сыр, нарезка, овощи</dd>
@@ -451,10 +470,11 @@ dialog.viewer.out::backdrop{opacity:0}
       </dl>
     </div>
     <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
-    <div class="foot">
-      <button class="link" type="button" id="share">Ссылка для группы</button>
-      <button class="link" type="button" id="reset">Снять все отметки</button>
-    </div>
+    <ul class="list acts">
+      <li id="shareLi"><button class="prow" type="button" id="share"><span class="nm">Ссылка для группы</span><span class="cur">поделиться</span></button></li>
+      <li id="resetLi"><button class="prow" type="button" id="reset"><span class="nm">Снять все отметки</span><span class="cur" id="resetN"></span></button></li>
+      <li><button class="prow" type="button" id="csv2"><span class="nm">Скачать расходы</span><span class="cur">CSV</span></button></li>
+    </ul>
   </div>
 </dialog>
 
@@ -507,7 +527,7 @@ const S = {
   expenses: new Map(),        // id -> record
   tab: null,
   me: LS.get("trip.me"),
-  online: false,
+  online: null,               // null until the first connect or failure
   loaded: false,
 };
 const $ = (s, el = document) => el.querySelector(s);
@@ -560,7 +580,7 @@ async function flush() {
   flushing = false;
   clearTimeout(retryT);
   if (netFail) { setOnline(false); retryT = setTimeout(flush, 4000); }
-  else if (pending.size) flush();
+  else { setOnline(true); if (pending.size) flush(); }
   renderSync();
 }
 function errMsg(e) {
@@ -570,14 +590,34 @@ function errMsg(e) {
 }
 
 // ---------- sync status ----------
+// A pill next to the title, only when something is off: offline, or writes
+// still queued. Short blips (a tap's own save, a quick reconnect) never show.
 function setOnline(v) { if (S.online !== v) { S.online = v; renderSync(); } }
+let syncT = 0, syncWant = "";
 function renderSync() {
-  const el = $("#sync"), txt = el;
   const n = pending.size;
-  if (!S.online) { el.dataset.s = "off"; morph(txt, "нет связи" + (n ? ` · ${n} ${plural(n, "ждёт", "ждут", "ждут")}` : "")); }
-  else if (n || flushing) { el.dataset.s = "busy"; morph(txt, "сохраняю…"); }
-  else { el.dataset.s = "ok"; morph(txt, "онлайн"); }
-  el.title = !S.online ? "Отметки сохранены в телефоне и уйдут, когда появится связь" : "Всё синхронизируется";
+  const want = S.online === false ? "off" : n || flushing ? "busy" : "";
+  if (want === syncWant) return paintSync();
+  syncWant = want;
+  clearTimeout(syncT);
+  if (!want) return paintSync();
+  syncT = setTimeout(paintSync, want === "off" ? 1500 : 900);
+}
+// A title squeezed by the pills fades out at the edge instead of being cut.
+function fitTitle() {
+  requestAnimationFrame(() => { const h = $("h1"); h.classList.toggle("clip", h.scrollWidth > h.clientWidth + 1); });
+}
+addEventListener("resize", () => fitTitle());
+function paintSync() {
+  const el = $("#sync"), n = pending.size, s = syncWant;
+  const show = !!s && (s === "off" ? S.online === false : n > 0 || flushing);
+  if (!show) { el.hidden = true; delete el.dataset.t; fitTitle(); return; }
+  el.dataset.s = s;
+  const text = s === "off" ? "нет связи" + (n ? ` · ${n} ${plural(n, "ждёт", "ждут", "ждут")}` : "") : "сохраняю…";
+  el.hidden = false;
+  morph(el, text);
+  fitTitle();
+  el.title = s === "off" ? "Отметки сохранены в телефоне и уйдут, когда появится связь" : "";
 }
 function plural(n, one, few, many) {
   const m10 = n % 10, m100 = n % 100;
@@ -600,6 +640,7 @@ async function reloadAll() {
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
     S.loaded = true;
+    setOnline(true);
     renderAll();
     return true;
   } catch (e) {
@@ -665,6 +706,7 @@ function renderMe() {
   const nm = p ? p.name : "Кто ты?";
   if ($("#meName").dataset.t && $("#meName").dataset.t !== nm) { b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); }
   morph($("#meName"), nm);
+  setTimeout(fitTitle, 450);
   b.setAttribute("aria-label", p ? `Отмечаю как ${p.name}. Сменить` : "Выбрать, кто ты");
 }
 
@@ -747,8 +789,10 @@ function renderList() {
     if (chip) { morph(chip.querySelector(".n"), `${d}/${t}`); chip.classList.toggle("full", t > 0 && d === t); }
     total += t; done += d;
   });
-  morph($("#count"), `${done} / ${total}`);
+  S.done = done; S.total = total;
   $("#bar").style.width = total ? (done / total * 100) + "%" : "0";
+  $("#resetN").textContent = done ? String(done) : "";
+  renderSub();
 }
 // Put rows into ul in order. A row that changes group folds away first, then
 // fades in at its new place (unless this is a fresh build).
@@ -962,7 +1006,9 @@ function setTab(tab, focus) {
     if (on && focus) b.focus();
   }
   for (const el of document.querySelectorAll(".only-list")) el.hidden = tab !== "list";
+  $("#hdr").classList.toggle("on-list", tab === "list");
   morph($("#title"), TITLES[tab]);
+  setTimeout(fitTitle, 450);
   document.title = TITLES[tab];
   renderSub();
   placeInd();
@@ -986,15 +1032,26 @@ addEventListener("resize", placeInd);
 const isField = (el) => el && el.matches && el.matches("input:not([type=file]):not([type=checkbox]),textarea,select");
 document.addEventListener("focusin", (e) => { if (isField(e.target)) document.body.classList.add("typing"); });
 document.addEventListener("focusout", (e) => { if (!isField(e.relatedTarget)) document.body.classList.remove("typing"); });
+// Row 2 of the header: one short line per tab that never wraps.
+const money0 = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "PLN", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 });
 function renderSub() {
-  const n = S.people.length, ppl = n ? `${n} ${plural(n, "человек", "человека", "человек")}` : "";
+  if (!S.loaded) return;
+  const c = S.expenses.size, tg = totalG();
   let t;
-  if (S.tab === "exp" || S.tab === "sum") {
-    const c = S.expenses.size;
-    t = c ? `${c} ${plural(c, "чек", "чека", "чеков")} · ${fmtG(totalG())}` : "чеков пока нет";
-    if (S.tab === "sum" && ppl) t = ppl + " · " + t;
-  } else t = (ppl ? ppl + " · " : "") + "ужин пт → завтрак вс · гриль";
-  $("#sub").textContent = t;   // plain text: it may wrap on narrow phones
+  if (S.tab === "exp") t = c ? `${fmtG(tg)} · ${c} ${plural(c, "чек", "чека", "чеков")}` : "чеков пока нет";
+  else if (S.tab === "sum") {
+    const me = person(S.me);
+    if (!c) t = "чеков пока нет";
+    else if (!me) t = `${fmtG(tg)} на ${S.people.length} ${plural(S.people.length, "человека", "человек", "человек")}`;
+    else {
+      const b = ledger().bal.get(me.id) || 0;
+      t = b > 0 ? `Ты получишь ${fmtG(b)}` : b < 0 ? `Ты должен ${fmtG(-b)}` : "Ты в расчёте";
+    }
+  } else {
+    t = `${S.done || 0} из ${S.total || 0} куплено`;
+    if (tg) t += ` · ${money0.format(tg / 100)} по чекам`;
+  }
+  morph($("#sub"), t);
 }
 $(".nav").addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) setTab(b.dataset.tab); });
 $(".nav").addEventListener("keydown", (e) => {
@@ -1518,7 +1575,7 @@ function renderSum() {
   $("#sumNote").textContent = `«+» — тебе должны, «−» — должен ты. Чек «на всех» делится на ${n}.`;
 }
 $("#goExp").addEventListener("click", () => setTab("exp"));
-$("#csv").addEventListener("click", () => {
+function exportCsv() {
   const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
   const rows = [["Дата", "Что", "Категория", "Сумма", "Валюта", "Платил", "На кого", "Чек"]];
   for (const x of sortedExpenses().reverse()) {
@@ -1537,7 +1594,9 @@ $("#csv").addEventListener("click", () => {
   a.download = "trip-expenses.csv";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-});
+}
+$("#csv").addEventListener("click", exportCsv);
+$("#csv2").addEventListener("click", () => { closeSheet(more); exportCsv(); });
 
 // ---------- who am I ----------
 // Bottom sheets. The sheet itself takes focus (autofocus), so the × never
@@ -1573,7 +1632,7 @@ function renderWho() {
   $("#whoListH").textContent = KEY ? "Уже заходил — выбери себя" : "Выбери себя";
   $("#join").hidden = !KEY;
   $("#joinH").hidden = !KEY;
-  $("#share").hidden = !KEY;
+  $("#shareLi").hidden = !KEY;
   $("#rename").hidden = !KEY || !person(S.me);
 }
 function setMe(id) {
@@ -1634,7 +1693,7 @@ S.booted = true;
 $("#ro").hidden = !!KEY;
 $("#roExp").hidden = !!KEY;
 $("#addx").hidden = !KEY;
-$("#reset").hidden = !KEY;
+$("#resetLi").hidden = !KEY;
 renderSync();
 // Show the last known list right away (works offline), then refresh.
 try {
