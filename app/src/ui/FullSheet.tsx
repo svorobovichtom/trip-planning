@@ -38,14 +38,24 @@ export function FullSheet({
   const popup = useRef<HTMLDivElement>(null);
   const focus = (type: string) => {
     if (type === "keyboard") return initialFocus?.current ?? true;
-    if (initialFocus?.current && (focusAlways || matchMedia("(hover: hover) and (pointer: fine)").matches)) return initialFocus.current;
-    return popup.current;
+    if (initialFocus?.current && matchMedia("(hover: hover) and (pointer: fine)").matches) return initialFocus.current;
+    // Touch: move no focus at all. Focusing anything inside the popup while it
+    // still sits below the screen (start of the slide-in) makes iOS Safari pan
+    // the viewport to it — the sheet flashed at the top, then jumped back.
+    return false;
   };
   return (
     <Drawer.Root
       open={open}
       onOpenChange={(o) => onOpenChange(o)}
-      onOpenChangeComplete={(o) => !o && onClosed?.()}
+      onOpenChangeComplete={(o) => {
+        // focusAlways on touch: focus the field only once the sheet has landed,
+        // without scrolling — focusing it mid-slide made iOS pan the viewport.
+        if (o && focusAlways && initialFocus?.current && !matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          initialFocus.current.focus({ preventScroll: true });
+        }
+        if (!o) onClosed?.();
+      }}
     >
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal>

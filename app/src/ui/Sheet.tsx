@@ -4,8 +4,7 @@ import "./ui.css";
 
 /**
  * Bottom sheet (Base UI Drawer): slides up, swipe down / backdrop / Esc /
- * × to close. Focus goes to the popup itself unless `initialFocus` says
- * otherwise, so phones don't show a focus ring on ×.
+ * × to close. On touch no focus is moved on open (see `focus` below).
  */
 function KeyboardWrap({ on, children }: { on: boolean; children: ReactNode }) {
   return on ? <Drawer.VirtualKeyboardProvider>{children}</Drawer.VirtualKeyboardProvider> : <>{children}</>;
@@ -35,7 +34,10 @@ export function Sheet({
   const focus = (type: string) => {
     if (type === "keyboard") return initialFocus?.current ?? true;
     if (initialFocus?.current && matchMedia("(hover: hover) and (pointer: fine)").matches) return initialFocus.current;
-    return popup.current;
+    // Touch: move no focus at all. Focusing anything inside the popup while it
+    // still sits below the screen (start of the slide-in) makes iOS Safari pan
+    // the viewport to it — the sheet flashed at the top, then jumped back.
+    return false;
   };
   return (
     // Same structure as Base UI's bottom-drawer demo. VirtualKeyboardProvider
