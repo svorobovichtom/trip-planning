@@ -120,7 +120,8 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .got .row{grid-template-columns:18px minmax(0,1fr) auto auto auto;gap:10px;min-height:36px;padding:6px 14px;font-size:14px}
 .got .row .pl,.got .row .by{display:none}
 .got .row .name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.got .row .who{display:block;max-width:6.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px}
+.got .row .who{display:block;max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
+.got .done .qty{text-decoration:none}
 .got .row .qty{max-width:6em;font-size:13px}
 .got .row .pr{display:block;min-width:4.2em;text-align:right;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .got .box{width:16px;height:16px;margin-left:1px;border-radius:4px}
@@ -128,9 +129,11 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .got .del{width:36px;font-size:16px}
 .bought .bs{color:var(--muted);font-variant-numeric:tabular-nums}
 /* lines bought beyond the list */
-.extra .row{cursor:default}
-.extra .row:active{background:none}
-.extra .row .box{border-style:dashed;opacity:.6}
+.bought.solo{padding-left:14px}
+.extra .got{border-top:1px solid var(--line)}
+.extra .got .row{grid-template-columns:minmax(0,1fr) auto auto auto;cursor:default}
+.extra .got .row:active{background:none}
+.extra .got .row .name{color:var(--text)}
 .add-li{display:flex}
 .add-btn{width:100%;min-height:44px;padding:0 14px 0 46px;border:0;background:none;color:var(--muted);font-size:14px;text-align:left}
 .add-form{display:grid;grid-template-columns:1fr 6em;gap:8px;width:100%;padding:10px}
@@ -332,6 +335,10 @@ dialog.viewer.out::backdrop{opacity:0}
   <div class="ro" id="ro" hidden>Только просмотр. Чтобы отмечать, попроси ссылку с ключом.</div>
 
   <main id="list"><div class="skel"></div></main>
+  <section class="extra" id="extraSec" hidden aria-label="Сверх списка">
+    <div class="card"><button class="bought solo" type="button" aria-expanded="false" aria-controls="extraL"><span class="bt"></span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>
+    <div class="bwrap"><div class="bin"><ul class="list got" id="extraL"></ul></div></div></div>
+  </section>
 
   </div>
 
@@ -733,7 +740,7 @@ function itemLi(it) {
   return `<li data-id="${it.id}"><button class="row" type="button" aria-pressed="false">`
     + `<span class="box">${CHECK}</span>`
     + `<span class="txt"><span class="name"></span><span class="pl"></span><span class="by"></span></span>`
-    + `<span class="qty"></span></button>`
+    + `<span class="who"></span><span class="qty"></span><span class="pr"></span></button>`
     + (String(it.key).startsWith("c-") ? `<button class="del" type="button" aria-label="Удалить ${esc(it.name)}">×</button>` : "")
     + `</li>`;
 }
@@ -760,6 +767,7 @@ function renderList() {
     observeSections();
   }
   let total = 0, done = 0;
+  const agg = itemAgg();
   const chips = $("#secs").children;
   main.querySelectorAll("section").forEach((sec, si) => {
     const s = secs[si];
@@ -770,17 +778,19 @@ function renderList() {
       const li = sec.querySelector(`li[data-id="${it.id}"]`);
       if (!li) continue;
       if (it.done) d++;
-      paintRow(li, it);
+      paintRow(li, it, agg.m.get(it.id));
       want[shownDone(it) ? "got" : "open"].push(li);
     }
     place(openUl, want.open, fresh);
     place(gotUl, want.got, fresh);
     const t = s.items.length, g = want.got.length;
+    let gs = 0;
+    for (const li of want.got) { const a = agg.m.get(li.dataset.id); if (a) gs += a.g; }
     const expanded = openGot.has(s.name);
     const btn = sec.querySelector(".bought");
     btn.hidden = !g;
     btn.setAttribute("aria-expanded", String(expanded && g > 0));
-    morph(btn.querySelector(".bt"), g && g === t ? `Всё куплено · ${g}` : `Куплено · ${g}`);
+    morph(btn.querySelector(".bt"), (g && g === t ? `Всё куплено · ${g}` : `Куплено · ${g}`) + (gs ? ` · ${fmtG(gs)}` : ""));
     sec.querySelector(".bwrap").classList.toggle("on", expanded && g > 0);
     gotUl.toggleAttribute("inert", !(expanded && g > 0));
     morph(sec.querySelector(".sec-n"), `${d} / ${t}`);
@@ -790,6 +800,7 @@ function renderList() {
     total += t; done += d;
   });
   S.done = done; S.total = total;
+  renderExtra(agg.extra);
   $("#bar").style.width = total ? (done / total * 100) + "%" : "0";
   $("#resetN").textContent = done ? String(done) : "";
   renderSub();
@@ -823,21 +834,88 @@ function foldMove(li, ul) {
   li.style.height = "0px"; li.style.opacity = "0";
   setTimeout(land, 330);
 }
-function paintRow(li, it) {
+function paintRow(li, it, a) {
   const row = li.firstElementChild;
   li.classList.toggle("is-done", !!it.done);
   row.classList.toggle("done", !!it.done);
   row.setAttribute("aria-pressed", String(!!it.done));
   row.querySelector(".name").textContent = it.name;
   row.querySelector(".pl").textContent = it.pl || "";
-  row.querySelector(".qty").textContent = it.qty || "";
+  row.querySelector(".qty").textContent = shownDone(it) ? actualQty(it, a) : it.qty || "";
   let by = "";
+  const p = it.done && person(it.done_by);
   if (it.done) {
-    const p = person(it.done_by), at = parseDate(it.done_at);
+    const at = parseDate(it.done_at);
     by = (p ? p.name : "кто-то") + (at && !isNaN(at) ? ", " + fmtTime.format(at) : "");
   }
   row.querySelector(".by").textContent = by;
+  row.querySelector(".who").textContent = p ? p.name : "";
+  row.querySelector(".pr").textContent = a && a.lines.length ? fmtG(a.g) : "—";
 }
+
+// Receipt lines (from the background scan) against the list: what each bought
+// item really cost and how much of it came, plus lines that aren't on the list.
+const UNIT = { kg: "кг", g: "г", l: "л", ml: "мл", szt: "шт" };
+const fmtQ = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 3 });
+function receiptLines() {
+  const out = [];
+  for (const x of S.expenses.values()) if (Array.isArray(x.lines)) x.lines.forEach((l, i) => { if (l && l.text) out.push({ x, i, l }); });
+  return out;
+}
+function itemAgg() {
+  const m = new Map(), extra = [];
+  for (const r of receiptLines()) {
+    const id = r.l.item_id;
+    if (id && S.items.has(id)) {
+      let a = m.get(id);
+      if (!a) m.set(id, a = { g: 0, lines: [] });
+      a.g += grosze(r.l.price); a.lines.push(r.l);
+    } else extra.push(r);
+  }
+  return { m, extra };
+}
+const lineQty = (l) => {
+  const q = Number(l.qty);
+  if (!(q > 0)) return "";
+  if (UNIT[l.unit]) return fmtQ.format(q) + " " + UNIT[l.unit];
+  return q !== 1 ? "× " + fmtQ.format(q) : "";
+};
+// Sum of the matching lines when they share a unit; otherwise the planned qty.
+function actualQty(it, a) {
+  const L = a ? a.lines.filter((l) => Number(l.price) > 0) : [];
+  if (!L.length) return it.qty || "";
+  const u = L[0].unit;
+  if (!UNIT[u] || L.some((l) => l.unit !== u || !(Number(l.qty) > 0))) return it.qty || "";
+  return fmtQ.format(Math.round(L.reduce((s, l) => s + Number(l.qty), 0) * 1000) / 1000) + " " + UNIT[u];
+}
+const EXTRA = "\u0000extra";
+let extraSig = "";
+function renderExtra(rows) {
+  const sec = $("#extraSec");
+  sec.hidden = !rows.length;
+  const ul = $("#extraL"), btn = sec.querySelector(".bought");
+  const on = openGot.has(EXTRA) && rows.length > 0;
+  btn.setAttribute("aria-expanded", String(on));
+  sec.querySelector(".bwrap").classList.toggle("on", on);
+  ul.toggleAttribute("inert", !on);
+  if (!rows.length) return;
+  const sum = rows.reduce((t, r) => t + grosze(r.l.price), 0);
+  morph(btn.querySelector(".bt"), `Сверх списка · ${rows.length} · ${fmtG(sum)}`);
+  const sig = JSON.stringify(rows.map((r) => [r.x.id, r.i, r.l.text, r.l.qty, r.l.unit, r.l.price, r.x.paid_by]));
+  if (sig === extraSig) return;
+  extraSig = sig;
+  ul.innerHTML = rows.map((r) => {
+    const p = person(r.x.paid_by);
+    return `<li><div class="row"><span class="txt"><span class="name">${esc(r.l.text)}</span></span>`
+      + `<span class="who">${esc(p ? p.name : "")}</span><span class="qty">${esc(lineQty(r.l))}</span>`
+      + `<span class="pr">${r.l.price == null ? "—" : fmtSigned2(grosze(r.l.price))}</span></div></li>`;
+  }).join("");
+}
+$("#extraSec .bought").addEventListener("click", () => {
+  openGot.has(EXTRA) ? openGot.delete(EXTRA) : openGot.add(EXTRA);
+  LS.set("trip.got", openGot.size ? JSON.stringify([...openGot]) : null);
+  renderList();
+});
 
 // Section chips: tap scrolls to the section; the one in view is highlighted.
 let secIO = null, chipLock = 0;
@@ -1082,6 +1160,7 @@ function onExpenseEvent(e) {
     if (F.open && F.editing === e.record.id) { closeEditor(); toast("Этот чек удалили"); }
   } else S.expenses.set(e.record.id, e.record);
   renderMoney();
+  renderList();
   saveSnap();
 }
 
