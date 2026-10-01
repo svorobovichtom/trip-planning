@@ -355,6 +355,9 @@ function finish(raw, items, provider, model) {
       return { text: l.text.trim().slice(0, 120), price: p == null ? null : round2(p) };
     });
 
+  const priced = lines.filter((l) => l.price != null);
+  const linesSum = priced.length ? round2(priced.reduce((t, l) => t + l.price, 0)) : null;
+
   const store = typeof raw.store === "string" && raw.store.trim() ? raw.store.trim().slice(0, 60) : null;
   const category = CATEGORIES.includes(raw.category) ? raw.category : null;
 
@@ -376,6 +379,10 @@ function finish(raw, items, provider, model) {
     date: cleanDate(raw.date),
     category,
     lines,
+    // Sanity check for per-line splitting: models sometimes drop or repeat
+    // lines on long receipts even when the total is right.
+    lines_sum: linesSum,
+    lines_ok: total != null && linesSum != null && Math.abs(linesSum - total) <= Math.max(0.05, total * 0.005),
     matched,
   };
 }
