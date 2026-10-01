@@ -94,11 +94,7 @@ BLIK правятся прямо в строках), «Меню и заметк�
 | Путь | Что это |
 |---|---|
 | `app/` | приложение (Vite + React 19 + TypeScript + Base UI + torph + boring-avatars), раздаётся на `/`; `npm test`, `npm run typecheck` |
-| `web/index.html` | старая одностраничная версия, оставлена на `/old/` как запасной вариант |
-| `package.json`, `scripts/assemble.mjs` | сборка: `npm run build` собирает `app/` в `dist/`, кладёт `web/` в `dist/old/`, пишет `_headers` и `_redirects` (`/next/*` → `/`) |
-| `web/sw.js` | service worker старой версии (scope `/old/`); у приложения свой, генерируется в `app/vite.config.ts` (`/sw.js`, scope `/`) |
-| `web/vendor/pocketbase.umd.js` | JS SDK PocketBase |
-| `web/vendor/torph.mjs` | torph 0.1.3 (MIT, Lochie Axon), морфинг текста |
+| `package.json`, `scripts/assemble.mjs` | сборка: `npm run build` собирает `app/` в `dist/`, пишет `_headers` и `_redirects` (старые адреса `/next/`, `/old/`, `/lab` → `/`); service worker генерируется в `app/vite.config.ts` (`/sw.js`, scope `/`) |
 | `wrangler.jsonc` | Worker `trip-planning`: раздаёт `dist/` как статику (`build.command` = `npm run build`) |
 | `pb_migrations/` | схема, сид, настройки (batch, бэкапы) |
 | `pb_hooks/` | JS-хуки PocketBase: фоновое распознавание чеков |
@@ -111,8 +107,7 @@ BLIK правятся прямо в строках), «Меню и заметк�
 
 Cloudflare Workers Builds подключён к GitHub: каждый push в `main` ставит
 зависимости (`npm ci`, workspaces: `app`), `npx wrangler deploy` запускает
-`npm run build` и публикует `dist/`: приложение на `/`, старая версия на
-`/old/` (около 1–2 минут). Preview-сборки выключены. GitHub Pages выключен.
+`npm run build` и публикует `dist/` (около 1–2 минут). Preview-сборки выключены. GitHub Pages выключен.
 Проверить сборку локально: `npx wrangler deploy --dry-run --outdir /tmp/wout`.
 
 Новое приложение (`app/`) читает те же ключи `localStorage` (`trip.key`,
@@ -120,8 +115,8 @@ Cloudflare Workers Builds подключён к GitHub: каждый push в `ma
 повторного входа; снимок данных — `trip.next.snap`. Разработка:
 `npm run dev` (http://127.0.0.1:5196/, `/api` проксируется на локальный
 PocketBase `PB_URL`, по умолчанию http://127.0.0.1:8096).
-`SERVER` в `web/index.html` указывает на `https://trip-api.svorobovich.com`;
-если страницу отдаёт сам PocketBase (локально), она ходит в свой origin.
+`SERVER` в `app/src/lib/pb.ts` указывает на `https://trip-api.svorobovich.com`
+(переопределяется `VITE_PB_URL`); на localhost приложение ходит в свой origin.
 
 Если push по SSH не проходит: один раз `gh auth setup-git` и пушить по HTTPS
 (`origin` уже HTTPS).

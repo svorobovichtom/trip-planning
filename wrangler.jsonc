@@ -1,7 +1,7 @@
 // Cloudflare Worker: static frontend from dist/ plus a small script
 // (worker/index.js) for POST /scan, the receipt-recognition endpoint.
 // dist/ is assembled by `npm run build` (build.command, run by
-// `wrangler deploy`): web/ at / (legacy page) and the React app (app/) at /next/.
+// `wrangler deploy`): the React app (app/) at /.
 // Builds run on every push to main (Workers Builds, connected to GitHub).
 // The API is PocketBase on the Oracle VM; see README.md.
 {

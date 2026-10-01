@@ -7,3 +7,7 @@
 .av-none {
   background: var(--surface-2);
 }
+/* The palette's near-black blends into the dark background: a faint ring. */
+@media (prefers-color-scheme: dark) {
+  .av { outline: 1px solid rgba(255, 255, 255, 0.14); outline-offset: -1px; }
+}
