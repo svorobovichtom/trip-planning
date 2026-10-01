@@ -43,7 +43,8 @@ const UNITS = new Set(["kg", "g", "l", "ml", "szt"]);
 // fast fallback that is only used if the main one fails or its lines are
 // clearly worse.
 const VISION_MODELS = ["@cf/qwen/qwen3.8-27b", "@cf/google/gemma-4-26b-a4b-it"];
-// Step 2 (text only). The first is the default; the others can be pinned.
+// Step 2 (text only). The first is the default (best matches in tests), the
+// second a faster retry if it errors; any of them can be pinned.
 const MATCH_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
   "@cf/zai-org/glm-4.7-flash",
@@ -131,7 +132,6 @@ async function handleScan(request, env) {
 
   const pinned = form.get("model");
   const matchPinned = form.get("match_model");
-  const matchModel = MATCH_MODELS.includes(matchPinned) ? matchPinned : MATCH_MODELS[0];
 
   // ---- step 1: vision ----
   const t0 = Date.now();
@@ -146,15 +146,23 @@ async function handleScan(request, env) {
 
   // ---- step 2: categories + shopping-list matches ----
   const t1 = Date.now();
-  let match = null, matchError = null;
-  if (r.lines.length) {
+  let match = null, matchError = null, matchModel = null;
+  // Default model, then the next one if the first errors early; one shared
+  // deadline so a slow step 2 never holds the step-1 result for long.
+  const matchModels = MATCH_MODELS.includes(matchPinned) ? [matchPinned] : MATCH_MODELS.slice(0, 2);
+  for (const m of r.lines.length ? matchModels : []) {
+    const left = MATCH_TIMEOUT_MS - (Date.now() - t1);
+    if (left < 3000) break;
     try {
-      match = await withTimeout(matchLines(env.AI, matchModel, r.lines, items), MATCH_TIMEOUT_MS);
+      match = await withTimeout(matchLines(env.AI, m, r.lines, items), left);
+      matchModel = m;
+      break;
     } catch (e) {
-      matchError = String(e.message || e).slice(0, 200);
-      console.warn("match failed", matchModel, matchError);
+      matchError = `${m}: ${String(e.message || e).slice(0, 200)}`;
+      console.warn("match failed", matchError);
     }
   }
+  if (match) matchError = null;
   const matchMs = Date.now() - t1;
 
   const lines = r.lines.map((l, i) => ({
@@ -567,7 +575,7 @@ const MATCH_SCHEMA = {
         required: ["i", "c", "m"],
         properties: {
           i: { type: "integer" },
-          c: { anyOf: [{ type: "integer" }, { type: "null" }] },
+          c: { type: "integer" },
           m: { anyOf: [{ type: "integer" }, { type: "null" }] },
         },
       },
