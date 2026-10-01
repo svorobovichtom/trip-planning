@@ -205,6 +205,7 @@ dialog.viewer.out::backdrop{opacity:0}
 .rc-s{display:block;color:var(--ink);font-size:14px}
 .rc-m{display:block;margin-top:1px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .rc-m:empty{display:none}
+.rc .retry{margin-top:8px;background:var(--bg);color:var(--ink)}
 .lines{margin-bottom:12px;border-radius:8px;background:var(--bg)}
 .lines summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 14px;color:var(--ink);font-size:14px;cursor:pointer;list-style:none}
 .lines summary::-webkit-details-marker{display:none}
@@ -318,6 +319,7 @@ dialog.viewer.out::backdrop{opacity:0}
         <div class="rc-t">
           <span class="rc-s" id="rcS"></span>
           <span class="rc-m" id="rcM"></span>
+          <button class="pill retry" type="button" id="rcRetry" hidden>Попробовать ещё раз</button>
         </div>
         <button class="link" type="button" id="rcRm">Убрать</button>
       </div>
@@ -972,6 +974,7 @@ function renderReceipt() {
     const sc = F.scan;
     morph($("#rcS"), sc ? sc.text : F.file ? "Фото чека" : "Чек приложен");
     $("#rcM").textContent = sc && sc.meta || "";
+    $("#rcRetry").hidden = !(sc && sc.state === "fail" && sc.retry && F.file);
     th.classList.toggle("scan", !!(sc && sc.state === "busy"));
   }
   const L = F.file && F.lines || [];
@@ -1049,13 +1052,14 @@ async function scanReceipt(file, seq) {
   const tick = () => {
     if (seq !== F.seq || !F.scan || F.scan.state !== "busy") return;
     const s = Math.round((Date.now() - t0) / 1000);
-    F.scan.text = s < 2 ? "Загружаю фото…" : s < 8 ? "Читаю чек…" : `Читаю чек · ${s} с`;
-    F.scan.meta = s >= 20 ? "Долго думает, подожди ещё немного" : "";
+    F.scan.text = s < 2 ? "Загружаю фото…" : s < 8 ? "Читаю чек…" : `Читаю чек… ${s} с`;
+    F.scan.meta = s >= 25 ? "длинный чек — ещё немного" : "";
     renderReceipt();
   };
   const iv = setInterval(tick, 1000);
   tick();
-  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 45000);
+  // Long receipts take the model ~30 s, plus a slow mobile upload.
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 100000);
   let res = null, err = null, body = null;
   try {
     const fd = new FormData();
@@ -1067,11 +1071,19 @@ async function scanReceipt(file, seq) {
   } catch (e) { err = e; }
   clearInterval(iv); clearTimeout(to);
   if (seq !== F.seq) return;
-  const fail = (meta) => { F.scan = { state: "fail", text: "Не распознал", meta }; renderReceipt(); if (!$("#fAmount").value) $("#fAmount").focus(); };
-  if (err) return fail(err.name === "AbortError" ? "Слишком долго — введи сумму вручную" : "Нет связи — распознавание недоступно, введи вручную");
-  if (res.status === 404 || res.status === 405) return fail("Распознавание недоступно, введи вручную");
-  if (res.status === 401) return fail("Ключ не подошёл — введи сумму вручную");
-  if (!res.ok || !body || typeof body !== "object") return fail("Не получилось распознать — введи сумму вручную");
+  // On failure the photo stays attached; "retry" re-sends the same compressed file.
+  const fail = (why, retry = true) => {
+    F.scan = { state: "fail", text: why.charAt(0).toUpperCase() + why.slice(1), meta: retry ? "Попробуй ещё раз или введи сумму вручную" : "Введи сумму вручную", retry };
+    renderReceipt();
+    if (!retry && !$("#fAmount").value) $("#fAmount").focus();
+  };
+  if (err) return fail(err.name === "AbortError" ? "не успели прочитать" : "нет связи");
+  if (res.status === 404 || res.status === 405) return fail("распознавание недоступно", false);
+  if (res.status === 401) return fail("ключ не подошёл", false);
+  if (res.status === 413 || res.status === 415) return fail("не тот формат фото", false);
+  const slow = res.status === 504 || res.status === 524 || (res.status === 502 && /time ?out|timed out|abort/i.test(JSON.stringify(body || "")));
+  if (slow) return fail("не успели прочитать");
+  if (!res.ok || !body || typeof body !== "object") return fail("не получилось распознать");
 
   // Fill empty fields, and ones that still hold what an earlier scan put there.
   const A = F.auto || {}, free = (el, k) => !el.value.trim() || el.value === A[k];
@@ -1184,6 +1196,13 @@ $("#rcRm").addEventListener("click", () => {
   renderReceipt();
 });
 $("#matchBtn").addEventListener("click", markMatched);
+$("#rcRetry").addEventListener("click", () => {
+  if (!F.file || !KEY) return;
+  const seq = ++F.seq;
+  F.scan = { state: "busy", text: "Загружаю фото…" };
+  renderReceipt();
+  scanReceipt(F.file, seq);
+});
 $("#rcThumb").addEventListener("click", () => {
   const ed = F.editing && S.expenses.get(F.editing);
   if (F.file) openViewer({ src: F.fileUrl, pdf: F.file.type === "application/pdf", title: $("#fTitle").value.trim() || "Чек", meta: "ещё не сохранён" });
@@ -1218,7 +1237,7 @@ function renderExpList() {
   renderExpList.done = true;
   morph($("#expN"), xs.length ? `${xs.length} · ${fmtG(totalG())}` : "");
   const ul = $("#expList");
-  if (!xs.length) { ul.innerHTML = `<li class="empty-s">Чеков пока нет. ${KEY ? "Сфотографируй первый — сумма и категория подставятся сами." : ""}</li>`; return; }
+  if (!xs.length) { ul.innerHTML = `<li class="empty-s">Чеков пока нет. ${KEY ? "Выбери фото чека из галереи — сумма, категория и позиции подставятся сами." : ""}</li>`; return; }
   ul.innerHTML = xs.map((x) => {
     const p = person(x.paid_by);
     const n = (x.split_between || []).filter((id) => person(id)).length;
