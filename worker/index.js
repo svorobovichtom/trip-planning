@@ -193,8 +193,15 @@ const SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["text", "price"],
-        properties: { text: { type: "string" }, price: nullable({ type: "number" }) },
+        required: ["text", "qty", "unit", "price", "category", "item_id"],
+        properties: {
+          text: { type: "string" },
+          qty: nullable({ type: "number" }),
+          unit: nullable({ type: "string", enum: ["kg", "g", "l", "ml", "szt"] }),
+          price: nullable({ type: "number" }),
+          category: nullable({ type: "string", enum: CATEGORIES }),
+          item_id: nullable({ type: "string" }),
+        },
       },
     },
     total: nullable({ type: "number" }),
@@ -213,11 +220,11 @@ function buildPrompt(items) {
 Return one JSON object with these fields:
 - store: shop/brand name as printed (e.g. "Auchan"), or null.
 - date: purchase date as YYYY-MM-DD, or null if not readable.
-- lines: every purchased product line in order: {"text": product name as printed (without quantity/unit price), "price": final line amount as a number, e.g. 59.64}. Discount lines (RABAT/OPUST) get a negative price. Do not include totals, tax (PTU/VAT), payment or change lines.
+- lines: every purchased product line in order, one entry per product: {"text": product name as printed (without quantity/unit price), "qty": quantity bought as a number (weight for loose goods, e.g. 2.034, or a count, e.g. 2), "unit": "kg" | "g" | "l" | "ml" | "szt" (pieces) or null, "price": the line's FINAL amount after any discount, "category": one of the categories below or null, "item_id": the id of the matching shopping-list row below or null}. Discount lines (RABAT/OPUST/PROMOCJA) are NOT separate entries: subtract each discount from the product line it belongs to. Do not include totals, tax (PTU/VAT), payment, deposit summary or change lines. Read every line; long receipts have 30–60 products.
 - total: the amount paid (SUMA / DO ZAPŁATY / RAZEM) as a number with a dot decimal separator, or null.
 - currency: ISO code, normally "PLN".
-- category: the one category that covers most of the money, exactly one of: ${CATEGORIES.map((c) => `"${c}"`).join(", ")}; null if unclear. Fuel stations -> "Транспорт и бензин".
-- matched: ids from the shopping list below whose product clearly appears among the receipt lines. Each list row is "id | Russian name | Polish name". Only include an id when you are confident; similar but different products do not count (cherry tomatoes are not tomatoes). Use [] if nothing matches.
+- category (top level): the one category that covers most of the money, exactly one of: ${CATEGORIES.map((c) => `"${c}"`).join(", ")}; null if unclear. Fuel stations -> "Транспорт и бензин".
+- matched: ids from the shopping list below whose product clearly appears among the receipt lines (the same ids you put in lines[].item_id). Each list row is "id | Russian name | Polish name". Only include an id when you are confident; similar but different products do not count (cherry tomatoes are not tomatoes). Use [] if nothing matches.
 
 Shopping list:
 ${list}
@@ -351,9 +358,18 @@ function finish(raw, items, provider, model) {
     .filter((l) => l && typeof l === "object" && typeof l.text === "string" && l.text.trim())
     .slice(0, 100)
     .map((l) => {
-      const p = toNumber(l.price);
-      return { text: l.text.trim().slice(0, 120), price: p == null ? null : round2(p) };
-    });
+      const p = toNumber(l.price), q = toNumber(l.qty);
+      return {
+        text: l.text.trim().slice(0, 120),
+        qty: q != null && q > 0 && q < 1e4 ? Math.round(q * 1000) / 1000 : null,
+        unit: ["kg", "g", "l", "ml", "szt"].includes(l.unit) ? l.unit : null,
+        price: p == null ? null : round2(p),
+        category: CATEGORIES.includes(l.category) ? l.category : null,
+        item_id: typeof l.item_id === "string" ? l.item_id.trim() : null,
+      };
+    })
+    // Discounts are folded into their product; drop any stray discount rows.
+    .filter((l) => !(l.price != null && l.price < 0 && /^(opust|rabat|promocja)/i.test(l.text)));
 
   const priced = lines.filter((l) => l.price != null);
   const linesSum = priced.length ? round2(priced.reduce((t, l) => t + l.price, 0)) : null;
@@ -363,7 +379,11 @@ function finish(raw, items, provider, model) {
 
   const ids = new Set(items.map((i) => i.id));
   const byName = new Map(items.map((i) => [i.name.toLowerCase(), i.id]));
+  for (const l of lines) {
+    if (l.item_id && !ids.has(l.item_id)) l.item_id = byName.get(l.item_id.toLowerCase()) || null;
+  }
   const matched = [];
+  for (const l of lines) if (l.item_id && !matched.includes(l.item_id)) matched.push(l.item_id);
   for (const m of Array.isArray(raw.matched) ? raw.matched : []) {
     const s = String(m).trim();
     const id = ids.has(s) ? s : byName.get(s.toLowerCase());
