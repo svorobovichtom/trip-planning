@@ -47,6 +47,7 @@ body{overflow:hidden;overscroll-behavior:none}
 /* header */
 header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 header:has(.only-list:not([hidden])){padding-bottom:0}
+@media (max-width:572px){header .secs{margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));scroll-padding:0 16px}}
 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .top>div{flex:1;min-width:0}
 h1{margin:0;color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-.005em}
@@ -65,10 +66,16 @@ h1{margin:0;color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-.005
 .bar{flex:1;height:2px;border-radius:1px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .4s cubic-bezier(.19,1,.22,1)}
 .count{color:var(--ink);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
-.tools{display:flex;flex-wrap:wrap;align-items:center;column-gap:20px;margin-top:4px}
-.chip{min-height:44px;padding:0;border:0;background:none;color:var(--muted);font-size:14px;font-weight:500;transition:color .15s}
-.chip[aria-pressed="true"]{color:var(--ink)}
-.chip:disabled{opacity:.4;cursor:default}
+.more-b{flex:none;position:relative;height:28px;margin:-13px 0;padding:0 11px;border:0;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:13px;font-weight:500}
+.more-b::before{content:"";position:absolute;inset:-8px -6px}
+/* section chips: one row that scrolls sideways */
+.secs{display:flex;gap:6px;margin-top:10px;padding-bottom:10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.secs::-webkit-scrollbar{display:none}
+.sc{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:999px;background:var(--surface);color:var(--text);font-size:13px;font-weight:500;white-space:nowrap;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
+.sc .n{color:var(--muted);font-variant-numeric:tabular-nums;transition:color .25s}
+.sc[aria-current="true"]{background:var(--ink);color:var(--bg)}
+.sc[aria-current="true"] .n{color:var(--bg);opacity:.6}
+.sc.full:not([aria-current="true"]){color:var(--muted)}
 .sync{color:var(--muted);white-space:nowrap}
 .sync[data-s="off"]{color:var(--bad)}
 .ro{margin-top:16px;padding:12px 14px;border-radius:var(--r);background:var(--surface);font-size:14px}
@@ -80,6 +87,20 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .sec-n{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:var(--r);overflow:hidden}
 .list>li{display:flex;align-items:stretch}
+.card{background:var(--surface);border-radius:var(--r);overflow:hidden}
+.card .list{background:none;border-radius:0}
+.card>*+*{border-top:1px solid var(--line)}
+.card>.open:empty+*,.card>.bwrap{border-top:0}
+.card>.open:empty{display:none}
+.bought{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 14px 0 46px;border:0;background:none;color:var(--muted);font-size:14px;text-align:left}
+.bought .bt{flex:1;min-width:0}
+.bought svg{flex:none;width:10px;height:10px;transition:transform .35s cubic-bezier(.19,1,.22,1)}
+.bought[aria-expanded="true"] svg{transform:rotate(180deg)}
+.bwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.19,1,.22,1)}
+.bwrap.on{grid-template-rows:1fr}
+.bin{min-height:0;overflow:hidden}
+.got{border-top:1px solid var(--line)}
+.got:empty{display:none}
 .list>li+li{border-top:1px solid var(--line)}
 .row{flex:1;min-width:0;display:grid;grid-template-columns:18px 1fr auto;gap:14px;align-items:center;min-height:52px;padding:9px 14px;border:0;background:none;text-align:left}
 .row:active{background:var(--surface-2)}
@@ -96,8 +117,7 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .done .box svg{opacity:1;transform:none}
 .done .name,.done .qty{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
 .del{flex:none;width:44px;border:0;background:none;color:var(--muted);font-size:18px}
-.hide-done li.is-done{display:none}
-.hide-done section.all-done{display:none}
+.add-li{display:flex}
 .add-btn{width:100%;min-height:44px;padding:0 14px 0 46px;border:0;background:none;color:var(--muted);font-size:14px;text-align:left}
 .add-form{display:grid;grid-template-columns:1fr 6em;gap:8px;width:100%;padding:10px}
 .add-form .act{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
@@ -110,12 +130,14 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 .skel{margin-top:20px;height:300px;border-radius:var(--r);background:var(--surface)}
 
 /* menu + note */
-.menu{margin-top:24px;padding:14px;border-radius:var(--r);background:var(--surface)}
+.menu{margin-top:16px;padding:14px;border-radius:var(--r);background:var(--surface)}
 .menu h2{margin-bottom:10px;color:var(--ink)}
 .menu dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px}
 .menu dt{color:var(--muted);white-space:nowrap}
 .menu dd{margin:0;min-width:0}
 .note{margin:14px 2px 0;font-size:13px;color:var(--muted)}
+.sheet p.note{margin:12px 2px 0}
+.sheet .menu h2{margin:0 0 10px}
 
 /* sheet */
 dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%;margin:0;color:var(--text)}
@@ -271,11 +293,8 @@ dialog.viewer.out::backdrop{opacity:0}
       <button class="me empty" id="meBtn" type="button" aria-haspopup="dialog"><span class="k">ты:</span><span class="nm" id="meName">Кто ты?</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>
     </div>
     <div class="only-list">
-      <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span></div>
-      <div class="tools">
-        <button class="chip" id="hide" type="button">Скрыть купленное</button>
-        <button class="chip" id="reset" type="button">Сбросить</button>
-      </div>
+      <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span><button class="more-b" id="moreBtn" type="button" aria-haspopup="dialog">Ещё</button></div>
+      <nav class="secs" id="secs" aria-label="Разделы списка"></nav>
     </div>
   </div></header>
 
@@ -287,17 +306,6 @@ dialog.viewer.out::backdrop{opacity:0}
 
   <main id="list"><div class="skel"></div></main>
 
-  <div class="menu">
-    <h2>Меню</h2>
-    <dl>
-      <dt>Пт ужин</dt><dd>Гриль: шея, курица, колбаски, картошка, салат. Для одного: лосось</dd>
-      <dt>Сб завтрак</dt><dd>Сырники со сметаной, яйца, хлеб, сыр, нарезка, овощи</dd>
-      <dt>Сб обед</dt><dd>Лёгкий перекус перед выездом: бутерброды, овощи, фрукты</dd>
-      <dt>Сб ужин</dt><dd>Лосось на гриле, немного шеи, пюре, овощи гриль, салат</dd>
-      <dt>Вс завтрак</dt><dd>Без готовки: йогурт с гранолой и фруктами, бутерброды, кофе</dd>
-    </dl>
-  </div>
-  <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
   </div>
 
   <div id="p-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
@@ -414,7 +422,27 @@ dialog.viewer.out::backdrop{opacity:0}
     </form>
     <div class="foot">
       <button class="link" type="button" id="rename" hidden>Исправить моё имя</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="more" aria-labelledby="moreH">
+  <div class="sheet">
+    <div class="sheet-h"><h3 id="moreH">Ещё</h3><button class="x" type="button" id="moreClose" aria-label="Закрыть">×</button></div>
+    <div class="menu">
+      <h2>Меню</h2>
+      <dl>
+        <dt>Пт ужин</dt><dd>Гриль: шея, курица, колбаски, картошка, салат. Для одного: лосось</dd>
+        <dt>Сб завтрак</dt><dd>Сырники со сметаной, яйца, хлеб, сыр, нарезка, овощи</dd>
+        <dt>Сб обед</dt><dd>Лёгкий перекус перед выездом: бутерброды, овощи, фрукты</dd>
+        <dt>Сб ужин</dt><dd>Лосось на гриле, немного шеи, пюре, овощи гриль, салат</dd>
+        <dt>Вс завтрак</dt><dd>Без готовки: йогурт с гранолой и фруктами, бутерброды, кофе</dd>
+      </dl>
+    </div>
+    <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
+    <div class="foot">
       <button class="link" type="button" id="share">Ссылка для группы</button>
+      <button class="link" type="button" id="reset">Снять все отметки</button>
     </div>
   </div>
 </dialog>
@@ -470,7 +498,6 @@ const S = {
   me: LS.get("trip.me"),
   online: false,
   loaded: false,
-  hide: LS.get("trip.hide") === "1",
 };
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -631,7 +658,15 @@ function renderMe() {
 }
 
 // ---------- render: list ----------
+// Open items stay on top of each section; bought ones gather in a collapsed
+// "Куплено · N" group at the bottom. A row you just tapped waits ~600 ms
+// (the check animation) before it moves.
 let listSig = "";
+const CHEV = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg>';
+const openGot = new Set((() => { try { return JSON.parse(LS.get("trip.got") || "[]"); } catch { return []; } })());
+const hold = new Map();   // id -> {done (as shown), t (timer)}
+const shownDone = (it) => (hold.has(it.id) ? hold.get(it.id).done : !!it.done);
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function sectionsOf() {
   const order = [], by = new Map();
   const items = [...S.items.values()].sort((a, b) => (a.sort - b.sort) || String(a.created).localeCompare(String(b.created)));
@@ -641,46 +676,97 @@ function sectionsOf() {
   }
   return order.map((name) => ({ name, items: by.get(name) }));
 }
+function itemLi(it) {
+  return `<li data-id="${it.id}"><button class="row" type="button" aria-pressed="false">`
+    + `<span class="box">${CHECK}</span>`
+    + `<span class="txt"><span class="name"></span><span class="pl"></span><span class="by"></span></span>`
+    + `<span class="qty"></span></button>`
+    + (String(it.key).startsWith("c-") ? `<button class="del" type="button" aria-label="Удалить ${esc(it.name)}">×</button>` : "")
+    + `</li>`;
+}
+const ADD = '<button class="add-btn" type="button">+ добавить</button>';
 function renderList() {
   if (!S.loaded) return;
   const secs = sectionsOf();
   const sig = secs.map((s) => s.name + ":" + s.items.map((i) => i.id).join(",")).join("|");
   const main = $("#list");
+  let fresh = false;
   if (sig !== listSig || !main.querySelector("section")) {
-    listSig = sig;
+    listSig = sig; fresh = true;
     const open = main.querySelector(".add-form");
     const openSec = open && open.closest("section").dataset.sec;
     main.innerHTML = secs.map((s, si) => `
-      <section data-sec="${esc(s.name)}" aria-labelledby="sh${si}">
+      <section data-sec="${esc(s.name)}" id="sec${si}" aria-labelledby="sh${si}">
         <div class="sec-h"><h2 id="sh${si}">${esc(s.name)}</h2><span class="sec-n"></span></div>
-        <ul class="list">${s.items.map((it) => `
-          <li data-id="${it.id}"><button class="row" type="button" aria-pressed="false">
-            <span class="box">${CHECK}</span>
-            <span class="txt"><span class="name"></span><span class="pl"></span><span class="by"></span></span>
-            <span class="qty"></span>
-          </button>${String(it.key).startsWith("c-") ? `<button class="del" type="button" aria-label="Удалить ${esc(it.name)}">×</button>` : ""}</li>`).join("")}
-          <li class="add-li"><button class="add-btn" type="button">+ добавить</button></li>
-        </ul>
+        <div class="card"><ul class="list open">${s.items.map(itemLi).join("")}</ul><div class="add-li">${ADD}</div>`
+      + `<button class="bought" type="button" aria-expanded="false" aria-controls="got${si}"><span class="bt"></span>${CHEV}</button>`
+      + `<div class="bwrap"><div class="bin"><ul class="list got" id="got${si}"></ul></div></div></div>
       </section>`).join("");
+    $("#secs").innerHTML = secs.map((s, si) => `<button class="sc" type="button" data-to="sec${si}"><span class="t">${esc(s.name)}</span><span class="n"></span></button>`).join("");
     if (openSec) { const sec = [...main.querySelectorAll("section")].find((x) => x.dataset.sec === openSec); if (sec) openAdd(sec); }
+    observeSections();
   }
   let total = 0, done = 0;
-  for (const sec of main.querySelectorAll("section")) {
-    let t = 0, d = 0;
-    for (const li of sec.querySelectorAll("li[data-id]")) {
-      const it = S.items.get(li.dataset.id);
-      if (!it) continue;
-      t++; if (it.done) d++;
+  const chips = $("#secs").children;
+  main.querySelectorAll("section").forEach((sec, si) => {
+    const s = secs[si];
+    const openUl = sec.querySelector(".open"), gotUl = sec.querySelector(".got");
+    const want = { open: [], got: [] };
+    let d = 0;
+    for (const it of s.items) {
+      const li = sec.querySelector(`li[data-id="${it.id}"]`);
+      if (!li) continue;
+      if (it.done) d++;
       paintRow(li, it);
+      want[shownDone(it) ? "got" : "open"].push(li);
     }
+    place(openUl, want.open, fresh);
+    place(gotUl, want.got, fresh);
+    const t = s.items.length, g = want.got.length;
+    const expanded = openGot.has(s.name);
+    const btn = sec.querySelector(".bought");
+    btn.hidden = !g;
+    btn.setAttribute("aria-expanded", String(expanded && g > 0));
+    morph(btn.querySelector(".bt"), g && g === t ? `Всё куплено · ${g}` : `Куплено · ${g}`);
+    sec.querySelector(".bwrap").classList.toggle("on", expanded && g > 0);
+    gotUl.toggleAttribute("inert", !(expanded && g > 0));
     morph(sec.querySelector(".sec-n"), `${d} / ${t}`);
     sec.classList.toggle("all-done", t > 0 && d === t);
+    const chip = chips[si];
+    if (chip) { morph(chip.querySelector(".n"), `${d}/${t}`); chip.classList.toggle("full", t > 0 && d === t); }
     total += t; done += d;
-  }
+  });
   morph($("#count"), `${done} / ${total}`);
   $("#bar").style.width = total ? (done / total * 100) + "%" : "0";
-  main.classList.toggle("hide-done", S.hide);
-  morph($("#hide"), S.hide ? "Показать купленное" : "Скрыть купленное");
+}
+// Put rows into ul in order. A row that changes group folds away first, then
+// fades in at its new place (unless this is a fresh build).
+function place(ul, lis, fresh) {
+  let prev = null;
+  for (const li of lis) {
+    if (li.dataset.moving) continue;
+    if (!fresh && li.parentElement !== ul) { foldMove(li, ul); continue; }
+    const next = prev ? prev.nextElementSibling : ul.firstElementChild;
+    if (next !== li) ul.insertBefore(li, next);
+    prev = li;
+  }
+}
+function foldMove(li, ul) {
+  const visible = li.offsetHeight > 0 && !li.closest(".bwrap:not(.on)");
+  const land = () => {
+    li.style.cssText = ""; delete li.dataset.moving;
+    ul.appendChild(li);
+    if (!reduced() && !ul.closest(".bwrap:not(.on)")) { li.classList.remove("rowin"); void li.offsetWidth; li.classList.add("rowin"); }
+    renderList();
+  };
+  if (!visible || reduced()) return land();
+  li.dataset.moving = "1";
+  li.style.height = li.offsetHeight + "px";
+  li.style.overflow = "hidden";
+  void li.offsetHeight;
+  li.style.transition = "height .32s cubic-bezier(.19,1,.22,1), opacity .2s";
+  li.style.height = "0px"; li.style.opacity = "0";
+  setTimeout(land, 330);
 }
 function paintRow(li, it) {
   const row = li.firstElementChild;
@@ -698,6 +784,58 @@ function paintRow(li, it) {
   row.querySelector(".by").textContent = by;
 }
 
+// Section chips: tap scrolls to the section; the one in view is highlighted.
+let secIO = null, chipLock = 0;
+const inView = new Set();
+function observeSections() {
+  if (secIO) secIO.disconnect();
+  inView.clear();
+  if (!("IntersectionObserver" in window)) return;
+  secIO = new IntersectionObserver((es) => {
+    for (const e of es) e.isIntersecting ? inView.add(e.target.id) : inView.delete(e.target.id);
+    if (Date.now() < chipLock) return;
+    const first = [...$("#list").querySelectorAll("section")].find((x) => inView.has(x.id));
+    if (first) setChip(first.id);
+  }, { root: $("#scroll"), rootMargin: "0px 0px -78% 0px" });
+  for (const sec of $("#list").querySelectorAll("section")) secIO.observe(sec);
+  const first = $("#list").querySelector("section");
+  if (first && !$("#secs [aria-current]")) setChip(first.id);
+}
+function setChip(id) {
+  const row = $("#secs");
+  let cur = null;
+  for (const c of row.children) {
+    const on = c.dataset.to === id;
+    if (on) { c.setAttribute("aria-current", "true"); cur = c; } else c.removeAttribute("aria-current");
+  }
+  if (!cur || !row.offsetWidth) return;
+  const l = cur.offsetLeft - row.offsetLeft, pad = 16;
+  if (l < row.scrollLeft + pad || l + cur.offsetWidth > row.scrollLeft + row.clientWidth - pad)
+    row.scrollTo({ left: Math.max(0, l - (row.clientWidth - cur.offsetWidth) / 2), behavior: reduced() ? "auto" : "smooth" });
+}
+// The last sections are short and never reach the top band: at the very bottom, light the last one.
+let endRaf = 0;
+$("#scroll").addEventListener("scroll", () => {
+  if (endRaf || S.tab !== "list") return;
+  endRaf = requestAnimationFrame(() => {
+    endRaf = 0;
+    const sc = $("#scroll");
+    if (Date.now() < chipLock || sc.scrollTop + sc.clientHeight < sc.scrollHeight - 4) return;
+    const all = $("#list").querySelectorAll("section");
+    if (all.length) setChip(all[all.length - 1].id);
+  });
+}, { passive: true });
+$("#secs").addEventListener("click", (e) => {
+  const c = e.target.closest(".sc");
+  const sec = c && document.getElementById(c.dataset.to);
+  if (!sec) return;
+  const sc = $("#scroll");
+  const top = sc.scrollTop + sec.getBoundingClientRect().top - sc.getBoundingClientRect().top - 12;
+  chipLock = Date.now() + 900;
+  setChip(sec.id);
+  sc.scrollTo({ top: Math.max(0, top), behavior: reduced() ? "auto" : "smooth" });
+});
+
 // ---------- actions ----------
 function canWrite() {
   if (!KEY) { toast("Только просмотр — попроси ссылку с ключом"); return false; }
@@ -710,6 +848,10 @@ function toggle(id) {
   const patch = it.done
     ? { done: false, done_by: "", done_at: "" }
     : { done: true, done_by: S.me, done_at: new Date().toISOString() };
+  const h = hold.get(id);
+  if (h) clearTimeout(h.t);
+  const shown = h ? h.done : !patch.done;
+  hold.set(id, { done: shown, t: setTimeout(() => { hold.delete(id); renderList(); }, 600) });
   Object.assign(it, patch);
   if (navigator.vibrate) navigator.vibrate(8);
   renderList();
@@ -750,7 +892,10 @@ async function submitAdd(form) {
       section: sec, name, qty, pl: "", sort, done: false,
     });
     S.items.set(r.id, r);
-    form.closest("li").innerHTML = '<button class="add-btn" type="button">+ добавить</button>';
+    form.closest(".add-li").innerHTML = ADD;
+    // The realtime echo may have rebuilt the list (and reopened the form) already.
+    const cur = [...$("#list").querySelectorAll("section")].find((x) => x.dataset.sec === sec);
+    if (cur && cur.querySelector(".add-form")) cur.querySelector(".add-li").innerHTML = ADD;
     renderList();
   } catch (e) {
     btn.disabled = false;
@@ -768,13 +913,23 @@ $("#list").addEventListener("click", (e) => {
   const t = e.target;
   const row = t.closest(".row");
   if (row) return toggle(row.parentElement.dataset.id);
-  if (t.closest(".del")) return deleteItem(t.closest("li").dataset.id);
+  if (t.closest(".del")) return deleteItem(t.closest("li[data-id]").dataset.id);
   if (t.closest(".add-btn")) { if (canWrite()) openAdd(t.closest("section")); return; }
-  if (t.closest("[data-cancel]")) { t.closest("li").innerHTML = '<button class="add-btn" type="button">+ добавить</button>'; }
+  if (t.closest("[data-cancel]")) { t.closest(".add-li").innerHTML = ADD; return; }
+  const b = t.closest(".bought");
+  if (b) {
+    const name = b.closest("section").dataset.sec;
+    openGot.has(name) ? openGot.delete(name) : openGot.add(name);
+    LS.set("trip.got", openGot.size ? JSON.stringify([...openGot]) : null);
+    renderList();
+  }
 });
 $("#list").addEventListener("submit", (e) => { e.preventDefault(); submitAdd(e.target); });
-$("#hide").addEventListener("click", () => { S.hide = !S.hide; LS.set("trip.hide", S.hide ? "1" : null); renderList(); });
-$("#reset").addEventListener("click", resetAll);
+$("#reset").addEventListener("click", () => { more.close(); resetAll(); });
+const more = $("#more");
+$("#moreBtn").addEventListener("click", () => { if (!more.open) more.showModal(); });
+$("#moreClose").addEventListener("click", () => more.close());
+more.addEventListener("click", (e) => { if (e.target === more) more.close(); });
 
 // ---------- tabs ----------
 const TABS = ["list", "exp", "sum"];
@@ -1452,7 +1607,7 @@ S.booted = true;
 $("#ro").hidden = !!KEY;
 $("#roExp").hidden = !!KEY;
 $("#addx").hidden = !KEY;
-$("#reset").disabled = !KEY;
+$("#reset").hidden = !KEY;
 renderSync();
 // Show the last known list right away (works offline), then refresh.
 try {
