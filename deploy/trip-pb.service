@@ -13,6 +13,13 @@ ExecStart=/opt/trip/pocketbase serve --http=127.0.0.1:8090 --dir=/opt/trip/pb_da
 Restart=always
 RestartSec=3
 LimitNOFILE=4096
+# Good neighbour: Flatsy shares this VM, so cap what the trip app can take.
+MemoryMax=384M
+MemorySwapMax=0
+CPUQuota=50%
+Nice=10
+IOWeight=20
+TasksMax=128
 UMask=0077
 NoNewPrivileges=true
 ProtectSystem=strict

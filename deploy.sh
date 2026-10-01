@@ -8,9 +8,9 @@ HOST="${TRIP_HOST:-ubuntu@89.168.118.89}"
 SSH_KEY="${TRIP_SSH_KEY:-$HOME/.ssh/flatsy_oracle}"
 SSH=(ssh -i "$SSH_KEY" -o BatchMode=yes)
 
-rsync -az --delete -e "${SSH[*]}" index.html vendor pb_migrations "$HOST:~/trip-src/"
+rsync -az --delete -e "${SSH[*]}" index.html sw.js vendor pb_migrations "$HOST:~/trip-src/"
 "${SSH[@]}" "$HOST" 'set -e
-  sudo install -m 644 -o trip -g trip ~/trip-src/index.html /opt/trip/pb_public/index.html
+  sudo install -m 644 -o trip -g trip ~/trip-src/index.html ~/trip-src/sw.js /opt/trip/pb_public/
   sudo mkdir -p /opt/trip/pb_public/vendor
   sudo install -m 644 -o trip -g trip ~/trip-src/vendor/* /opt/trip/pb_public/vendor/
   if [ "'"${1:-}"'" = --restart ]; then

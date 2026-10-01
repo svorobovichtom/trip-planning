@@ -54,7 +54,7 @@ fi
 
 # --- app files --------------------------------------------------------------
 install -m 644 "$REPO"/pb_migrations/*.js "$APP/pb_migrations/"
-install -m 644 "$REPO/index.html" "$APP/pb_public/index.html"
+install -m 644 "$REPO/index.html" "$REPO/sw.js" "$APP/pb_public/"
 mkdir -p "$APP/pb_public/vendor"
 install -m 644 "$REPO"/vendor/* "$APP/pb_public/vendor/"
 chown -R trip:trip "$APP"
@@ -67,8 +67,12 @@ systemctl enable --now trip-pb.service
 systemctl restart trip-pb.service
 
 # --- caddy: root config + per-app site file ---------------------------------
+# A broken file in sites.d would also stop Flatsy the next time Caddy restarts,
+# so the new block is validated first and rolled back if it fails.
 mkdir -p /etc/caddy/sites.d
-sed "s/__DOMAIN__/$TRIP_DOMAIN/" "$REPO/deploy/Caddyfile" > /etc/caddy/sites.d/trip.caddy
+SITE=/etc/caddy/sites.d/trip.caddy
+[[ -f "$SITE" ]] && cp "$SITE" "$SITE.prev"
+sed "s/__DOMAIN__/$TRIP_DOMAIN/" "$REPO/deploy/Caddyfile" > "$SITE"
 install -m 644 "$REPO/deploy/caddy-root.caddy" /etc/caddy/root.caddy
 mkdir -p /etc/systemd/system/caddy.service.d
 install -m 644 "$REPO/deploy/caddy-20-sites.conf" /etc/systemd/system/caddy.service.d/20-sites.conf
@@ -76,7 +80,12 @@ install -m 644 "$REPO/deploy/caddy-20-sites.conf" /etc/systemd/system/caddy.serv
 # Validate with the same environment Caddy runs with (Flatsy keeps secrets there).
 CADDY_ENV=()
 [[ -f /etc/flatsy/caddy.env ]] && mapfile -t CADDY_ENV < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' /etc/flatsy/caddy.env)
-env "${CADDY_ENV[@]}" caddy validate --adapter caddyfile --config /etc/caddy/root.caddy
+if ! env "${CADDY_ENV[@]}" caddy validate --adapter caddyfile --config /etc/caddy/root.caddy; then
+    if [[ -f "$SITE.prev" ]]; then mv "$SITE.prev" "$SITE"; else rm -f "$SITE"; fi
+    echo "Caddy config invalid; trip site rolled back, Caddy not reloaded" >&2
+    exit 1
+fi
+rm -f "$SITE.prev"
 systemctl daemon-reload
 if [[ "$(systemctl show caddy -p ExecStart --value)" == *root.caddy* ]] && systemctl is-active --quiet caddy; then
     systemctl reload caddy

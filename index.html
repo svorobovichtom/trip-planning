@@ -291,6 +291,7 @@ async function reloadAll() {
     ]);
     S.people = people;
     S.items = new Map(items.map((r) => [r.id, r]));
+    LS.set("trip.snap", JSON.stringify({ people, items }));
     // keep optimistic values for writes that are still queued
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
@@ -313,6 +314,12 @@ function onItemEvent(e) {
     S.items.set(r.id, r);
   }
   renderList();
+  saveSnap();
+}
+let snapT;
+function saveSnap() {
+  clearTimeout(snapT);
+  snapT = setTimeout(() => LS.set("trip.snap", JSON.stringify({ people: S.people, items: [...S.items.values()] })), 500);
 }
 function onPeopleEvent(e) {
   const r = e.record;
@@ -547,6 +554,19 @@ $("#share").addEventListener("click", async () => {
 $("#ro").hidden = !!KEY;
 $("#reset").disabled = !KEY;
 renderSync();
+// Show the last known list right away (works offline), then refresh.
+try {
+  const snap = JSON.parse(LS.get("trip.snap") || "null");
+  if (snap && snap.items && snap.items.length) {
+    S.people = snap.people || [];
+    S.items = new Map(snap.items.map((r) => [r.id, r]));
+    for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
+    if (S.me && !person(S.me)) S.me = null;
+    S.loaded = true;
+    renderAll();
+  }
+} catch {}
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 (async () => {
   await reloadAll();
   connect();
