@@ -31,7 +31,7 @@ umask 022
 
 # --- user + layout ----------------------------------------------------------
 id trip >/dev/null 2>&1 || useradd --system --home-dir "$APP" --shell /usr/sbin/nologin trip
-mkdir -p "$APP/pb_data" "$APP/pb_migrations" "$APP/pb_public"   # pb_public stays empty: the site is on Cloudflare
+mkdir -p "$APP/pb_data" "$APP/pb_migrations" "$APP/pb_hooks" "$APP/pb_public"   # pb_public stays empty: the site is on Cloudflare
 
 # --- pocketbase binary ------------------------------------------------------
 case "$(uname -m)" in
@@ -51,6 +51,8 @@ fi
 
 # --- app files --------------------------------------------------------------
 install -m 644 "$REPO"/pb_migrations/*.js "$APP/pb_migrations/"
+find "$APP/pb_hooks" -mindepth 1 -delete
+install -m 644 "$REPO"/pb_hooks/*.js "$APP/pb_hooks/"
 chown -R trip:trip "$APP"
 chmod 600 "$ENV_FILE"; chown root:root "$ENV_FILE"
 

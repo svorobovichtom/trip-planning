@@ -25,7 +25,8 @@ trip-api.svorobovich.com ── Cloudflare Tunnel "trip" ──► VM Oracle
 ```
 
 Коллекции: `people` (участники), `items` (покупки), `expenses` (расходы, чек —
-файл). Правила: `list`/`view` открыты, `create`/`update`/`delete` требуют
+файл), `claims` («я брал эту строку чека»: `expense`, `line` — индекс в
+`expenses.lines`, `person`; уникально по тройке, удаляются вместе с расходом). Правила: `list`/`view` открыты, `create`/`update`/`delete` требуют
 `@request.headers.x_trip_key = "<ключ>"`. Ключ подставляется из переменной
 окружения `TRIP_KEY` в момент миграции, поэтому в репозитории его нет.
 
@@ -37,6 +38,26 @@ trip-api.svorobovich.com ── Cloudflare Tunnel "trip" ──► VM Oracle
 С Flatsy общая только сама VM: отдельные пользователи, каталоги, порты и
 systemd-лимиты. Caddy, порты 80/443 и сертификаты Flatsy приложение не трогает.
 
+## Расходы: распознавание чека и деление
+
+- **Фоновое распознавание** (`pb_hooks/scan.pb.js`, логика в `scan_lib.js`).
+  Расход, созданный через API с чеком JPEG/PNG/WebP (или получивший новый чек),
+  получает `scan_status = "pending"`; сумма может быть `0` («пока неизвестна»).
+  Раз в минуту cron берёт до 2 таких расходов → `running` → Worker
+  `POST /scan` (JSON `{image_url, items}`, заголовок `X-Trip-Key`, таймаут 100 с)
+  → `done`: `lines`, `scanned_at`; `amount` ставится, только если был 0,
+  `category` и `title` (магазин) — только если пустые. Деление, плательщик и
+  отметки покупок не меняются. `lines_ok = false` → `scan_error = "lines_mismatch"`
+  (строки не сходятся с итогом, деление «по чеку» не предлагается).
+  Ошибка → `failed` + короткая причина в `scan_error`, одна автоматическая
+  повторная попытка через ~5 мин. `running` дольше 5 мин → снова `pending`.
+  Обычное редактирование старых расходов ничего не запускает.
+  **Распознать вручную** (в т.ч. старый расход): `PATCH` с `{"scan_status":"pending"}`.
+  Логи: `journalctl -u trip-pb | grep '\[scan\]'`.
+- **Деление** (`split_mode`): `equal` (поровну между `split_between`, пусто =
+  все), `amounts` (`split_amounts`: `{"<personId>": грош | null}`, `null` —
+  поровну из остатка), `claims` (по строкам чека из `claims`).
+
 ## Структура репозитория
 
 | Путь | Что это |
@@ -47,7 +68,8 @@ systemd-лимиты. Caddy, порты 80/443 и сертификаты Flatsy 
 | `web/vendor/torph.mjs` | torph 0.1.3 (MIT, Lochie Axon), морфинг текста |
 | `wrangler.jsonc` | Worker `trip-planning`: раздаёт `web/` как статику |
 | `pb_migrations/` | схема, сид, настройки (batch, бэкапы) |
-| `deploy.sh` | выкладка миграций на VM + перезапуск PocketBase |
+| `pb_hooks/` | JS-хуки PocketBase: фоновое распознавание чеков |
+| `deploy.sh` | выкладка миграций, хуков и юнита на VM + перезапуск PocketBase |
 | `deploy/setup.sh` | идемпотентная настройка PocketBase на VM (от root) |
 | `deploy/tunnel-setup.sh` | разовая настройка туннеля |
 | `deploy/trip-pb.service`, `trip-tunnel.service`, `trip-tunnel.yml` | systemd-юниты и конфиг cloudflared |
@@ -67,11 +89,11 @@ Cloudflare Workers Builds подключён к GitHub: каждый push в `ma
 Миграции выкладываются вручную, с ноутбука:
 
 ```sh
-./deploy.sh  # pb_migrations/ на VM + перезапуск trip-pb (страницы переподключатся сами)
+./deploy.sh  # pb_migrations/, pb_hooks/, юнит на VM + перезапуск trip-pb (страницы переподключатся сами)
 ```
 
-Новые миграции применяются при старте PocketBase, поэтому скрипт его
-перезапускает. Автоматизации нет намеренно: SSH-ключ с sudo на VM, где живёт
+Новые миграции применяются, а хуки читаются при старте PocketBase
+(`--hooksWatch=false`), поэтому скрипт его перезапускает. Автоматизации нет намеренно: SSH-ключ с sudo на VM, где живёт
 Flatsy, не должен лежать в GitHub.
 
 Первая установка (PocketBase, затем туннель):
@@ -95,8 +117,12 @@ cloudflared tunnel login && bash deploy/tunnel-setup.sh
 
 ```sh
 TRIP_KEY=... ./pocketbase serve --http 127.0.0.1:8099 --dir pb_data \
-  --migrationsDir pb_migrations --publicDir web
+  --migrationsDir pb_migrations --hooksDir pb_hooks --publicDir web
 ```
+
+Хук распознавания по умолчанию ходит в боевой Worker и отдаёт ему ссылку на
+`https://trip-api.svorobovich.com`; локально их можно подменить через
+`TRIP_SCAN_URL=http://.../scan` и `TRIP_API_URL=http://127.0.0.1:8099`.
 
 Бинарник `pocketbase` и `pb_data` в `.gitignore`. Страница на
 http://127.0.0.1:8099/#<ключ> работает с тем же origin.
@@ -107,12 +133,13 @@ http://127.0.0.1:8099/#<ключ> работает с тем же origin.
    будущих миграций и повторного `setup.sh`). Обновить `deploy/.secrets`.
 2. Админка (`./admin.sh`) → Collections → `people` → ⚙ →
    API Rules: в Create, Update и Delete заменить ключ в
-   `@request.headers.x_trip_key = "..."`. Повторить для `items` и `expenses`.
+   `@request.headers.x_trip_key = "..."`. Повторить для `items`, `expenses` и
+   `claims` (у `claims` только Create и Delete).
 3. Разослать новую ссылку `https://trip-planning.svorobovichtom.workers.dev/#<новый ключ>`.
    Старая ссылка продолжит читать, но записывать уже не сможет.
 
 Альтернатива п. 2: новая миграция, которая читает `$os.getenv("TRIP_KEY")` и
-переставляет правила трёх коллекций (как `writeRule()` в `1790000000_init.js`),
+переставляет правила коллекций (`people`, `items`, `expenses`, `claims`) (как `writeRule()` в `1790000000_init.js`),
 затем `./deploy.sh`.
 
 ## Снять все отметки
