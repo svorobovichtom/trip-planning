@@ -199,9 +199,10 @@ function morph(el, text) {
   m.update(text);
 }
 // ---------- config ----------
-// The page is served by Cloudflare (workers.dev); the API is PocketBase on the VM.
-// Served from the VM itself (local dev, old sslip link) it talks to its own origin.
-const SERVER = "https://89-168-118-89.sslip.io";
+// The page is served by Cloudflare (workers.dev); the API is PocketBase on the VM,
+// reached through a Cloudflare Tunnel. Served from PocketBase itself (local dev)
+// the page talks to its own origin.
+const SERVER = "https://trip-api.svorobovich.com";
 const API = /\.(workers|pages)\.dev$|\.github\.io$/.test(location.hostname) || location.protocol === "file:" ? SERVER : location.origin;
 const pb = new PocketBase(API);
 pb.autoCancellation(false);

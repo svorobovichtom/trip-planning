@@ -1,0 +1,26 @@
+[Unit]
+Description=Trip API tunnel (cloudflared -> PocketBase on 127.0.0.1:8090)
+After=network-online.target trip-pb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=trip-tunnel
+Group=trip-tunnel
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/trip-tunnel/config.yml tunnel run
+Restart=always
+RestartSec=5
+# Good neighbour: Flatsy shares this VM.
+MemoryMax=128M
+MemorySwapMax=0
+CPUQuota=25%
+Nice=10
+TasksMax=64
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

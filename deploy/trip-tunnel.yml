@@ -1,0 +1,10 @@
+# cloudflared config for the trip API. Installed as /etc/trip-tunnel/config.yml
+# by deploy/tunnel-setup.sh, which fills in __TUNNEL_ID__.
+# The tunnel only dials out to Cloudflare: no open ports, no Caddy involvement.
+tunnel: __TUNNEL_ID__
+credentials-file: /etc/trip-tunnel/__TUNNEL_ID__.json
+no-autoupdate: true
+ingress:
+  - hostname: trip-api.svorobovich.com
+    service: http://127.0.0.1:8090
+  - service: http_status:404
