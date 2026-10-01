@@ -143,8 +143,17 @@ h2{margin:0;color:var(--text);font-size:13px;font-weight:500}
 dialog{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100%;height:100%;margin:0;color:var(--text)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
 .sheet{position:absolute;left:0;right:0;bottom:0;max-width:540px;margin:0 auto;max-height:90vh;overflow:auto;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));border-radius:14px 14px 0 0;background:var(--bg)}
-dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
-@keyframes up{from{transform:translateY(24px);opacity:0}}
+/* sheets slide up from the bottom edge; closing slides them back before close() */
+dialog:focus,dialog:focus-visible,.sheet:focus{outline:none}
+.x:focus:not(:focus-visible){outline:none}
+.grab{display:block;width:36px;height:4px;margin:-8px auto 12px;border-radius:2px;background:var(--surface-2)}
+dialog:not(.viewer)[open] .sheet{animation:sheetin .38s cubic-bezier(.19,1,.22,1)}
+@keyframes sheetin{from{transform:translateY(100%)}}
+dialog:not(.viewer)[open]::backdrop{animation:fadein .2s ease-out}
+@keyframes fadein{from{opacity:0}}
+dialog:not(.viewer)::backdrop{transition:opacity .2s ease-out}
+dialog.out:not(.viewer)::backdrop{opacity:0}
+dialog.out:not(.viewer) .sheet{transform:translateY(100%);transition:transform .28s cubic-bezier(.19,1,.22,1)}
 .sheet-h{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .sheet h3{margin:0;color:var(--ink);font-size:16px;font-weight:500}
 .x{flex:none;width:44px;height:44px;margin:-10px -12px -10px 0;border:0;background:none;color:var(--muted);font-size:22px;line-height:1}
@@ -154,7 +163,7 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
 .prow .nm{min-width:0;overflow-wrap:anywhere}
 .prow .cur{flex:none;font-size:13px;color:var(--muted)}
 .prow:active{background:var(--surface-2)}
-.join{display:flex;gap:8px}
+.join{display:flex;gap:8px;margin-bottom:4px}
 .join .in{flex:1;min-width:0;background:var(--surface)}
 .sheet .foot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:16px}
 .link{min-height:44px;padding:0;border:0;background:none;color:var(--muted);font-size:14px;font-weight:500}
@@ -411,15 +420,16 @@ dialog.viewer.out::backdrop{opacity:0}
 </dialog>
 
 <dialog id="who" aria-labelledby="whoH">
-  <div class="sheet">
+  <div class="sheet" tabindex="-1" autofocus>
+    <i class="grab" aria-hidden="true"></i>
     <div class="sheet-h"><h3 id="whoH">Кто ты?</h3><button class="x" type="button" id="whoClose" aria-label="Закрыть">×</button></div>
-    <p id="whoP">Твоё имя будет стоять рядом с тем, что ты отметишь.</p>
-    <div id="whoListBox"><h2>Уже здесь</h2><ul class="list" id="whoList"></ul></div>
-    <h2 id="joinH">Меня нет в списке</h2>
+    <p id="whoP">Имя будет видно рядом с тем, что ты отметишь и оплатишь.</p>
+    <h2 id="joinH"><label for="joinName">Впервые здесь? Впиши своё имя</label></h2>
     <form class="join" id="join">
-      <input class="in" name="name" id="joinName" placeholder="Имя" aria-labelledby="joinH" maxlength="40" autocomplete="given-name" enterkeyhint="done" required>
+      <input class="in" name="name" id="joinName" placeholder="Имя" maxlength="40" autocomplete="given-name" enterkeyhint="done" required>
       <button class="btn pri" type="submit">Это я</button>
     </form>
+    <div id="whoListBox"><h2 id="whoListH">Уже заходил — выбери себя</h2><ul class="list" id="whoList" aria-labelledby="whoListH"></ul></div>
     <div class="foot">
       <button class="link" type="button" id="rename" hidden>Исправить моё имя</button>
     </div>
@@ -427,7 +437,8 @@ dialog.viewer.out::backdrop{opacity:0}
 </dialog>
 
 <dialog id="more" aria-labelledby="moreH">
-  <div class="sheet">
+  <div class="sheet" tabindex="-1" autofocus>
+    <i class="grab" aria-hidden="true"></i>
     <div class="sheet-h"><h3 id="moreH">Ещё</h3><button class="x" type="button" id="moreClose" aria-label="Закрыть">×</button></div>
     <div class="menu">
       <h2>Меню</h2>
@@ -925,11 +936,10 @@ $("#list").addEventListener("click", (e) => {
   }
 });
 $("#list").addEventListener("submit", (e) => { e.preventDefault(); submitAdd(e.target); });
-$("#reset").addEventListener("click", () => { more.close(); resetAll(); });
+$("#reset").addEventListener("click", () => { closeSheet(more); resetAll(); });
 const more = $("#more");
-$("#moreBtn").addEventListener("click", () => { if (!more.open) more.showModal(); });
-$("#moreClose").addEventListener("click", () => more.close());
-more.addEventListener("click", (e) => { if (e.target === more) more.close(); });
+$("#moreBtn").addEventListener("click", () => openSheet(more));
+$("#moreClose").addEventListener("click", () => closeSheet(more));
 
 // ---------- tabs ----------
 const TABS = ["list", "exp", "sum"];
@@ -1530,8 +1540,28 @@ $("#csv").addEventListener("click", () => {
 });
 
 // ---------- who am I ----------
+// Bottom sheets. The sheet itself takes focus (autofocus), so the × never
+// shows a focus ring on phones; with a mouse the name field gets focus.
+function openSheet(d, field) {
+  if (d.open && !d.classList.contains("out")) return;
+  clearTimeout(d._t);
+  d.classList.remove("out");
+  if (!d.open) d.showModal();
+  if (field && matchMedia("(hover: hover) and (pointer: fine)").matches) field.focus();
+  else if (document.activeElement !== d.firstElementChild) d.firstElementChild.focus({ preventScroll: true });
+}
+function closeSheet(d) {
+  if (!d.open || d.classList.contains("out")) return;
+  if (reduced()) return d.close();
+  d.classList.add("out");
+  d._t = setTimeout(() => { d.close(); d.classList.remove("out"); }, 280);
+}
+for (const d of document.querySelectorAll("dialog:not(.viewer)")) {
+  d.addEventListener("cancel", (e) => { e.preventDefault(); closeSheet(d); });
+  d.addEventListener("click", (e) => { if (e.target === d) closeSheet(d); });
+}
 const who = $("#who");
-function openWho() { renderWho(); if (!who.open) who.showModal(); }
+function openWho() { renderWho(); openSheet(who, KEY && $("#joinName")); }
 function renderWho() {
   const has = S.people.length > 0;
   $("#whoListBox").hidden = !has;
@@ -1539,29 +1569,25 @@ function renderWho() {
     <li><button class="prow" type="button" data-id="${p.id}" aria-pressed="${p.id === S.me}">
       <span class="nm">${esc(p.name)}</span>${p.id === S.me ? '<span class="cur">это ты</span>' : ""}
     </button></li>`).join("");
-  $("#joinH").textContent = has ? "Меня нет в списке" : "Как тебя зовут?";
-  $("#whoP").textContent = has
-    ? "Выбери себя — имя будет стоять рядом с тем, что ты отметишь."
-    : "Впиши имя — оно будет стоять рядом с тем, что ты отметишь.";
+  $("#joinH").querySelector("label").textContent = has ? "Впервые здесь? Впиши своё имя" : "Как тебя зовут?";
+  $("#whoListH").textContent = KEY ? "Уже заходил — выбери себя" : "Выбери себя";
   $("#join").hidden = !KEY;
   $("#joinH").hidden = !KEY;
   $("#share").hidden = !KEY;
   $("#rename").hidden = !KEY || !person(S.me);
 }
 function setMe(id) {
-  const changed = S.me !== id;
   S.me = id; LS.set("trip.me", id); renderAll();
   const p = person(id);
-  if (p && changed) toast("Отмечаешь как " + p.name);
+  if (p) toast("Отмечаешь как " + p.name);
 }
 $("#meBtn").addEventListener("click", openWho);
-$("#whoClose").addEventListener("click", () => who.close());
-who.addEventListener("click", (e) => { if (e.target === who) who.close(); });
+$("#whoClose").addEventListener("click", () => closeSheet(who));
 $("#whoList").addEventListener("click", (e) => {
   const b = e.target.closest(".prow");
   if (!b) return;
   setMe(b.dataset.id);
-  who.close();
+  closeSheet(who);
 });
 const norm = (s) => s.trim().replace(/\s+/g, " ");
 $("#join").addEventListener("submit", async (e) => {
@@ -1569,7 +1595,7 @@ $("#join").addEventListener("submit", async (e) => {
   const name = norm($("#joinName").value);
   if (!name) return;
   const same = S.people.find((p) => p.name.toLowerCase() === name.toLowerCase());
-  if (same) { setMe(same.id); $("#joinName").value = ""; who.close(); return; }
+  if (same) { setMe(same.id); $("#joinName").value = ""; $("#joinName").blur(); closeSheet(who); return; }
   const btn = e.target.querySelector("button");
   btn.disabled = true;
   try {
@@ -1578,7 +1604,8 @@ $("#join").addEventListener("submit", async (e) => {
     if (!person(r.id)) S.people.push(r);
     $("#joinName").value = "";
     setMe(r.id);
-    who.close();
+    $("#joinName").blur();
+    closeSheet(who);
   } catch (err) {
     toast(isNetErr(err) ? "Нет связи — попробуй, когда появится интернет" : "Не получилось: " + errMsg(err));
   } finally { btn.disabled = false; }
