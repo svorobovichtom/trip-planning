@@ -1,0 +1,53 @@
+/* Confirm dialog (Confirm.tsx): centered card above sheets. */
+.cf-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--backdrop);
+  transition: opacity 0.2s;
+}
+.cf-backdrop[data-starting-style],
+.cf-backdrop[data-ending-style] {
+  opacity: 0;
+}
+.cf-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 61;
+  width: min(340px, calc(100vw - 32px));
+  padding: 20px 16px 16px;
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  outline: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s, transform 0.25s var(--ease);
+}
+.cf-popup[data-starting-style],
+.cf-popup[data-ending-style] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+}
+.cf-title {
+  margin: 0 2px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+}
+.cf-body {
+  margin: 6px 2px 0;
+  font-size: 14px;
+}
+.cf-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.cf-actions .btn {
+  flex: 1;
+}
+.btn.cf-danger {
+  background: var(--surface-2);
+  color: var(--bad);
+}
