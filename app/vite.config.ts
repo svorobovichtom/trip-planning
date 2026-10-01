@@ -73,6 +73,12 @@ export default defineConfig({
   plugins: [react(), serviceWorker()],
   server: { port: 5196, strictPort: true, proxy },
   preview: { port: 5197, strictPort: true, proxy },
-  build: { target: "es2022", sourcemap: false, assetsInlineLimit: 0 },
+  build: {
+    target: "es2022",
+    sourcemap: false,
+    assetsInlineLimit: 0,
+    // lab.html: drawer comparison page for phone testing (not linked in the app).
+    rollupOptions: { input: { index: "index.html", lab: "lab.html" } },
+  },
   test: { environment: "node", include: ["src/**/*.test.ts"] },
 });
