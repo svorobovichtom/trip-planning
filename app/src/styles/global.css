@@ -256,8 +256,11 @@ h2 {
     opacity: 0;
   }
 }
+/* Reduced motion: no decorative motion. Bottom sheets are excluded — their
+   slide is functional (iOS keeps it too), and killing it made them pop in
+   from nowhere and fight the swipe. */
 @media (prefers-reduced-motion: reduce) {
-  *,
+  *:not(.sh-popup):not(.sh-backdrop),
   *::before,
   *::after {
     transition: none !important;

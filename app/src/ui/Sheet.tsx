@@ -7,6 +7,10 @@ import "./ui.css";
  * × to close. Focus goes to the popup itself unless `initialFocus` says
  * otherwise, so phones don't show a focus ring on ×.
  */
+function KeyboardWrap({ on, children }: { on: boolean; children: ReactNode }) {
+  return on ? <Drawer.VirtualKeyboardProvider>{children}</Drawer.VirtualKeyboardProvider> : <>{children}</>;
+}
+
 export function Sheet({
   open,
   onOpenChange,
@@ -14,6 +18,7 @@ export function Sheet({
   children,
   initialFocus,
   className,
+  keyboard = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,6 +26,8 @@ export function Sheet({
   children: ReactNode;
   initialFocus?: RefObject<HTMLElement | null>;
   className?: string;
+  /** The sheet has text fields: keep them above the on-screen keyboard. */
+  keyboard?: boolean;
 }) {
   const popup = useRef<HTMLDivElement>(null);
   // Keyboard: first field/button. Touch/mouse: the sheet itself (no ring on ×),
@@ -31,15 +38,14 @@ export function Sheet({
     return popup.current;
   };
   return (
-    // modal="trap-focus": keep focus inside, but skip Base UI's page scroll
-    // lock. The page itself never scrolls (only #scroll does), and the lock's
-    // body styles shifted the layout under the opening sheet on iOS.
-    <Drawer.Root open={open} onOpenChange={(o) => onOpenChange(o)} modal="trap-focus">
-      <Drawer.VirtualKeyboardProvider>
+    // Same structure as Base UI's bottom-drawer demo. VirtualKeyboardProvider
+    // only for sheets with text fields (`keyboard`), as in their keyboard demo.
+    <Drawer.Root open={open} onOpenChange={(o) => onOpenChange(o)}>
+      <KeyboardWrap on={keyboard}>
         <Drawer.Portal>
           <Drawer.Backdrop className="sh-backdrop" />
           <Drawer.Viewport className="sh-viewport">
-            <Drawer.Popup className={`sh-popup${className ? ` ${className}` : ""}`} ref={popup} initialFocus={focus}>
+            <Drawer.Popup className={`sh-popup${keyboard ? " sh-kb" : ""}${className ? ` ${className}` : ""}`} ref={popup} initialFocus={focus}>
               <i className="sh-grab" aria-hidden="true" />
               <Drawer.Content className="sh-content">
                 <div className="sh-head">
@@ -53,7 +59,7 @@ export function Sheet({
             </Drawer.Popup>
           </Drawer.Viewport>
         </Drawer.Portal>
-      </Drawer.VirtualKeyboardProvider>
+      </KeyboardWrap>
     </Drawer.Root>
   );
 }

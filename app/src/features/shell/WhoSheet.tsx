@@ -24,6 +24,7 @@ export function WhoSheet() {
       }}
       title="Кто ты?"
       initialFocus={canWriteKey ? nameRef : undefined}
+      keyboard
     >
       <p className="lead">Имя будет видно рядом с тем, что ты отметишь и оплатишь.</p>
       {canWriteKey && (

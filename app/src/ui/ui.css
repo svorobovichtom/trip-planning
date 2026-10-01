@@ -1,10 +1,17 @@
-/* Bottom sheets (Base UI Drawer) */
+/* Bottom sheets (Base UI Drawer).
+   Mirrors Base UI's own bottom-drawer demo (docs/…/drawer/demos/position)
+   rule for rule; only colours, radius and max width are ours. Don't add
+   transitions on other properties or swipe-specific overrides: Base UI
+   drives the swipe itself, and every extra rule we tried made it jumpy. */
 .sh-backdrop {
   position: fixed;
+  min-height: 100dvh;
   inset: 0;
   background: var(--backdrop);
-  opacity: calc(1 - var(--drawer-swipe-progress, 0));
-  transition: opacity 0.3s var(--sheet-ease);
+  opacity: calc(1 - var(--drawer-swipe-progress));
+  transition-duration: 450ms;
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 .sh-backdrop[data-starting-style],
 .sh-backdrop[data-ending-style] {
@@ -12,6 +19,9 @@
 }
 .sh-backdrop[data-swiping] {
   transition-duration: 0ms;
+}
+.sh-backdrop[data-ending-style] {
+  transition-duration: calc(var(--drawer-swipe-strength) * 400ms);
 }
 .sh-viewport {
   position: fixed;
@@ -23,41 +33,39 @@
 }
 .sh-popup {
   --bleed: 3rem;
+  box-sizing: border-box;
   width: 100%;
   max-width: 540px;
-  /* svh, not dvh: dvh changes while iOS Safari's toolbar collapses, which
-     made the sheet resize (jump) mid-animation. */
-  max-height: calc(90svh + var(--bleed));
+  max-height: calc(80vh + var(--bleed));
   margin-bottom: calc(-1 * var(--bleed));
-  padding: 20px max(16px, var(--safe-r)) calc(20px + var(--safe-b) + var(--bleed) + var(--drawer-keyboard-inset, 0px)) max(16px, var(--safe-l));
+  padding: 1rem max(16px, var(--safe-r)) 1.5rem max(16px, var(--safe-l));
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--bleed));
   border-radius: 14px 14px 0 0;
   background: var(--bg);
   color: var(--text);
   outline: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  transform: translateY(calc(var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)));
-  transition: transform 0.42s var(--sheet-ease);
+  transition: transform 450ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  transform: translateY(var(--drawer-swipe-movement-y));
 }
 .sh-popup[data-starting-style],
 .sh-popup[data-ending-style] {
   transform: translateY(calc(100% - var(--bleed) + 2px));
 }
 .sh-popup[data-ending-style] {
-  transition-duration: calc(var(--drawer-swipe-strength, 1) * 320ms);
+  transition-duration: calc(var(--drawer-swipe-strength) * 400ms);
 }
-/* Follow the finger 1:1 while dragging; animating each pointer move made
-   swipes lag ~0.4 s behind. */
-.sh-popup[data-swiping] {
-  user-select: none;
-  transition-duration: 0ms;
-  will-change: transform;
+/* Opt-in for sheets with forms: lift content above the on-screen keyboard. */
+.sh-popup.sh-kb {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--bleed) + var(--drawer-keyboard-inset, 0px));
 }
 .sh-grab {
   display: block;
-  width: 36px;
-  height: 4px;
-  margin: -8px auto 12px;
+  width: 3rem;
+  height: 0.25rem;
+  margin: 0 auto 1rem;
   border-radius: 2px;
   background: var(--surface-2);
 }
