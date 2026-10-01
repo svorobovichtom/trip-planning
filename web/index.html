@@ -47,12 +47,13 @@ body{overflow:hidden;overscroll-behavior:none}
 /* header */
 header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.top>div{flex:1;min-width:0}
 h1{margin:0;color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-.005em}
 .sub{margin-top:2px;font-size:14px}
 .me{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-height:44px;max-width:45%;margin-top:-6px;padding:0;border:0;background:none;text-align:right}
 .me .k{font-size:12px;color:var(--muted)}
 .me .nm{max-width:100%;color:var(--ink);font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prog{display:flex;align-items:center;gap:12px;margin-top:16px}
+.prog{display:flex;align-items:center;gap:12px;margin-top:2px}
 .bar{flex:1;height:2px;border-radius:1px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .4s cubic-bezier(.19,1,.22,1)}
 .count{color:var(--ink);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -128,6 +129,79 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
 .sheet .foot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:16px}
 .link{min-height:44px;padding:0;border:0;background:none;color:var(--muted);font-size:14px;font-weight:500}
 
+/* tabs */
+.tabs{display:flex;align-items:center;gap:20px;margin-top:6px}
+.tab{min-height:44px;padding:0;border:0;background:none;color:var(--muted);font-size:14px;font-weight:500;transition:color .15s}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tabs .sync{margin-left:auto}
+
+/* shared pieces for money tabs */
+.pill{min-height:44px;padding:0 14px;border:0;border-radius:999px;background:var(--surface-2);color:var(--text);font-size:14px;font-weight:500;transition:background .15s,color .15s}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.fl{display:block;margin:20px 2px 8px;font-size:13px;font-weight:500;color:var(--muted)}
+.empty-s{padding:20px 14px;color:var(--muted);font-size:14px}
+.h2row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:28px 2px 8px}
+.thumb{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:8px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:500;overflow:hidden;text-decoration:none}
+.thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.thumb svg{width:18px;height:18px}
+
+/* expenses: add */
+.addx{display:grid;gap:8px;margin-top:20px}
+.addx .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn.lg{min-height:52px;font-size:15px}
+/* expenses: editor */
+.ed{margin-top:20px;padding:16px;border-radius:var(--r);background:var(--surface)}
+.ed-h{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.ed-h h3{margin:0;color:var(--ink);font-size:16px;font-weight:500}
+.ed .in{background:var(--surface-2)}
+.rc{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.rc .thumb{width:56px;height:56px}
+.rc-t{flex:1;min-width:0}
+.rc-s{display:block;color:var(--ink);font-size:14px}
+.rc-m{display:block;margin-top:1px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.rc-m:empty{display:none}
+.busy{height:2px;margin-top:8px;border-radius:1px;background:var(--surface-2);overflow:hidden}
+.busy i{display:block;width:30%;height:100%;background:var(--ink);animation:busy 1.2s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes busy{from{transform:translateX(-100%)}to{transform:translateX(340%)}}
+.match{margin-bottom:16px;padding:12px 14px;border-radius:8px;background:var(--bg)}
+.match p{margin:0 0 8px;font-size:14px;color:var(--text)}
+.match b{color:var(--ink);font-weight:500}
+.amt{display:flex;align-items:baseline;gap:8px;padding-bottom:6px;border-bottom:1.5px solid var(--surface-2);transition:border-color .15s}
+.amt:focus-within{border-color:var(--ink)}
+.amt input{flex:1;min-width:0;padding:0;border:0;background:none;outline:none;color:var(--ink);font-size:40px;font-weight:500;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.amt input::placeholder{color:var(--muted)}
+.amt span{font-size:20px;color:var(--muted)}
+.seg{display:flex;gap:6px}
+.ed-f{display:flex;align-items:center;gap:8px;margin-top:24px}
+.ed-f .sp{flex:1}
+.link.bad{color:var(--bad)}
+/* expenses: list */
+.exps>li{align-items:center}
+.exps .thumb{margin-left:14px}
+.xrow{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px 10px 12px;border:0;background:none;text-align:left}
+.xrow:active{background:var(--surface-2)}
+.xrow .txt{flex:1}
+.xamt{flex:none;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* totals */
+.hero{margin-top:24px}
+.k{font-size:13px;color:var(--muted)}
+.hero .v{margin-top:2px;color:var(--ink);font-size:40px;font-weight:500;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:32px;margin-top:14px}
+.stats b{display:block;margin-top:2px;color:var(--ink);font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+.kv>li{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:12px 14px}
+.kv .l{min-width:0;color:var(--ink);overflow-wrap:anywhere}
+.kv .l i{font-style:normal;color:var(--muted);padding:0 6px}
+.kv .r{flex:none;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv .s{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
+.bars>li{display:block;padding:12px 14px}
+.bars .l{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--ink)}
+.bars .l b{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.track{height:4px;margin-top:8px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.track i{display:block;height:100%;border-radius:2px;background:var(--ink)}
+.sum-f{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+
 /* toast */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:50;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:14px;font-weight:500;opacity:0;transform:translate(-50%,8px) scale(.97);pointer-events:none;transition:opacity .2s,transform .35s cubic-bezier(.19,1,.22,1)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -139,20 +213,29 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
   <header><div class="hin">
     <div class="top">
       <div>
-        <h1 id="title">Покупки в Ашан</h1>
-        <div class="sub"><span id="ppl"></span>ужин пт → завтрак вс · гриль</div>
+        <h1><span id="title">Покупки в Ашан</span></h1>
+        <div class="sub" id="sub">ужин пт → завтрак вс · гриль</div>
       </div>
       <button class="me empty" id="meBtn" type="button" aria-haspopup="dialog"><span class="k" id="meK">ты не выбран</span><span class="nm" id="meName">Кто ты?</span></button>
     </div>
-    <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span></div>
-    <div class="tools">
-      <button class="chip" id="hide" type="button">Скрыть купленное</button>
-      <button class="chip" id="reset" type="button">Сбросить</button>
+    <div class="tabs" role="tablist" aria-label="Разделы">
+      <button class="tab" role="tab" id="t-list" data-tab="list" aria-controls="p-list" aria-selected="true" type="button">Список</button>
+      <button class="tab" role="tab" id="t-exp" data-tab="exp" aria-controls="p-exp" aria-selected="false" tabindex="-1" type="button">Расходы</button>
+      <button class="tab" role="tab" id="t-sum" data-tab="sum" aria-controls="p-sum" aria-selected="false" tabindex="-1" type="button">Итоги</button>
       <span class="sync" id="sync" role="status" aria-live="polite">подключаюсь…</span>
+    </div>
+    <div class="only-list">
+      <div class="prog"><div class="bar"><i id="bar"></i></div><span class="count" id="count">0 / 0</span></div>
+      <div class="tools">
+        <button class="chip" id="hide" type="button">Скрыть купленное</button>
+        <button class="chip" id="reset" type="button">Сбросить</button>
+      </div>
     </div>
   </div></header>
 
   <div class="scroll" id="scroll"><div class="wrap">
+
+  <div id="p-list" role="tabpanel" aria-labelledby="t-list">
 
   <div class="ro" id="ro" hidden>Только просмотр. Чтобы отмечать, попроси ссылку с ключом.</div>
 
@@ -169,6 +252,89 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
     </dl>
   </div>
   <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
+  </div>
+
+  <div id="p-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
+    <div class="ro" id="roExp" hidden>Только просмотр. Чтобы добавлять чеки, попроси ссылку с ключом.</div>
+    <div class="addx" id="addx">
+      <button class="btn pri lg" type="button" id="aCam">Сфотографировать чек</button>
+      <div class="two">
+        <button class="btn" type="button" id="aPick">Из галереи</button>
+        <button class="btn" type="button" id="aManual">Ввести вручную</button>
+      </div>
+      <input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="fPick" accept="image/*,application/pdf" hidden>
+    </div>
+
+    <form class="ed" id="ed" hidden novalidate aria-labelledby="edH">
+      <div class="ed-h"><h3 id="edH">Новый чек</h3><button class="x" type="button" id="edClose" aria-label="Закрыть">×</button></div>
+      <div class="rc" id="rc" hidden>
+        <a class="thumb" id="rcThumb" target="_blank" rel="noopener"></a>
+        <div class="rc-t">
+          <span class="rc-s" id="rcS"></span>
+          <span class="rc-m" id="rcM"></span>
+          <div class="busy" id="rcBusy" hidden><i></i></div>
+        </div>
+        <button class="link" type="button" id="rcRm">Убрать</button>
+      </div>
+      <div class="match" id="match" hidden>
+        <p id="matchP"></p>
+        <button class="btn" type="button" id="matchBtn">Отметить купленными</button>
+      </div>
+      <label class="amt"><input id="fAmount" inputmode="decimal" placeholder="0,00" autocomplete="off" aria-label="Сумма" enterkeyhint="done"><span>zł</span></label>
+      <div class="fl" id="catL">Категория</div>
+      <div class="pills" id="fCats" role="group" aria-labelledby="catL"></div>
+      <div class="fl" id="paidL">Кто платил</div>
+      <div class="pills" id="fPaid" role="group" aria-labelledby="paidL"></div>
+      <label class="fl" for="fTitle">Что купили</label>
+      <input class="in" id="fTitle" maxlength="120" placeholder="Магазин или что купили" autocomplete="off" enterkeyhint="done">
+      <label class="fl" for="fDate">Дата</label>
+      <input class="in" id="fDate" type="date">
+      <div class="fl" id="splitL">На кого делим</div>
+      <div class="seg" role="group" aria-labelledby="splitL">
+        <button class="pill" type="button" data-split="all" aria-pressed="true">На всех</button>
+        <button class="pill" type="button" data-split="some" aria-pressed="false">Выбрать людей</button>
+      </div>
+      <div class="pills" id="fSplit" hidden style="margin-top:8px"></div>
+      <div class="ed-f">
+        <button class="link bad" type="button" id="fDel" hidden>Удалить</button>
+        <span class="sp"></span>
+        <button class="btn" type="button" id="fCancel">Отмена</button>
+        <button class="btn pri" type="submit" id="fSave">Сохранить</button>
+      </div>
+    </form>
+
+    <div class="h2row"><h2>Чеки</h2><span class="sec-n" id="expN"></span></div>
+    <ul class="list exps" id="expList"></ul>
+  </div>
+
+  <div id="p-sum" role="tabpanel" aria-labelledby="t-sum" hidden>
+    <div id="sumEmpty" hidden>
+      <div class="hero"><div class="k">Всего потрачено</div><div class="v">0 zł</div></div>
+      <p class="note" style="margin-top:12px">Чеков пока нет. Добавь первый во вкладке «Расходы» — и здесь появится, кто кому сколько переводит.</p>
+      <button class="btn" type="button" id="goExp" style="margin-top:16px">Добавить чек</button>
+    </div>
+    <div id="sumBody" hidden>
+      <div class="hero">
+        <div class="k">Всего потрачено</div>
+        <div class="v" id="sTotal"></div>
+        <div class="stats">
+          <div><span class="k">На человека</span><b id="sAvg"></b></div>
+          <div><span class="k">Чеков</span><b id="sN"></b></div>
+        </div>
+      </div>
+      <div class="h2row"><h2>Кто кому переводит</h2><span class="sec-n" id="txN"></span></div>
+      <ul class="list kv" id="txList"></ul>
+      <div class="h2row"><h2>По категориям</h2></div>
+      <ul class="list bars" id="catList"></ul>
+      <div class="h2row"><h2>По людям</h2></div>
+      <ul class="list kv" id="pplList"></ul>
+      <div class="sum-f">
+        <p class="note" style="margin:0" id="sumNote"></p>
+        <button class="btn" type="button" id="csv">Скачать CSV</button>
+      </div>
+    </div>
+  </div>
   </div></div>
 </div>
 
@@ -235,6 +401,8 @@ pb.beforeSend = (url, options) => {
 const S = {
   people: [],                 // sorted
   items: new Map(),           // id -> record
+  expenses: new Map(),        // id -> record
+  tab: null,
   me: LS.get("trip.me"),
   online: false,
   loaded: false,
@@ -317,13 +485,15 @@ function plural(n, one, few, many) {
 // ---------- data ----------
 async function reloadAll() {
   try {
-    const [people, items] = await Promise.all([
+    const [people, items, expenses] = await Promise.all([
       pb.collection("people").getFullList({ sort: "sort,created" }),
       pb.collection("items").getFullList({ sort: "sort,created" }),
+      pb.collection("expenses").getFullList({ sort: "-created" }),
     ]);
     S.people = people;
     S.items = new Map(items.map((r) => [r.id, r]));
-    LS.set("trip.snap", JSON.stringify({ people, items }));
+    S.expenses = new Map(expenses.map((r) => [r.id, r]));
+    LS.set("trip.snap", JSON.stringify({ people, items, expenses }));
     // keep optimistic values for writes that are still queued
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
@@ -351,7 +521,7 @@ function onItemEvent(e) {
 let snapT;
 function saveSnap() {
   clearTimeout(snapT);
-  snapT = setTimeout(() => LS.set("trip.snap", JSON.stringify({ people: S.people, items: [...S.items.values()] })), 500);
+  snapT = setTimeout(() => LS.set("trip.snap", JSON.stringify({ people: S.people, items: [...S.items.values()], expenses: [...S.expenses.values()] })), 500);
 }
 function onPeopleEvent(e) {
   const r = e.record;
@@ -375,6 +545,7 @@ async function connect() {
     });
     await pb.collection("items").subscribe("*", onItemEvent);
     await pb.collection("people").subscribe("*", onPeopleEvent);
+    await pb.collection("expenses").subscribe("*", onExpenseEvent);
   } catch (e) { setOnline(false); setTimeout(connect, 4000); }
 }
 pb.realtime.onDisconnect = () => setOnline(false);
@@ -385,15 +556,13 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // ---------- render: header ----------
-function renderAll() { renderMe(); renderList(); renderWho(); }
+function renderAll() { renderMe(); renderList(); renderWho(); renderMoney(); renderSub(); }
 function renderMe() {
   const p = person(S.me), b = $("#meBtn");
   b.classList.toggle("empty", !p);
   morph($("#meK"), p ? "отмечаю как" : "ты не выбран");
   morph($("#meName"), p ? p.name : "Кто ты?");
   b.setAttribute("aria-label", p ? `Отмечаю как ${p.name}. Сменить` : "Выбрать, кто ты");
-  const n = S.people.length;
-  $("#ppl").textContent = n ? `${n} ${plural(n, "человек", "человека", "человек")} · ` : "";
 }
 
 // ---------- render: list ----------
@@ -542,6 +711,481 @@ $("#list").addEventListener("submit", (e) => { e.preventDefault(); submitAdd(e.t
 $("#hide").addEventListener("click", () => { S.hide = !S.hide; LS.set("trip.hide", S.hide ? "1" : null); renderList(); });
 $("#reset").addEventListener("click", resetAll);
 
+// ---------- tabs ----------
+const TABS = ["list", "exp", "sum"];
+const TITLES = { list: "Покупки в Ашан", exp: "Расходы", sum: "Итоги" };
+const tabScroll = {};
+function setTab(tab, focus) {
+  if (!TABS.includes(tab)) tab = "list";
+  const sc = $("#scroll");
+  if (S.tab) tabScroll[S.tab] = sc.scrollTop;
+  S.tab = tab;
+  LS.set("trip.tab", tab === "list" ? null : tab);
+  for (const t of TABS) {
+    const b = $("#t-" + t), on = t === tab;
+    b.setAttribute("aria-selected", String(on));
+    b.tabIndex = on ? 0 : -1;
+    $("#p-" + t).hidden = !on;
+    if (on && focus) b.focus();
+  }
+  for (const el of document.querySelectorAll(".only-list")) el.hidden = tab !== "list";
+  morph($("#title"), TITLES[tab]);
+  document.title = TITLES[tab];
+  renderSub();
+  sc.scrollTop = tabScroll[tab] || 0;
+}
+function renderSub() {
+  const n = S.people.length, ppl = n ? `${n} ${plural(n, "человек", "человека", "человек")}` : "";
+  let t;
+  if (S.tab === "exp" || S.tab === "sum") {
+    const c = S.expenses.size;
+    t = c ? `${c} ${plural(c, "чек", "чека", "чеков")} · ${fmtG(totalG())}` : "чеков пока нет";
+    if (S.tab === "sum" && ppl) t = ppl + " · " + t;
+  } else t = (ppl ? ppl + " · " : "") + "ужин пт → завтрак вс · гриль";
+  $("#sub").textContent = t;   // plain text: it may wrap on narrow phones
+}
+$(".tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) setTab(b.dataset.tab); });
+$(".tabs").addEventListener("keydown", (e) => {
+  const i = TABS.indexOf(S.tab);
+  if (e.key === "ArrowRight") setTab(TABS[(i + 1) % 3], true);
+  else if (e.key === "ArrowLeft") setTab(TABS[(i + 2) % 3], true);
+});
+
+// ---------- money ----------
+// Amounts are PLN numbers in the database; everything here is integer grosze.
+const CATS = ["Мясо и рыба", "Молочка и яйца", "Овощи и зелень", "Фрукты", "Бакалея", "Снеки", "Гриль и быт", "Напитки и алкоголь", "Жильё", "Транспорт и бензин", "Другое"];
+const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "PLN", currencyDisplay: "narrowSymbol" });
+const fmtG = (g) => money.format(g / 100);
+const fmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + fmtG(Math.abs(g));
+const grosze = (a) => Math.round(Number(a || 0) * 100);
+const fmtDayI = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" });
+const fmtDay = { format: (d) => fmtDayI.format(d).replace(/\s/g, "\u00a0") };
+const ICON_RECEIPT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>';
+const totalG = () => { let t = 0; for (const x of S.expenses.values()) t += grosze(x.amount); return t; };
+const sortedExpenses = () => [...S.expenses.values()].sort((a, b) => String(b.created).localeCompare(String(a.created)));
+const pad2 = (n) => String(n).padStart(2, "0");
+const dayStr = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+function onExpenseEvent(e) {
+  if (e.action === "delete") {
+    S.expenses.delete(e.record.id);
+    if (F.open && F.editing === e.record.id) { closeEditor(); toast("Этот чек удалили"); }
+  } else S.expenses.set(e.record.id, e.record);
+  renderMoney();
+  saveSnap();
+}
+
+// Split an amount (grosze) evenly between ids; leftover grosze go one each to
+// the first people in list order, so the parts always add up exactly.
+function splitEven(g, ids, into) {
+  if (!ids.length || !g) return;
+  const base = Math.floor(g / ids.length), rem = g - base * ids.length;
+  ids.forEach((id, i) => into.set(id, (into.get(id) || 0) + base + (i < rem ? 1 : 0)));
+}
+function splitIds(x) {
+  const order = S.people.map((p) => p.id);
+  const ids = (x.split_between || []).filter((id) => order.includes(id));
+  return (ids.length ? ids.sort((a, b) => order.indexOf(a) - order.indexOf(b)) : order);
+}
+// Who owes what for one expense: Map(personId -> grosze).
+function shares(x) {
+  const out = new Map();
+  splitEven(grosze(x.amount), splitIds(x), out);
+  return out;
+}
+function ledger() {
+  const paid = new Map(), owes = new Map(), cats = new Map();
+  let total = 0;
+  for (const p of S.people) { paid.set(p.id, 0); owes.set(p.id, 0); }
+  for (const x of S.expenses.values()) {
+    const g = grosze(x.amount);
+    total += g;
+    cats.set(x.category || "Другое", (cats.get(x.category || "Другое") || 0) + g);
+    if (paid.has(x.paid_by)) paid.set(x.paid_by, paid.get(x.paid_by) + g);
+    for (const [id, s] of shares(x)) if (owes.has(id)) owes.set(id, owes.get(id) + s);
+  }
+  const bal = new Map(S.people.map((p) => [p.id, paid.get(p.id) - owes.get(p.id)]));
+  return { total, paid, owes, bal, cats };
+}
+// Greedy settle-up: the biggest debtor pays the biggest creditor until square.
+function settle(bal) {
+  const cred = [], debt = [];
+  for (const [id, b] of bal) { if (b > 0) cred.push([id, b]); else if (b < 0) debt.push([id, -b]); }
+  cred.sort((a, b) => b[1] - a[1]); debt.sort((a, b) => b[1] - a[1]);
+  const out = [];
+  let i = 0, j = 0;
+  while (i < debt.length && j < cred.length) {
+    const amt = Math.min(debt[i][1], cred[j][1]);
+    if (amt > 0) out.push({ from: debt[i][0], to: cred[j][0], g: amt });
+    debt[i][1] -= amt; cred[j][1] -= amt;
+    if (!debt[i][1]) i++;
+    if (!cred[j][1]) j++;
+  }
+  return out;
+}
+
+function renderMoney() { if (!S.loaded) return; renderExpList(); renderSum(); if (F.open) renderEditor(); renderSub(); }
+
+// ---------- expenses: editor ----------
+const F = {
+  open: false, editing: null, cat: null, paid: null, split: "all", pick: new Set(),
+  file: null, fileUrl: null, removeFile: false, dateOrig: "",
+  scan: null,          // {state: "busy"|"ok"|"fail", text, meta}
+  seq: 0, matched: [], marked: 0, lines: null,
+};
+function openEditor(x) {
+  closeEditor(true);
+  Object.assign(F, {
+    open: true, editing: x ? x.id : null, cat: x ? x.category : null, paid: x ? x.paid_by : S.me,
+    split: x && (x.split_between || []).length ? "some" : "all", pick: new Set(x ? x.split_between || [] : []),
+    file: null, removeFile: false, scan: null, matched: [], marked: 0, lines: x && Array.isArray(x.lines) ? x.lines : null,
+  });
+  const d = x ? parseDate(x.spent_at || x.created) : new Date();
+  F.dateOrig = d && !isNaN(d) ? dayStr(d) : "";
+  $("#fAmount").value = x ? String(x.amount).replace(".", ",") : "";
+  $("#fTitle").value = x ? x.title || "" : "";
+  $("#fDate").value = F.dateOrig;
+  $("#ed").hidden = false;
+  $("#addx").hidden = true;
+  renderEditor();
+  $("#scroll").scrollTo({ top: 0 });
+}
+function closeEditor(quiet) {
+  F.seq++;   // drop any scan still running
+  if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
+  Object.assign(F, { open: false, editing: null, file: null, fileUrl: null, scan: null, matched: [], lines: null });
+  $("#fCam").value = ""; $("#fPick").value = "";
+  if (quiet) return;
+  $("#ed").hidden = true;
+  $("#addx").hidden = !KEY;
+}
+function renderEditor() {
+  const ed = F.editing && S.expenses.get(F.editing);
+  $("#edH").textContent = ed ? "Изменить чек" : "Новый чек";
+  $("#fDel").hidden = !ed;
+  $("#fCats").innerHTML = CATS.map((c) => `<button class="pill" type="button" data-cat="${esc(c)}" aria-pressed="${c === F.cat}">${esc(c)}</button>`).join("");
+  const paid = F.paid || S.me;
+  $("#fPaid").innerHTML = S.people.map((p) => `<button class="pill" type="button" data-pid="${p.id}" aria-pressed="${p.id === paid}">${esc(p.name)}</button>`).join("");
+  for (const b of document.querySelectorAll(".seg .pill")) b.setAttribute("aria-pressed", String(b.dataset.split === F.split));
+  const pick = $("#fSplit");
+  pick.hidden = F.split !== "some";
+  pick.innerHTML = S.people.map((p) => `<button class="pill" type="button" data-pid="${p.id}" aria-pressed="${F.pick.has(p.id)}">${esc(p.name)}</button>`).join("");
+  renderReceipt();
+}
+function renderReceipt() {
+  const ed = F.editing && S.expenses.get(F.editing);
+  const box = $("#rc"), th = $("#rcThumb");
+  const hasOld = ed && ed.receipt && !F.removeFile && !F.file;
+  box.hidden = !F.file && !hasOld;
+  if (!box.hidden) {
+    if (F.file) {
+      const isPdf = F.file.type === "application/pdf";
+      th.innerHTML = isPdf ? "PDF" : `<img src="${F.fileUrl}" alt="">`;
+      th.href = F.fileUrl;
+    } else {
+      th.innerHTML = receiptInner(ed);
+      th.href = pb.files.getURL(ed, ed.receipt);
+    }
+    th.setAttribute("aria-label", "Открыть чек");
+    const sc = F.scan;
+    morph($("#rcS"), sc ? sc.text : F.file ? "Фото чека" : "Чек приложен");
+    $("#rcM").textContent = sc && sc.meta || "";
+    $("#rcBusy").hidden = !(sc && sc.state === "busy");
+  }
+  const m = F.matched.map((id) => S.items.get(id)).filter(Boolean);
+  const left = m.filter((it) => !it.done);
+  $("#match").hidden = !m.length;
+  if (m.length) {
+    const names = m.map((it) => it.name.charAt(0).toLowerCase() + it.name.slice(1)).join(", ");
+    $("#matchP").innerHTML = F.marked && !left.length
+      ? `Отмечено купленными: <b>${esc(names)}</b>`
+      : `Нашлось в списке: <b>${esc(names)}</b>`;
+    $("#matchBtn").hidden = !left.length;
+  }
+}
+function receiptInner(x) {
+  if (!x.receipt) return ICON_RECEIPT;
+  if (/\.pdf$/i.test(x.receipt)) return "PDF";
+  return `<img src="${pb.files.getURL(x, x.receipt, { thumb: "400x0" })}" alt="" loading="lazy">`;
+}
+function parseAmount(s) {
+  const t = String(s).replace(/[\s ]|zł|pln/gi, "").replace(",", ".");
+  if (!/^\d*\.?\d*$/.test(t) || !t || t === ".") return NaN;
+  return Math.round(Number(t) * 100) / 100;
+}
+
+// Downscale photos to <= 1600 px JPEG: quick to upload and to recognise.
+async function compressImage(file) {
+  if (!/^image\//.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    if (k === 1 && file.type === "image/jpeg" && file.size < 1.5e6) return file;
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close && bmp.close();
+    const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.82));
+    if (!blob) return file;
+    return new File([blob], (file.name || "receipt").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch { return file; }
+}
+async function onPicked(input) {
+  const f0 = input.files && input.files[0];
+  input.value = "";
+  if (!f0) return;
+  if (!F.open) openEditor(null);
+  const seq = ++F.seq;
+  F.scan = { state: "busy", text: "Готовлю фото…" };
+  F.matched = []; F.marked = 0;
+  renderEditor();
+  const f = await compressImage(f0);
+  if (seq !== F.seq) return;
+  if (f.size > 10 * 1024 * 1024) { F.scan = null; renderReceipt(); toast("Файл больше 10 МБ"); return; }
+  if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
+  F.file = f; F.fileUrl = URL.createObjectURL(f); F.removeFile = false;
+  if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
+    F.scan = { state: "fail", text: f.type === "application/pdf" ? "PDF приложен" : "Фото приложено", meta: "Этот формат не распознаю — введи сумму вручную" };
+    renderReceipt();
+    return;
+  }
+  scanReceipt(f, seq);
+}
+
+// POST /scan (Cloudflare Worker on the site's origin). Fills only empty fields.
+async function scanReceipt(file, seq) {
+  const t0 = Date.now();
+  const tick = () => {
+    if (seq !== F.seq || !F.scan || F.scan.state !== "busy") return;
+    const s = Math.round((Date.now() - t0) / 1000);
+    F.scan.text = s < 4 ? "Распознаю чек…" : `Распознаю чек · ${s} с`;
+    F.scan.meta = s >= 20 ? "Долго думает, подожди ещё немного" : "";
+    renderReceipt();
+  };
+  const iv = setInterval(tick, 1000);
+  tick();
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 45000);
+  let res = null, err = null, body = null;
+  try {
+    const fd = new FormData();
+    fd.append("image", file, "receipt.jpg");
+    const items = [...S.items.values()].filter((i) => !i.done).slice(0, 200).map((i) => ({ id: i.id, name: i.name, pl: i.pl || "" }));
+    if (items.length) fd.append("items", JSON.stringify(items));
+    res = await fetch("/scan", { method: "POST", headers: { "X-Trip-Key": KEY || "" }, body: fd, signal: ac.signal });
+    body = await res.json().catch(() => null);
+  } catch (e) { err = e; }
+  clearInterval(iv); clearTimeout(to);
+  if (seq !== F.seq) return;
+  const fail = (meta) => { F.scan = { state: "fail", text: "Не распознал", meta }; renderReceipt(); if (!$("#fAmount").value) $("#fAmount").focus(); };
+  if (err) return fail(err.name === "AbortError" ? "Слишком долго — введи сумму вручную" : "Нет связи — распознавание недоступно, введи вручную");
+  if (res.status === 404 || res.status === 405) return fail("Распознавание недоступно, введи вручную");
+  if (res.status === 401) return fail("Ключ не подошёл — введи сумму вручную");
+  if (!res.ok || !body || typeof body !== "object") return fail("Не получилось распознать — введи сумму вручную");
+
+  const filled = [];
+  if (body.total > 0 && !$("#fAmount").value.trim()) { $("#fAmount").value = String(Math.round(body.total * 100) / 100).replace(".", ","); filled.push(fmtG(grosze(body.total))); }
+  else if (body.total > 0) filled.push(fmtG(grosze(body.total)));
+  if (body.store && !$("#fTitle").value.trim()) $("#fTitle").value = niceStore(body.store);
+  if (body.category && CATS.includes(body.category) && !F.cat) F.cat = body.category;
+  if (body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !F.editing) $("#fDate").value = body.date;
+  F.lines = Array.isArray(body.lines) ? body.lines.filter((l) => l && l.text) : null;
+  F.matched = (Array.isArray(body.matched) ? body.matched : []).filter((id) => { const it = S.items.get(id); return it && !it.done; });
+  const meta = [body.store && niceStore(body.store), body.total > 0 ? fmtG(grosze(body.total)) : "сумму не нашёл", body.date ? fmtDay.format(new Date(body.date + "T12:00")) : ""].filter(Boolean).join(" · ");
+  F.scan = { state: "ok", text: "Распознано — проверь", meta };
+  renderEditor();
+  if (!(body.total > 0)) $("#fAmount").focus();
+}
+
+// Receipts print the shop in capitals ("AUCHAN"); "Auchan" reads better as a title.
+function niceStore(s) {
+  s = String(s).trim();
+  if (s !== s.toUpperCase() || !/[A-ZА-ЯŁŚŻŹĆŃÓĘĄ]/.test(s)) return s;
+  return s.toLowerCase().replace(/(^|[\s\-\/.(])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+}
+function markMatched() {
+  if (!canWrite()) return;
+  const at = new Date().toISOString();
+  let n = 0;
+  for (const id of F.matched) {
+    const it = S.items.get(id);
+    if (!it || it.done) continue;
+    const patch = { done: true, done_by: S.me, done_at: at };
+    Object.assign(it, patch);
+    queueUpdate("items", id, patch);
+    n++;
+  }
+  F.marked += n;
+  renderList();
+  renderReceipt();
+  if (n) toast(`Отмечено: ${n}`);
+}
+
+function spentAtValue() {
+  const v = $("#fDate").value;
+  if (F.editing && v === F.dateOrig) return undefined;          // unchanged
+  if (!v || v === dayStr(new Date())) return new Date().toISOString();
+  const [y, m, d] = v.split("-").map(Number);
+  return new Date(y, m - 1, d, 12).toISOString();
+}
+async function saveExpense() {
+  if (!canWrite()) return;
+  const amount = parseAmount($("#fAmount").value);
+  if (!(amount >= 0.01)) { toast("Введи сумму"); $("#fAmount").focus(); return; }
+  if (amount > 1000000) { toast("Слишком большая сумма"); return; }
+  if (!F.cat) { toast("Выбери категорию"); $("#fCats").scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+  const paid = F.paid || S.me;
+  if (!person(paid)) { toast("Выбери, кто платил"); return; }
+  const pick = [...F.pick].filter((id) => person(id));
+  if (F.split === "some" && !pick.length) { toast("Выбери, на кого делим"); return; }
+  const data = {
+    amount, currency: "PLN", category: F.cat, paid_by: paid,
+    title: $("#fTitle").value.trim(),
+    split_between: F.split === "some" && pick.length < S.people.length ? pick : [],
+  };
+  const at = spentAtValue();
+  if (at) data.spent_at = at;
+  if (F.file) data.receipt = F.file;
+  else if (F.editing && F.removeFile) data.receipt = null;
+  if (navigator.onLine === false) { toast("Нет связи — чек не сохранён, форма осталась"); return; }
+  const btn = $("#fSave"), wasEdit = !!F.editing;
+  btn.disabled = true; btn.textContent = F.file ? "Загружаю…" : "Сохраняю…";
+  try {
+    const rec = wasEdit ? await pb.collection("expenses").update(F.editing, data) : await pb.collection("expenses").create(data);
+    S.expenses.set(rec.id, rec);
+    closeEditor();
+    renderMoney();
+    saveSnap();
+    toast(wasEdit ? "Сохранено" : "Чек добавлен · " + fmtG(grosze(rec.amount)));
+  } catch (e) {
+    toast(isNetErr(e) ? "Нет связи — чек не сохранён, форма осталась" : "Не сохранилось: " + errMsg(e));
+  } finally {
+    btn.disabled = false; btn.textContent = "Сохранить";
+  }
+}
+async function deleteExpense() {
+  const x = F.editing && S.expenses.get(F.editing);
+  if (!x || !canWrite()) return;
+  if (!confirm(`Удалить чек «${x.title || x.category}» на ${fmtG(grosze(x.amount))}?`)) return;
+  try {
+    await pb.collection("expenses").delete(x.id);
+    S.expenses.delete(x.id);
+    closeEditor();
+    renderMoney();
+    saveSnap();
+    toast("Чек удалён");
+  } catch (e) { toast(isNetErr(e) ? "Нет связи — не удалилось" : "Не удалилось: " + errMsg(e)); }
+}
+
+$("#aCam").addEventListener("click", () => { if (canWrite()) $("#fCam").click(); });
+$("#aPick").addEventListener("click", () => { if (canWrite()) $("#fPick").click(); });
+$("#aManual").addEventListener("click", () => { if (canWrite()) { openEditor(null); $("#fAmount").focus(); } });
+$("#fCam").addEventListener("change", (e) => onPicked(e.target));
+$("#fPick").addEventListener("change", (e) => onPicked(e.target));
+$("#rcRm").addEventListener("click", () => {
+  F.seq++;
+  if (F.file) { URL.revokeObjectURL(F.fileUrl); F.file = null; F.fileUrl = null; }
+  else F.removeFile = true;
+  F.scan = null; F.matched = [];
+  renderReceipt();
+});
+$("#matchBtn").addEventListener("click", markMatched);
+$("#fCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (b) { F.cat = F.cat === b.dataset.cat ? null : b.dataset.cat; renderEditor(); } });
+$("#fPaid").addEventListener("click", (e) => { const b = e.target.closest("[data-pid]"); if (b) { F.paid = b.dataset.pid; renderEditor(); } });
+$(".seg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-split]");
+  if (!b) return;
+  F.split = b.dataset.split;
+  if (F.split === "some" && !F.pick.size) for (const p of S.people) F.pick.add(p.id);
+  renderEditor();
+});
+$("#fSplit").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pid]");
+  if (!b) return;
+  F.pick.has(b.dataset.pid) ? F.pick.delete(b.dataset.pid) : F.pick.add(b.dataset.pid);
+  renderEditor();
+});
+$("#fAmount").addEventListener("input", (e) => { const v = e.target.value.replace(/[^\d.,\s]/g, ""); if (v !== e.target.value) e.target.value = v; });
+$("#ed").addEventListener("submit", (e) => { e.preventDefault(); saveExpense(); });
+$("#fCancel").addEventListener("click", () => closeEditor());
+$("#edClose").addEventListener("click", () => closeEditor());
+$("#fDel").addEventListener("click", deleteExpense);
+
+// ---------- expenses: list ----------
+function renderExpList() {
+  const xs = sortedExpenses();
+  morph($("#expN"), xs.length ? `${xs.length} · ${fmtG(totalG())}` : "");
+  const ul = $("#expList");
+  if (!xs.length) { ul.innerHTML = `<li class="empty-s">Чеков пока нет. ${KEY ? "Сфотографируй первый — сумма и категория подставятся сами." : ""}</li>`; return; }
+  ul.innerHTML = xs.map((x) => {
+    const p = person(x.paid_by);
+    const n = (x.split_between || []).filter((id) => person(id)).length;
+    const when = parseDate(x.spent_at || x.created);
+    const meta = [x.title ? x.category : "", "платил " + (p ? p.name : "?"), n && n < S.people.length ? "на " + n : "на всех", when && !isNaN(when) ? fmtDay.format(when) : ""].filter(Boolean).join(" · ");
+    const thumb = x.receipt
+      ? `<a class="thumb" href="${pb.files.getURL(x, x.receipt)}" target="_blank" rel="noopener" aria-label="Открыть чек">${receiptInner(x)}</a>`
+      : `<span class="thumb">${ICON_RECEIPT}</span>`;
+    return `<li data-id="${x.id}">${thumb}<button class="xrow" type="button"${KEY ? ' aria-label="Изменить: ' + esc(x.title || x.category) + '"' : ""}>
+        <span class="txt"><span class="name">${esc(x.title || x.category)}</span><span class="pl">${esc(meta)}</span></span>
+        <span class="xamt">${fmtG(grosze(x.amount))}</span>
+      </button></li>`;
+  }).join("");
+}
+$("#expList").addEventListener("click", (e) => {
+  const row = e.target.closest(".xrow");
+  if (!row) return;
+  const x = S.expenses.get(row.parentElement.dataset.id);
+  if (!x) return;
+  if (!KEY) return toast("Только просмотр — попроси ссылку с ключом");
+  openEditor(x);
+});
+
+// ---------- totals ----------
+function renderSum() {
+  const has = S.expenses.size > 0;
+  $("#sumEmpty").hidden = has;
+  $("#sumBody").hidden = !has;
+  if (!has) return;
+  const L = ledger(), n = S.people.length || 1;
+  morph($("#sTotal"), fmtG(L.total));
+  morph($("#sAvg"), fmtG(Math.round(L.total / n)));
+  morph($("#sN"), String(S.expenses.size));
+  const name = (id) => esc((person(id) || {}).name || "?");
+  const tx = settle(L.bal);
+  morph($("#txN"), tx.length ? `${tx.length} ${plural(tx.length, "перевод", "перевода", "переводов")}` : "");
+  $("#txList").innerHTML = tx.length
+    ? tx.map((t) => `<li><span class="l">${name(t.from)}<i>→</i>${name(t.to)}</span><span class="r">${fmtG(t.g)}</span></li>`).join("")
+    : '<li class="empty-s">Все в расчёте</li>';
+  const cats = [...L.cats].sort((a, b) => b[1] - a[1]);
+  const max = cats.length ? cats[0][1] : 1;
+  $("#catList").innerHTML = cats.map(([c, g]) => `<li><div class="l"><span>${esc(c)}</span><b>${fmtG(g)}</b></div><div class="track"><i style="width:${Math.max(1, g / max * 100).toFixed(1)}%"></i></div></li>`).join("");
+  $("#pplList").innerHTML = S.people.map((p) => {
+    const b = L.bal.get(p.id);
+    return `<li><span class="l">${esc(p.name)}<span class="s">заплатил ${fmtG(L.paid.get(p.id))} · доля ${fmtG(L.owes.get(p.id))}</span></span><span class="r">${b ? fmtSigned(b) : "0"}</span></li>`;
+  }).join("");
+  $("#sumNote").textContent = `«+» — тебе должны, «−» — должен ты. Чек «на всех» делится на ${n}.`;
+}
+$("#goExp").addEventListener("click", () => setTab("exp"));
+$("#csv").addEventListener("click", () => {
+  const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const rows = [["Дата", "Что", "Категория", "Сумма", "Валюта", "Платил", "На кого", "Чек"]];
+  for (const x of sortedExpenses().reverse()) {
+    const ids = (x.split_between || []).filter((id) => person(id));
+    const d = parseDate(x.spent_at || x.created);
+    rows.push([d && !isNaN(d) ? dayStr(d) : "", x.title, x.category, String(x.amount).replace(".", ","), x.currency || "PLN",
+      (person(x.paid_by) || {}).name, ids.length ? ids.map((id) => person(id).name).join(", ") : "все", x.receipt ? pb.files.getURL(x, x.receipt) : ""]);
+  }
+  const L = ledger();
+  rows.push([]);
+  rows.push(["Кто", "Заплатил", "Доля", "Баланс"]);
+  for (const p of S.people) rows.push([p.name, (L.paid.get(p.id) / 100).toFixed(2).replace(".", ","), (L.owes.get(p.id) / 100).toFixed(2).replace(".", ","), (L.bal.get(p.id) / 100).toFixed(2).replace(".", ",")]);
+  const blob = new Blob(["﻿" + rows.map((r) => r.map(q).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "trip-expenses.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+});
+
 // ---------- who am I ----------
 const who = $("#who");
 function openWho() { renderWho(); if (!who.open) who.showModal(); }
@@ -609,7 +1253,10 @@ $("#share").addEventListener("click", async () => {
 });
 
 // ---------- boot ----------
+setTab(LS.get("trip.tab"));
 $("#ro").hidden = !!KEY;
+$("#roExp").hidden = !!KEY;
+$("#addx").hidden = !KEY;
 $("#reset").disabled = !KEY;
 renderSync();
 // Show the last known list right away (works offline), then refresh.
@@ -618,6 +1265,7 @@ try {
   if (snap && snap.items && snap.items.length) {
     S.people = snap.people || [];
     S.items = new Map(snap.items.map((r) => [r.id, r]));
+    S.expenses = new Map((snap.expenses || []).map((r) => [r.id, r]));
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
     S.loaded = true;
