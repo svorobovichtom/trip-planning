@@ -2,8 +2,8 @@
 // reconciliation, the payload that is sent), scan status, receipt lines
 // grouped for display and claiming. No React, no network — see logic.test.ts.
 
-import { byOrder, linesOk, splitEven } from "../../lib/ledger";
-import { grosze, parseAmount } from "../../lib/money";
+import { byOrder, linesOk, receiptRows, splitEven } from "../../lib/ledger";
+import { grosze, parseAmount, parseG } from "../../lib/money";
 import { lineQty } from "../../lib/receipt";
 import { CATEGORIES, type Expense, type ReceiptLine, type SplitMode } from "../../lib/types";
 import { SCANNABLE_NAME, SCANNABLE_TYPE } from "../../lib/image";
@@ -93,9 +93,9 @@ export function amountsState(ids: readonly string[], amts: Readonly<Record<strin
       autos.push(id);
       continue;
     }
-    const n = parseAmount(v);
+    const n = parseG(v);
     if (Number.isNaN(n)) bad.push(id);
-    else fixed += Math.round(n * 100);
+    else fixed += n;
   }
   const total = amountG || (!photo && !autos.length ? fixed : 0);
   const rem = total - fixed;
@@ -248,6 +248,11 @@ export function buildSave(f: PayForm, x: Expense | null, ctx: SaveCtx): SaveResu
   if (!amount && !readable && !(x && x.amount > 0 && !f.touched.amount)) {
     return { ok: false, error: hasPhoto(f, x) ? "Введи сумму" : "Добавь фото чека или введи сумму", field: "amount" };
   }
+  // a saved payment whose amount is cleared would silently drop out of the
+  // balances (the scan only fills an amount for a new receipt or a rescan)
+  if (x && !amount && f.touched.amount && x.amount > 0 && !f.file && !isScanning(x)) {
+    return { ok: false, error: "Введи сумму", field: "amount" };
+  }
   if (!order.includes(f.paid)) return { ok: false, error: "Выбери, кто платил", field: "paid" };
   if (!part.length) return { ok: false, error: "Отметь, на кого делим", field: "part" };
 
@@ -255,7 +260,7 @@ export function buildSave(f: PayForm, x: Expense | null, ctx: SaveCtx): SaveResu
   const splitAmounts = st
     ? Object.fromEntries(st.ids.map((id) => {
         const v = (f.amts[id] ?? "").trim();
-        return [id, v ? Math.round(parseAmount(v) * 100) : null];
+        return [id, v ? parseG(v) : null];
       }))
     : null;
   const at = spentAt(f.date, x ? dayOf(x) : null, now);
@@ -340,21 +345,13 @@ const OTHER = "Другое";
  * grouped by category in the usual category order.
  */
 export function groupLines(lines: readonly (ReceiptLine | null | undefined)[] | null | undefined): { groups: LineGroup[]; rows: LineRow[]; categorized: boolean } {
-  const rows: LineRow[] = [];
-  (lines ?? []).forEach((l, idx) => {
-    if (!l || !l.text) return;
-    const g = l.price == null || !Number.isFinite(Number(l.price)) ? null : grosze(l.price);
-    const prev = rows[rows.length - 1];
-    if (g !== null && g < 0 && prev && prev.g !== null && prev.g > 0 && !prev.extra.length) {
-      prev.extra.push(idx);
-      prev.discount += g;
-      prev.g += g;
-      return;
-    }
-    rows.push({
-      idx, extra: [], text: l.text, qty: lineQty(l), g, discount: 0,
+  // the same rows the ledger charges for (lib/ledger.ts receiptRows)
+  const rows: LineRow[] = receiptRows(lines).map((r) => {
+    const l = lines![r.idx]!;
+    return {
+      idx: r.idx, extra: r.extra, text: l.text, qty: lineQty(l), g: r.g, discount: r.discount,
       cat: l.category || "", itemId: l.item_id || null,
-    });
+    };
   });
   const categorized = rows.some((r) => r.cat);
   const by = new Map<string, LineRow[]>();

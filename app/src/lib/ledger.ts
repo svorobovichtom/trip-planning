@@ -4,14 +4,25 @@
 //   equal   — the amount evenly between split_between (empty = everyone)
 //   amounts — split_amounts {personId: grosze | null}: fixed shares, the rest
 //             evenly between the «авто» (null) ones; nobody «авто» -> the rest
-//             goes to split_between/everyone
-//   claims  — each receipt line evenly between the people who claimed it;
-//             unclaimed lines + (amount − sum of lines) evenly between
-//             split_between/everyone. Only when the lines add up (linesOk),
-//             otherwise it falls back to equal.
-// Rounding: leftover grosze go one each to the first people in list order,
-// so the parts always add up to the amount exactly. Amount 0 (still being
-// scanned) counts for nobody. Unknown person ids are ignored.
+//             goes to split_between/everyone. Fixed shares that add up to MORE
+//             than the amount (the scan filled a smaller total later) are
+//             scaled down in proportion and «авто» get 0.
+//   claims  — receipt rows (a discount line folded into the product above it,
+//             exactly as the claims UI shows them — receiptRows) evenly
+//             between the people who claimed the row; unclaimed rows +
+//             (amount − sum of rows) evenly between split_between/everyone.
+//             When the claimed rows alone are more than the amount, the
+//             amount is split in proportion to what each person claimed.
+//             Only when the lines add up (linesOk), otherwise it falls back
+//             to equal.
+// Every share is >= 0 and the shares add up to the amount exactly (if some
+// share would still come out negative, e.g. someone claimed only a discount
+// row, the amount is split in proportion to the positive shares instead).
+// Rounding: leftover grosze go one each to the first people in list order
+// (proportional splits: largest remainder first, ties in list order).
+// Amount 0 (still being scanned) counts for nobody. Unknown person ids are
+// ignored; an expense whose payer is unknown (deleted person) counts for
+// nobody's balance, so the balances always add up to 0.
 //
 // Settlements (transfers marked «переведено», grosze) count like a payment
 // between two people: bal[from] += g, bal[to] −= g. paid/owes stay trip
@@ -19,7 +30,7 @@
 // what's left to transfer.
 
 import { grosze } from "./money";
-import type { Claim, Expense, Person, Settlement } from "./types";
+import type { Claim, Expense, Person, ReceiptLine, Settlement } from "./types";
 
 export type Shares = Map<string, number>;
 
@@ -31,6 +42,31 @@ export function splitEven(g: number, ids: readonly string[], into: Shares): void
   ids.forEach((id, i) => {
     into.set(id, (into.get(id) ?? 0) + base + (i < rem ? 1 : 0));
   });
+}
+
+/**
+ * Adds `g` (>= 0) split in proportion to the positive values of `w` into
+ * `into`: floor of each exact part, then the leftover grosze one each by
+ * largest remainder (ties in `order`). False (nothing added) when no weight
+ * is positive. Exact for any amount (BigInt).
+ */
+export function splitProp(g: number, w: ReadonlyMap<string, number>, order: readonly string[], into: Shares): boolean {
+  const ids = byOrder([...w].filter(([, v]) => v > 0).map(([id]) => id), order);
+  const W = ids.reduce((s, id) => s + BigInt(w.get(id)!), 0n);
+  if (!W || g < 0) return false;
+  const G = BigInt(g);
+  const parts = ids.map((id, i) => {
+    const num = G * BigInt(w.get(id)!);
+    return { id, i, n: Number(num / W), f: num % W };
+  });
+  let left = g - parts.reduce((s, p) => s + p.n, 0);
+  for (const p of [...parts].sort((a, b) => (b.f > a.f ? 1 : b.f < a.f ? -1 : a.i - b.i))) {
+    if (left <= 0) break;
+    p.n++;
+    left--;
+  }
+  for (const p of parts) if (p.n) into.set(p.id, (into.get(p.id) ?? 0) + p.n);
+  return true;
 }
 
 /** Unique known ids, sorted by people order. */
@@ -50,6 +86,42 @@ export function linesOk(x: Pick<Expense, "lines" | "scan_error"> | null | undefi
   return !!x && Array.isArray(x.lines) && x.lines.some((l) => l && l.text) && x.scan_error !== "lines_mismatch";
 }
 
+export interface ReceiptRow {
+  /** index in expense.lines (what claims.line points at) */
+  idx: number;
+  /** discount lines folded into this row (their indices) */
+  extra: number[];
+  /** price incl. folded discounts, grosze; null = unknown price */
+  g: number | null;
+  /** folded discounts, grosze (<= 0) */
+  discount: number;
+}
+
+/**
+ * Receipt lines as claimable rows: a discount line (negative price) right
+ * after a product with a known positive price is folded into it, so
+ * «Помидоры 28,00 / Rabat −14,00» is one row worth 14,00. Only one discount
+ * per row; a second one stays a row of its own. Lines without text are skipped.
+ * The claims UI (groupLines) and the ledger both use this, so what a person
+ * ticks is exactly what they pay for.
+ */
+export function receiptRows(lines: readonly (ReceiptLine | null | undefined)[] | null | undefined): ReceiptRow[] {
+  const rows: ReceiptRow[] = [];
+  (Array.isArray(lines) ? lines : []).forEach((l, idx) => {
+    if (!l || !l.text) return;
+    const g = l.price == null || !Number.isFinite(Number(l.price)) ? null : grosze(l.price);
+    const prev = rows[rows.length - 1];
+    if (g !== null && g < 0 && prev && prev.g !== null && prev.g > 0 && !prev.extra.length) {
+      prev.extra.push(idx);
+      prev.discount += g;
+      prev.g += g;
+      return;
+    }
+    rows.push({ idx, extra: [], g, discount: 0 });
+  });
+  return rows;
+}
+
 /** expense id -> line index -> claimer ids (list order). */
 export type ClaimIndex = Map<string, Map<number, string[]>>;
 
@@ -67,9 +139,20 @@ export function indexClaims(claims: Iterable<Pick<Claim, "expense" | "line" | "p
 }
 
 export function expenseShares(x: Expense, order: readonly string[], claims?: Map<number, string[]>): Shares {
-  const out: Shares = new Map();
   const g = grosze(x.amount);
-  if (!g || !order.length) return out;
+  if (g <= 0 || !order.length) return new Map();
+  const out = rawShares(x, g, order, claims);
+  // never charge anyone a negative share: fall back to the positive parts
+  if ([...out.values()].some((v) => v < 0)) {
+    const fixed: Shares = new Map();
+    if (!splitProp(g, out, order, fixed)) splitEven(g, participants(x, order), fixed);
+    return fixed;
+  }
+  return out;
+}
+
+function rawShares(x: Expense, g: number, order: readonly string[], claims?: Map<number, string[]>): Shares {
+  const out: Shares = new Map();
   const pool = participants(x, order);
   const sa = x.split_amounts;
 
@@ -87,21 +170,30 @@ export function expenseShares(x: Expense, order: readonly string[], claims?: Map
           out.set(id, (out.get(id) ?? 0) + n);
         }
       }
+      if (fixed > g) {
+        // written down more than the amount: everyone's fixed part shrinks in proportion
+        const scaled: Shares = new Map();
+        if (splitProp(g, out, order, scaled)) return scaled;
+      }
       splitEven(g - fixed, autos.length ? autos : pool, out);
       return out;
     }
   } else if (x.split_mode === "claims" && linesOk(x)) {
-    let sum = 0;
-    let rest = 0;
-    (x.lines ?? []).forEach((l, i) => {
-      if (!l || !l.text) return;
-      const lg = grosze(l.price);
-      sum += lg;
-      const who = claims?.get(i);
-      if (who && who.length) splitEven(lg, who, out);
-      else rest += lg;
-    });
-    splitEven(rest + g - sum, pool, out);
+    let claimed = 0;
+    for (const r of receiptRows(x.lines)) {
+      const who = claims?.get(r.idx);
+      if (r.g && who && who.length) {
+        splitEven(r.g, who, out);
+        claimed += r.g;
+      }
+    }
+    const rest = g - claimed;
+    if (rest < 0) {
+      // the claimed rows alone are more than the amount: split it in proportion
+      const scaled: Shares = new Map();
+      if (splitProp(g, out, order, scaled)) return scaled;
+    }
+    splitEven(rest, pool, out);
     return out;
   }
   splitEven(g, pool, out);
@@ -214,12 +306,19 @@ export function computeLedger(input: {
   let total = 0;
   for (const x of input.expenses) {
     const g = grosze(x.amount);
+    if (g <= 0) {
+      shares.set(x.id, new Map());
+      continue;
+    }
     total += g;
     for (const [c, v] of expenseCats(x)) cats.set(c, (cats.get(c) ?? 0) + v);
-    if (paid.has(x.paid_by)) paid.set(x.paid_by, paid.get(x.paid_by)! + g);
-    const s = expenseShares(x, order, idx.get(x.id));
+    // a payer that isn't in the list (deleted) can't be paid back: the expense
+    // counts for nobody's balance, so the balances still add up to 0
+    const s = paid.has(x.paid_by) ? expenseShares(x, order, idx.get(x.id)) : new Map<string, number>();
     shares.set(x.id, s);
-    for (const [id, v] of s) if (owes.has(id)) owes.set(id, owes.get(id)! + v);
+    if (!s.size) continue;
+    paid.set(x.paid_by, paid.get(x.paid_by)! + g);
+    for (const [id, v] of s) owes.set(id, owes.get(id)! + v);
   }
   const sent = new Map(order.map((id) => [id, 0]));
   const received = new Map(order.map((id) => [id, 0]));

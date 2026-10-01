@@ -20,9 +20,22 @@ export const fmtSigned = (g: number): string => (g > 0 ? "+" : g < 0 ? "−" : "
 /** only negatives get a sign (receipt discounts) */
 export const fmtMinus = (g: number): string => (g < 0 ? "−" : "") + fmtG(Math.abs(g));
 
+/**
+ * "12,5 zł" / "12.50" / "1 234,56" -> grosze (integer), NaN if not a number.
+ * Exact: works on the digits, not on a float, so "1,005" is 101 gr (half up
+ * at the third decimal), never 100 because 1.005 * 100 = 100.4999…
+ * Only one decimal separator ("," or "."); no sign — amounts are never negative.
+ */
+export function parseG(s: string): number {
+  const t = String(s).replace(/[\s  ]|zł|pln/gi, "").replace(",", ".");
+  if (!t || t === "." || !/^\d*\.?\d*$/.test(t)) return Number.NaN;
+  const [i = "", f = ""] = t.split(".");
+  const g = Number(i || "0") * 100 + Number((f + "00").slice(0, 2)) + (f.charAt(2) >= "5" ? 1 : 0);
+  return Number.isSafeInteger(g) ? g : Number.NaN;
+}
+
 /** "12,5 zł" / "12.50" / "1 234,56" -> PLN number (2 decimals), NaN if not a number. */
 export function parseAmount(s: string): number {
-  const t = String(s).replace(/[\s  ]|zł|pln/gi, "").replace(",", ".");
-  if (!t || t === "." || !/^\d*\.?\d*$/.test(t)) return Number.NaN;
-  return Math.round(Number(t) * 100) / 100;
+  const g = parseG(s);
+  return Number.isNaN(g) ? Number.NaN : g / 100;
 }

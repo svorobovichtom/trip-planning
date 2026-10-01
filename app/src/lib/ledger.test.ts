@@ -114,12 +114,14 @@ describe("expenseShares: claims", () => {
     const idx = indexClaims([{ expense: "e1", line: 0, person: "zz" }], order);
     expect(obj(expenseShares(x, order, idx.get("e1")))).toEqual({ a: 6000 });
   });
-  it("handles discounts (negative lines) and adds up", () => {
+  it("a discount folds into the claimed line above it (as the claims list shows it)", () => {
+    // before: a paid 30,00 − 1,66 and b, c got −1,67 each for a discount on a line only a took
     const x = X({ id: "e1", amount: 25, split_mode: "claims", lines: [{ text: "A", price: 30 }, { text: "Rabat", price: -5 }] });
     const idx = indexClaims([{ expense: "e1", line: 0, person: "a" }], order);
-    const s = expenseShares(x, order, idx.get("e1"));
-    expect(sum(s)).toBe(2500);
-    expect(s.get("a")).toBe(3000 - 166);
+    expect(obj(expenseShares(x, order, idx.get("e1")))).toEqual({ a: 2500 });
+    // also when the discount line was claimed too (what toggleClaim does) — same result
+    const idx2 = indexClaims([{ expense: "e1", line: 0, person: "a" }, { expense: "e1", line: 1, person: "a" }], order);
+    expect(obj(expenseShares(x, order, idx2.get("e1")))).toEqual({ a: 2500 });
   });
   it("linesOk needs at least one line with text and no mismatch", () => {
     expect(linesOk(X({ lines: [] }))).toBe(false);
@@ -150,9 +152,13 @@ describe("computeLedger + settle", () => {
       { from: "b", to: "a", g: 1500 },
     ]);
   });
-  it("ignores a payer who is not in the list", () => {
-    const L = computeLedger({ people, expenses: [X({ amount: 3, paid_by: "zz" })], claims: [] });
-    expect(sum(L.bal)).toBe(-300);
+  it("an expense whose payer is not in the list (deleted) counts for nobody's balance", () => {
+    // before: a, b, c each owed 1 zł to nobody (balances summed to −3 zł, settle() left it unpaid)
+    const L = computeLedger({ people, expenses: [X({ id: "e", amount: 3, paid_by: "zz" })], claims: [] });
+    expect(sum(L.bal)).toBe(0);
+    expect(obj(L.bal)).toEqual({ a: 0, b: 0, c: 0 });
+    expect(L.shares.get("e")!.size).toBe(0);
+    expect(L.total).toBe(300);
   });
   it("settle: nothing to do when square; several creditors", () => {
     expect(settle(new Map([["a", 0], ["b", 0]]))).toEqual([]);
