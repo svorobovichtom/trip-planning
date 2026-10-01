@@ -28,7 +28,8 @@ const MAX_ITEMS = 200;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const KEY_CACHE_MS = 10 * 60 * 1000;
 const KEYCHECK_TIMEOUT_MS = 5000;
-const MODEL_TIMEOUT_MS = 45000;
+// Long receipts (30+ lines) take ~30 s on Qwen; leave headroom.
+const MODEL_TIMEOUT_MS = 75000;
 
 const validKeys = new Map(); // key -> expiry (ms), per isolate
 
@@ -101,7 +102,10 @@ async function handleScan(request, env) {
     }
   }
 
-  for (const model of WORKERS_AI_MODELS) {
+  // Optional `model` form field pins one allow-listed model (for comparing them).
+  const pinned = form.get("model");
+  const models = WORKERS_AI_MODELS.includes(pinned) ? [pinned] : WORKERS_AI_MODELS;
+  for (const model of models) {
     try {
       const raw = await withTimeout(callWorkersAI(env.AI, model, mime, b64, prompt), MODEL_TIMEOUT_MS);
       return json(finish(raw, items, "workers-ai", model));
@@ -231,7 +235,7 @@ async function callWorkersAI(ai, model, mime, b64, prompt) {
       { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
     ],
   }];
-  const base = { messages, temperature: 0, max_tokens: 2000 };
+  const base = { messages, temperature: 0, max_tokens: 3500 };
   const attempts = [
     {
       ...base,
