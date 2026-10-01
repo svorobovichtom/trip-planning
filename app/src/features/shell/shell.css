@@ -69,14 +69,14 @@
 }
 .net {
   flex: none;
-  height: 22px;
-  padding: 0 9px;
+  height: 24px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--ink);
   font-size: 12px;
   font-weight: 500;
-  line-height: 22px;
+  line-height: 24px;
   white-space: nowrap;
   animation: netin 0.3s var(--ease);
 }
@@ -169,8 +169,8 @@
 /* section chips: one row that scrolls sideways, edge to edge on phones */
 .secs {
   display: flex;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 8px;
   padding-bottom: 8px;
   overflow-x: auto;
   overflow-y: hidden; /* sideways only (see .pills-x in payments.css) */
@@ -195,9 +195,9 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 14px;
   border: 0;
   border-radius: 999px;
   background: var(--surface);
@@ -210,7 +210,7 @@
 .sc::before {
   content: "";
   position: absolute;
-  inset: -6px -3px;
+  inset: -6px -4px;
 }
 .sc .n {
   color: var(--muted);
@@ -320,6 +320,7 @@ body.typing .nav {
   display: block;
   margin-bottom: 12px;
   font-size: 13px;
+  line-height: 1.4;
   color: var(--muted);
 }
 .menu dl {
@@ -364,7 +365,7 @@ body.typing .nav {
 }
 .pay-lab {
   display: block;
-  margin: 14px 2px 6px;
+  margin: 16px 2px 8px;
   font-size: 13px;
   color: var(--muted);
 }
@@ -422,16 +423,17 @@ button.pf-name::before {
   font-weight: 400;
 }
 .pf-sub {
-  margin-top: 1px;
+  margin-top: 3px;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.4;
 }
 .pf-switch {
   flex: none;
 }
 .btn.pf-switch {
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0 14px;
   font-size: 13px;
 }
 .pf-rename {
@@ -473,15 +475,16 @@ button.pf-name::before {
   color: var(--text);
 }
 .pf-ms {
-  margin-top: 2px;
+  margin-top: 4px;
   color: var(--text);
   font-size: 13px;
+  line-height: 1.4;
 }
 .pf-go {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   color: var(--muted);
   font-size: 13px;
 }
@@ -574,8 +577,10 @@ button.pf-name::before {
   overflow-wrap: anywhere;
 }
 .pf-ppay {
+  margin-top: 2px;
   color: var(--text);
   font-size: 12px;
+  line-height: 1.4;
 }
 .pf-ppay.none {
   color: var(--muted);

@@ -89,8 +89,9 @@
 .xt .pl,
 .xt .st {
   display: block;
-  margin-top: 1px;
+  margin-top: 3px;
   font-size: 13px;
+  line-height: 1.4;
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -250,21 +251,22 @@
 }
 .rc-m {
   display: block;
-  margin-top: 1px;
+  margin-top: 2px;
   font-size: 13px;
+  line-height: 1.4;
   color: var(--muted);
 }
 .rc-a {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-top: 6px;
+  gap: 6px 18px;
+  margin-top: 8px;
 }
 .amt {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   padding-bottom: 6px;
   border-bottom: 1.5px solid var(--surface-2);
   transition: border-color 0.15s;
@@ -296,17 +298,18 @@
 .hint {
   margin: 6px 2px 0;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--muted);
 }
 .amt-hint {
-  margin: -8px 2px 14px;
+  margin: -8px 2px 16px;
 }
 .mode-hint {
   margin: 10px 2px 0;
 }
 .fl {
   display: block;
-  margin: 18px 2px 8px;
+  margin: 24px 2px 10px;
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
@@ -314,7 +317,7 @@
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 6px;
+  gap: 8px;
 }
 /* one row that scrolls sideways, edge to edge (categories) */
 .pills-x {
@@ -339,8 +342,8 @@
 }
 .pill {
   position: relative;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 14px;
   border: 0;
   border-radius: 999px;
   background: var(--surface-2);
@@ -352,7 +355,7 @@
 .pill::before {
   content: "";
   position: absolute;
-  inset: -4px -3px;
+  inset: -4px;
 }
 .pill[aria-pressed="true"] {
   background: var(--ink);
@@ -373,7 +376,7 @@
 .segc button {
   flex: 1;
   min-width: 0;
-  height: 34px;
+  height: 36px;
   padding: 0 6px;
   border: 0;
   border-radius: 999px;
@@ -392,7 +395,7 @@
   color: var(--muted);
 }
 .mode {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .list.chks > li {
   align-items: center;
@@ -483,14 +486,15 @@
 }
 .am-auto {
   flex: none;
-  margin: 0 10px 0 6px;
-  min-height: 30px;
-  padding: 0 10px;
+  margin: 0 10px 0 8px;
+  min-height: 32px;
+  padding: 0 12px;
   font-size: 12px;
 }
 .msum {
-  margin: 8px 2px 0;
+  margin: 10px 2px 0;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -536,13 +540,15 @@
   letter-spacing: -0.02em;
 }
 .dt-meta {
-  margin-top: 2px;
+  margin-top: 4px;
   font-size: 13px;
+  line-height: 1.4;
   color: var(--muted);
 }
 .dt-st {
-  margin: 10px 2px 0;
+  margin: 12px 2px 0;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--text);
 }
 .dt-split {
@@ -553,15 +559,16 @@
 }
 .dt-split-n {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
+  line-height: 1.4;
   color: var(--muted);
   font-size: 13px;
 }
 .dt-act {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 14px;
+  margin-top: 16px;
 }
 .dt-act .hint {
   margin: 0;
@@ -625,7 +632,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin: 18px 2px 8px;
+  margin: 22px 2px 10px;
   font-size: 13px;
   font-weight: 500;
   color: var(--text);
@@ -650,7 +657,9 @@
   font-size: 14px;
 }
 .cls .pl {
+  margin-top: 2px;
   font-size: 12px;
+  line-height: 1.4;
 }
 .cls .qty {
   max-width: none;
@@ -848,8 +857,8 @@
 }
 .cat-scan {
   display: grid;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 .cat-scan .btn {
   justify-self: start;
@@ -864,6 +873,6 @@
 .pill.pill-av {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding-left: 7px;
+  gap: 8px;
+  padding-left: 8px;
 }

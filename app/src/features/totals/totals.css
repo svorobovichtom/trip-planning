@@ -21,8 +21,9 @@
   color: var(--muted);
 }
 .t-s {
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--text);
 }
 .t-card p {
@@ -76,7 +77,7 @@
   flex: none;
   min-height: 36px;
   margin: 0;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 0;
   border-radius: 8px;
   background: var(--surface-2);
@@ -286,8 +287,9 @@
   font-weight: 500;
 }
 .t-foot {
-  margin: 6px 14px 4px;
+  margin: 8px 14px 6px;
   font-size: 12px;
+  line-height: 1.45;
   color: var(--muted);
 }
 
@@ -303,7 +305,8 @@
   opacity: 0.5;
 }
 .t-moved {
-  margin-top: 2px;
+  margin-top: 4px;
+  line-height: 1.4;
   color: var(--muted);
 }
 .list.t-list > li {
@@ -316,8 +319,10 @@
 }
 .t-when {
   flex-basis: 100%;
+  margin-top: 2px;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1.4;
 }
 .t-done > li {
   padding-right: 6px;
@@ -366,7 +371,7 @@
 /* one-tap transfer on «Ты должен» rows: «Перевести» (Revolut) / «BLIK» */
 .t-rows > li {
   flex-wrap: wrap;
-  row-gap: 4px;
+  row-gap: 8px;
 }
 .t-acts {
   display: flex;
@@ -390,7 +395,8 @@ a.t-copy {
 }
 .t-card p.t-nopay {
   flex-basis: 100%;
-  margin: -6px 0 2px 20px;
+  margin: -4px 0 2px 20px;
+  line-height: 1.4;
   color: var(--muted);
   font-size: 12px;
 }

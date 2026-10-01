@@ -135,6 +135,22 @@ button {
   outline: 1.5px solid var(--ink);
   outline-offset: 0;
 }
+/* iOS WebKit draws a date field as an inline-flex native control that
+   ignores box-sizing: width:100% plus the padding made it 24px wider than
+   its column, and the whole sheet could be panned sideways. Plain block box
+   instead, value on the left like the other fields. */
+.in[type="date"] {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+.in[type="date"]::-webkit-date-and-time-value {
+  margin: 0;
+  text-align: left;
+}
 .btn {
   min-height: 44px;
   padding: 0 16px;

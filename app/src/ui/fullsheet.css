@@ -82,6 +82,7 @@
 .fs-body {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden; /* never sideways: a too-wide child must not pan the sheet */
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: auto;
