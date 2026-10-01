@@ -5,6 +5,12 @@ tunnel: __TUNNEL_ID__
 credentials-file: /etc/trip-tunnel/__TUNNEL_ID__.json
 no-autoupdate: true
 ingress:
+  # The admin UI and superuser login are not reachable from the internet at all.
+  # Admin goes through SSH instead: ssh -L 8090:127.0.0.1:8090 <vm>, then
+  # http://localhost:8090/_/ (see README).
+  - hostname: trip-api.svorobovich.com
+    path: ^/(_/|_$|api/collections/_superusers/)
+    service: http_status:404
   - hostname: trip-api.svorobovich.com
     service: http://127.0.0.1:8090
   - service: http_status:404

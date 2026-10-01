@@ -8,7 +8,8 @@
 - Ссылка для участников: `https://trip-planning.svorobovichtom.workers.dev/#k=<TRIP_KEY>`
   (ключ в `deploy/.secrets` и `/opt/trip/trip.env`). Страница сохраняет ключ в
   `localStorage` и дальше шлёт его в заголовке `X-Trip-Key`.
-- API: https://trip-api.svorobovich.com, админка https://trip-api.svorobovich.com/_/
+- API: https://trip-api.svorobovich.com
+- Админка: только через SSH — `./admin.sh` открывает http://localhost:8091/_/ (из интернета `/_/` и вход суперюзера закрыты в туннеле и в Caddy). Логин в `deploy/.secrets`.
   (логин и пароль в `deploy/.secrets`).
 
 ## Архитектура
@@ -106,7 +107,7 @@ http://127.0.0.1:8099/#k=... работает с тем же origin.
 
 1. На VM: `sudo nano /opt/trip/trip.env` и заменить `TRIP_KEY=` (нужно для
    будущих миграций и повторного `setup.sh`). Обновить `deploy/.secrets`.
-2. Админка https://trip-api.svorobovich.com/_/ → Collections → `people` → ⚙ →
+2. Админка (`./admin.sh`) → Collections → `people` → ⚙ →
    API Rules: в Create, Update и Delete заменить ключ в
    `@request.headers.x_trip_key = "..."`. Повторить для `items` и `expenses`.
 3. Разослать новую ссылку `https://trip-planning.svorobovichtom.workers.dev/#k=<новый ключ>`.
