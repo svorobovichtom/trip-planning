@@ -41,6 +41,7 @@
 .list > li.it.fold {
   grid-template-rows: 0fr;
   opacity: 0;
+  pointer-events: none; /* a row on its way out can't take a second tap */
 }
 .list > li.it.rowin {
   animation: rowin 0.4s var(--ease);
@@ -63,6 +64,7 @@
   border: 0;
   background: none;
   text-align: left;
+  touch-action: manipulation; /* quick taps on neighbouring rows never zoom */
 }
 button.row:active {
   background: var(--surface-2);
@@ -139,6 +141,7 @@ button.row:active {
   background: none;
   color: var(--muted);
   font-size: 18px;
+  touch-action: manipulation;
 }
 
 /* «Куплено · N»: collapsed group at the bottom of a section */
@@ -190,13 +193,16 @@ button.row:active {
   display: none;
 }
 
-/* bought rows: one dense line — struck name, who, actual qty, price */
+/* bought rows: one dense line — struck name, who, actual qty, price.
+   Rows sit edge to edge, so the tap target is the row itself: 44px tall
+   (the minimum touch size) with no vertical padding, one 14px line. */
 .got .row {
   grid-template-columns: 16px minmax(0, 1fr) auto auto auto;
   gap: 10px;
-  min-height: 36px;
-  padding: 6px 14px;
+  min-height: 44px;
+  padding: 0 14px;
   font-size: 14px;
+  line-height: 1.3;
 }
 .got .row .name {
   overflow: hidden;
@@ -239,7 +245,7 @@ button.row:active {
   height: 10px;
 }
 .got .del {
-  width: 36px;
+  width: 44px;
   font-size: 16px;
 }
 /* lines bought beyond the list */
