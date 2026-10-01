@@ -1,6 +1,7 @@
 // Writes. Small patches (toggles, renames) go through the offline queue and
 // show up immediately; creates and deletes need the network.
 
+import { confirmAction } from "../ui/Confirm";
 import { toast } from "../ui/toast";
 import { haptic } from "./haptics";
 import { canWriteKey, errMsg, isNetErr, pb } from "./pb";
@@ -148,7 +149,7 @@ export const isCustomItem = (it: Pick<Item, "key">) => String(it.key).startsWith
 export async function deleteItem(id: string): Promise<boolean> {
   const it = dataStore.get().items.get(id);
   if (!it || !requireWriter()) return false;
-  if (!confirm(`Удалить «${it.name}»?`)) return false;
+  if (!(await confirmAction({ title: `Удалить «${it.name}»?`, body: "Пункт пропадёт из списка у всех.", ok: "Удалить", danger: true }))) return false;
   try {
     await pb.collection("items").delete(id);
     queue.drop("items", id);

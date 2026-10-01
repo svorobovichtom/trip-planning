@@ -51,3 +51,7 @@
   background: var(--surface-2);
   color: var(--bad);
 }
+.cf-text {
+  width: 100%;
+  margin-top: 12px;
+}

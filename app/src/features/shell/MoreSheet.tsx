@@ -4,6 +4,7 @@ import { useListStats } from "../../lib/hooks";
 import { canWriteKey, shareUrl } from "../../lib/pb";
 import { plural } from "../../lib/plural";
 import { openMore, useUi } from "../../lib/stores";
+import { showCopy } from "../../ui/Confirm";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { exportCsv } from "../totals/csv";
@@ -24,7 +25,7 @@ export function MoreSheet() {
         toast("Ссылка скопирована");
       }
     } catch (e) {
-      if ((e as { name?: string })?.name !== "AbortError") prompt("Скопируй ссылку:", url);
+      if ((e as { name?: string })?.name !== "AbortError") void showCopy("Скопируй ссылку", url);
     }
   };
 

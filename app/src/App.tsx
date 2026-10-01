@@ -1,24 +1,49 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Header } from "./features/shell/Header";
 import { MoreSheet } from "./features/shell/MoreSheet";
 import { TabBar } from "./features/shell/TabBar";
 import { WhoSheet } from "./features/shell/WhoSheet";
 import { ListPage } from "./features/list/ListPage";
-import { PaymentsPage } from "./features/payments/PaymentsPage";
-import { TotalsPage } from "./features/totals/TotalsPage";
 import { canWriteKey } from "./lib/pb";
 import { currentPerson, dataStore, openWho, setTab, type Tab, TABS, useUi } from "./lib/stores";
 import { startSync } from "./lib/sync";
+import { ConfirmHost } from "./ui/Confirm";
+import { lazyPart, PartBoundary, whenIdle } from "./ui/lazy";
 import { ScrollContext } from "./ui/scroll";
 import { ToastProvider } from "./ui/Toaster";
 import "./features/shell/shell.css";
+
+// «Расходы» and «Итоги» are separate chunks, so the first paint of «Список»
+// parses less. They are fetched and mounted (hidden) after the first idle,
+// which keeps tab switches instant; opening one earlier loads it on demand.
+const PaymentsPage = lazyPart(() => import("./features/payments/PaymentsPage"), (m) => m.PaymentsPage);
+const TotalsPage = lazyPart(() => import("./features/totals/TotalsPage"), (m) => m.TotalsPage);
+const tabSkel = <div className="skel" aria-busy="true" aria-label="Загружаю" />;
+
+/** Tabs whose content is mounted: the current one, then all after the first idle. */
+function useMountedTabs(tab: Tab): (t: Tab) => boolean {
+  const [warm, setWarm] = useState(false);
+  const seen = useRef(new Set<Tab>());
+  seen.current.add(tab);
+  useEffect(
+    () =>
+      whenIdle(() => {
+        void Promise.all([PaymentsPage.preload(), TotalsPage.preload()])
+          .catch(() => {})
+          .then(() => setWarm(true));
+      }),
+    [],
+  );
+  return (t) => warm || seen.current.has(t);
+}
 
 export function App() {
   const tab = useUi((s) => s.tab);
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabScroll = useRef<Partial<Record<Tab, number>>>({});
   const prevTab = useRef(tab);
+  const mounted = useMountedTabs(tab);
 
   // Each tab keeps its own scroll position.
   useLayoutEffect(() => {
@@ -64,10 +89,18 @@ export function App() {
                 <ListPage />
               </Tabs.Panel>
               <Tabs.Panel value="exp" keepMounted className="panel">
-                <PaymentsPage />
+                {mounted("exp") && (
+                  <PartBoundary fallback={tabSkel}>
+                    <PaymentsPage />
+                  </PartBoundary>
+                )}
               </Tabs.Panel>
               <Tabs.Panel value="sum" keepMounted className="panel">
-                <TotalsPage />
+                {mounted("sum") && (
+                  <PartBoundary fallback={tabSkel}>
+                    <TotalsPage />
+                  </PartBoundary>
+                )}
               </Tabs.Panel>
             </div>
           </div>
@@ -75,6 +108,7 @@ export function App() {
         </Tabs.Root>
         <WhoSheet />
         <MoreSheet />
+        <ConfirmHost />
       </ScrollContext.Provider>
     </ToastProvider>
   );

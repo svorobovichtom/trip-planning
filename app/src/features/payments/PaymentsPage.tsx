@@ -8,15 +8,18 @@ import { fmtG, grosze } from "../../lib/money";
 import { canWriteKey } from "../../lib/pb";
 import { useData, usePeople } from "../../lib/stores";
 import type { Expense } from "../../lib/types";
-import { ConfirmHost } from "../../ui/Confirm";
+import { lazyPart, PartBoundary } from "../../ui/lazy";
 import { Morph } from "../../ui/Morph";
 import { rescan } from "./api";
 import { CameraIcon, expenseName, fmtDay, GalleryIcon, Thumb, useNames, viewReceipt } from "./bits";
 import { isScanning, parseDate, scanView, splitLabel } from "./logic";
-import { PaymentSheet } from "./PaymentSheet";
-import { ReceiptViewer } from "./ReceiptViewer";
 import { openNewPayment, openPayment } from "./state";
 import "./payments.css";
+
+// The editor/details sheet and the receipt viewer are separate chunks: they
+// load right after this tab mounts (itself after the first idle), not with the list.
+const PaymentSheet = lazyPart(() => import("./PaymentSheet"), (m) => m.PaymentSheet);
+const ReceiptViewer = lazyPart(() => import("./ReceiptViewer"), (m) => m.ReceiptViewer);
 
 export function PaymentsPage() {
   const loaded = useData((s) => s.loaded);
@@ -80,9 +83,12 @@ export function PaymentsPage() {
           ))}
         </ul>
       )}
-      <PaymentSheet />
-      <ReceiptViewer />
-      <ConfirmHost />
+      <PartBoundary quiet>
+        <PaymentSheet />
+      </PartBoundary>
+      <PartBoundary quiet>
+        <ReceiptViewer />
+      </PartBoundary>
     </>
   );
 }

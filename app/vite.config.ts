@@ -93,7 +93,12 @@ export default defineConfig({
     sourcemap: false,
     assetsInlineLimit: 0,
     // lab.html: drawer comparison page for phone testing (not linked in the app).
-    rollupOptions: { input: { index: "index.html", lab: "lab.html" } },
+    rollupOptions: {
+      input: { index: "index.html", lab: "lab.html" },
+      // Libraries shared by the app and its lazy tabs/sheets go in one vendor
+      // chunk (instead of many small shared chunks); lazy-only ones stay lazy.
+      output: { codeSplitting: { groups: [{ name: "vendor", test: /node_modules/, minShareCount: 2 }] } },
+    },
   },
   test: { environment: "node", include: ["src/**/*.test.ts"] },
 });
