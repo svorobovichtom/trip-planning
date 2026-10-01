@@ -1,0 +1,48 @@
+/* PLACEHOLDER styles for the read-only totals */
+.hero {
+  margin-top: 16px;
+}
+.k {
+  font-size: 13px;
+  color: var(--muted);
+}
+.hero .v {
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kv > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 14px;
+}
+.kv .l {
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.kv .l i {
+  font-style: normal;
+  color: var(--muted);
+  padding: 0 6px;
+}
+.kv .r {
+  flex: none;
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.kv .s {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}

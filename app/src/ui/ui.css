@@ -1,0 +1,127 @@
+/* Bottom sheets (Base UI Drawer) */
+.sh-backdrop {
+  position: fixed;
+  inset: 0;
+  min-height: 100dvh;
+  background: var(--backdrop);
+  opacity: calc(1 - var(--drawer-swipe-progress, 0));
+  transition: opacity 0.3s var(--sheet-ease);
+}
+.sh-backdrop[data-starting-style],
+.sh-backdrop[data-ending-style] {
+  opacity: 0;
+}
+.sh-backdrop[data-swiping] {
+  transition-duration: 0ms;
+}
+.sh-viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sh-popup {
+  --bleed: 3rem;
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(90dvh + var(--bleed));
+  margin-bottom: calc(-1 * var(--bleed));
+  padding: 20px max(16px, var(--safe-r)) calc(20px + var(--safe-b) + var(--bleed) + var(--drawer-keyboard-inset, 0px)) max(16px, var(--safe-l));
+  border-radius: 14px 14px 0 0;
+  background: var(--bg);
+  color: var(--text);
+  outline: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateY(var(--drawer-swipe-movement-y, 0px));
+  transition: transform 0.42s var(--sheet-ease);
+  will-change: transform;
+}
+.sh-popup[data-starting-style],
+.sh-popup[data-ending-style] {
+  transform: translateY(calc(100% - var(--bleed) + 2px));
+}
+.sh-popup[data-ending-style] {
+  transition-duration: calc(var(--drawer-swipe-strength, 1) * 320ms);
+}
+.sh-popup[data-swiping] {
+  user-select: none;
+}
+.sh-grab {
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: -8px auto 12px;
+  border-radius: 2px;
+  background: var(--surface-2);
+}
+.sh-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.sh-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+}
+.sh-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -10px -12px -10px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+}
+.sh-content p.lead {
+  margin: 4px 0 20px;
+  font-size: 14px;
+}
+.sh-content h2 {
+  margin: 20px 2px 8px;
+}
+
+/* Toast: a pill above the tab bar */
+.toast-vp {
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + var(--safe-b));
+  z-index: 50;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  transform: translateX(-50%);
+  outline: 0;
+}
+.toast {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  transform: translateX(var(--toast-swipe-movement-x, 0px)) translateY(var(--toast-swipe-movement-y, 0px));
+  transition: opacity 0.2s, transform 0.35s var(--ease);
+}
+.toast[data-starting-style] {
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+}
+.toast[data-ending-style] {
+  opacity: 0;
+  transform: translateY(var(--toast-swipe-movement-y, 0px)) scale(0.97);
+}
+.toast[data-limited] {
+  display: none;
+}
+.toast-t {
+  margin: 0;
+  font: inherit;
+}

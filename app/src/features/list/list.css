@@ -1,0 +1,280 @@
+/* Список (ported from web/index.html) */
+.skel {
+  margin-top: 20px;
+  height: 300px;
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.panel-list section {
+  margin-top: 20px;
+}
+.sec-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 2px 8px;
+}
+.card {
+  background: var(--surface);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.card .list {
+  background: none;
+  border-radius: 0;
+}
+.card > * + * {
+  border-top: 1px solid var(--line);
+}
+.card > .bwrap {
+  border-top: 0;
+}
+
+/* item rows: <li class="it"><div class="it-in"><button class="row">…</button>[×]</div></li>.
+   The grid wrapper lets a row fold its height away before it moves. */
+.list > li.it {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.32s var(--ease), opacity 0.2s;
+}
+.list > li.it.fold {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.list > li.it.rowin {
+  animation: rowin 0.4s var(--ease);
+}
+.it-in {
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+.row {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 52px;
+  padding: 9px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+button.row:active {
+  background: var(--surface-2);
+}
+.box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  color: var(--bg);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.box svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s, transform 0.3s var(--ease);
+}
+.row:active .box {
+  transform: scale(0.88);
+}
+.txt {
+  min-width: 0;
+}
+.name {
+  display: block;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  transition: color 0.2s;
+}
+.pl {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.by {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.qty {
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.done .box {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.done .box svg {
+  opacity: 1;
+  transform: none;
+}
+.done .name,
+.done .qty {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--muted);
+}
+.del {
+  flex: none;
+  width: 44px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* «Куплено · N»: collapsed group at the bottom of a section */
+.bought {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px 0 46px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: left;
+}
+.bought .bt {
+  flex: 1;
+  min-width: 0;
+}
+.bought svg {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  transition: transform 0.35s var(--ease);
+}
+.bought[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.bought.solo {
+  padding-left: 14px;
+}
+.bwrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s var(--ease);
+}
+.bwrap.on {
+  grid-template-rows: 1fr;
+}
+.bin {
+  min-height: 0;
+  overflow: hidden;
+}
+.got {
+  border-top: 1px solid var(--line);
+}
+.got:empty {
+  display: none;
+}
+
+/* bought rows: one dense line — struck name, who, actual qty, price */
+.got .row {
+  grid-template-columns: 16px minmax(0, 1fr) auto auto auto;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 14px;
+}
+.got .row .name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.got .row .who {
+  display: block;
+  max-width: 5.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 12px;
+}
+.got .done .qty {
+  text-decoration: none;
+}
+.got .row .qty {
+  max-width: 6em;
+  font-size: 13px;
+}
+.got .row .pr {
+  display: block;
+  min-width: 4.2em;
+  text-align: right;
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.got .box {
+  width: 16px;
+  height: 16px;
+  margin-left: 1px;
+  border-radius: 4px;
+}
+.got .box svg {
+  width: 10px;
+  height: 10px;
+}
+.got .del {
+  width: 36px;
+  font-size: 16px;
+}
+/* lines bought beyond the list */
+.extra .got .row {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  cursor: default;
+}
+.extra .got .row .name {
+  color: var(--text);
+}
+
+/* + добавить */
+.add-li {
+  display: flex;
+}
+.add-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px 0 46px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: left;
+}
+.add-form {
+  display: grid;
+  grid-template-columns: 1fr 6em;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+}
+.add-form .act {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

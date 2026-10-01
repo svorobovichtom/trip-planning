@@ -6,3 +6,6 @@ deploy/.secrets
 .DS_Store
 node_modules/
 test-results/
+dist/
+app/dist/
+.vitest/

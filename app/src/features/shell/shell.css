@@ -1,0 +1,369 @@
+/* App shell: fixed header, one inner scroll container, floating tab pill. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.wrap,
+.hin {
+  max-width: 540px;
+  margin: 0 auto;
+}
+.wrap {
+  padding: 0 var(--gutter-r) calc(104px + var(--safe-b)) var(--gutter-l);
+}
+.panel {
+  outline: 0;
+}
+.panel:not([hidden]) {
+  animation: pin 0.24s var(--ease);
+}
+
+/* header: the same two rows on every tab (title + me + more; one-line summary);
+   the list adds section chips and a 2px progress line on the bottom edge. */
+.hdr {
+  flex: none;
+  position: relative;
+  z-index: 5;
+  background: var(--bg);
+  padding: calc(8px + var(--safe-t)) var(--gutter-r) 10px var(--gutter-l);
+  border-bottom: 1px solid var(--line);
+}
+.hdr.on-list {
+  padding-bottom: 0;
+}
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+}
+.hdr h1 {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+.hdr h1.clip {
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 20px);
+  mask-image: linear-gradient(to left, transparent, #000 20px);
+}
+.top .sp {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.net {
+  flex: none;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: nowrap;
+  animation: netin 0.3s var(--ease);
+}
+.net[data-s="off"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+@keyframes netin {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+.me {
+  flex: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 40%;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.25s var(--ease), color 0.25s;
+}
+/* 44px tap targets around the 32px pills */
+.me::before,
+.dots::before {
+  content: "";
+  position: absolute;
+  inset: -6px -3px;
+}
+.me .nm {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.me.empty {
+  background: var(--ink);
+  color: var(--bg);
+}
+.me.flash {
+  animation: flash 0.6s var(--ease);
+}
+@keyframes flash {
+  from {
+    transform: scale(1.06);
+  }
+}
+.dots {
+  flex: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.dots svg {
+  width: 16px;
+  height: 16px;
+}
+.sub {
+  margin-top: 1px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hbar {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ink);
+  transition: width 0.5s var(--ease), opacity 0.2s;
+}
+.hdr:not(.on-list) .hbar {
+  opacity: 0;
+}
+
+/* section chips: one row that scrolls sideways, edge to edge on phones */
+.secs {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.secs::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 572px) {
+  .hdr .secs {
+    margin-left: calc(-1 * var(--gutter-l));
+    margin-right: calc(-1 * var(--gutter-r));
+    padding-left: var(--gutter-l);
+    padding-right: var(--gutter-r);
+    scroll-padding: 0 16px;
+  }
+}
+.sc {
+  flex: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.25s var(--ease), color 0.25s;
+}
+.sc::before {
+  content: "";
+  position: absolute;
+  inset: -6px -3px;
+}
+.sc .n {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.25s;
+}
+.sc[aria-current="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+.sc[aria-current="true"] .n {
+  color: var(--bg);
+  opacity: 0.6;
+}
+.sc.full:not([aria-current="true"]) {
+  color: var(--muted);
+}
+
+/* bottom navigation: a floating high-contrast pill (black in light, white in dark) */
+.nav {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + var(--safe-b));
+  z-index: 20;
+  display: flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: var(--nav-shadow);
+  transform: translateX(-50%);
+  transition: transform 0.3s var(--ease), opacity 0.2s;
+}
+.nav .tab {
+  position: relative;
+  z-index: 1;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--bg);
+  opacity: 0.6;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.nav .tab[data-active] {
+  opacity: 1;
+}
+.nav .tab:focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: -4px;
+}
+/* equal 4px inset on every side: the indicator sits exactly on the tab box */
+.ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--active-tab-width);
+  height: var(--active-tab-height);
+  transform: translate(var(--active-tab-left), var(--active-tab-top));
+  border-radius: 999px;
+  background: var(--bg);
+  opacity: var(--ind-opacity);
+  transition: transform 0.3s var(--ease), width 0.3s var(--ease);
+}
+.nav.still .ind {
+  transition: none;
+}
+body.typing .nav {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 24px);
+}
+
+/* sheets: who am I, more */
+.join {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.join .in {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+}
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.foot .rename {
+  flex: 1;
+}
+.menu {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.sh-content .menu h2 {
+  margin: 0 0 2px;
+  color: var(--ink);
+}
+.menu .k {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.menu dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  font-size: 14px;
+}
+.menu dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.menu dd {
+  margin: 0;
+  min-width: 0;
+}
+.sh-content p.note {
+  margin: 12px 2px 0;
+}
+.acts {
+  margin-top: 16px;
+}
+.acts .prow {
+  color: var(--ink);
+  font-size: 15px;
+}
+.acts .prow .cur {
+  font-size: 13px;
+}
+.acts li.confirm {
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 4px 4px 14px;
+  color: var(--ink);
+}
+.acts li.confirm .nm {
+  flex: 1;
+  min-width: 0;
+}

@@ -1,0 +1,13 @@
+{
+  "name": "trip-planning",
+  "private": true,
+  "description": "Build orchestration: legacy web/ at /, the React app (app/) at /next/.",
+  "workspaces": ["app"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "npm run build -w app && node scripts/assemble.mjs",
+    "dev": "npm run dev -w app",
+    "test": "npm test -w app",
+    "typecheck": "npm run typecheck -w app"
+  }
+}

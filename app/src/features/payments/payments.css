@@ -1,0 +1,40 @@
+/* PLACEHOLDER styles for the read-only payments list */
+.exps > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 14px;
+}
+.exps > li.empty-s {
+  display: block;
+}
+.exps .xt {
+  flex: 1;
+  min-width: 0;
+}
+.exps .name {
+  display: block;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.exps .pl {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xamt {
+  flex: none;
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.xamt.q {
+  color: var(--muted);
+  font-weight: 400;
+}

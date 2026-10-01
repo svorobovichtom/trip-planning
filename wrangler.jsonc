@@ -1,5 +1,7 @@
-// Cloudflare Worker: static frontend from web/ plus a small script
+// Cloudflare Worker: static frontend from dist/ plus a small script
 // (worker/index.js) for POST /scan, the receipt-recognition endpoint.
+// dist/ is assembled by `npm run build` (build.command, run by
+// `wrangler deploy`): web/ at / (legacy page) and the React app (app/) at /next/.
 // Builds run on every push to main (Workers Builds, connected to GitHub).
 // The API is PocketBase on the Oracle VM; see README.md.
 {
@@ -7,8 +9,9 @@
   "name": "trip-planning",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
+  "build": { "command": "npm run build" },
   "assets": {
-    "directory": "./web",
+    "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "none",
     // Static files are served without running the script; /scan always
