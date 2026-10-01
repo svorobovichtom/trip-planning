@@ -227,39 +227,137 @@ async function recognise(env, mime, b64, pinned) {
         errors.push(`${model}: ${e.message || e}`);
         return null;
       }));
-  const results = await Promise.all(runs);
-  const [main, ...rest] = results;
 
-  // The main model reads names, prices and totals best; a fallback only wins
-  // if the main one failed or its lines clearly don't add up and the
-  // fallback's do (against the main model's total when there is one).
-  let pick = main, fallback = null;
+  // The main model reads names, prices and totals best. The fallback (run in
+  // parallel, so it costs no time) is only consulted when the main one fails
+  // or its lines don't add up to the total.
+  const main = await runs[0];
+  if (main && main.lines_ok) return { ok: true, result: main, usage, errors };
+  const alt = runs[1] ? await runs[1] : null;
+
   if (!main) {
-    pick = rest.find(Boolean) || null;
-    if (pick) fallback = `${models[0]} failed`;
-  } else if (!main.lines_ok) {
-    for (const alt of rest) {
-      if (!alt) continue;
-      const total = main.total ?? alt.total;
-      if (total == null || alt.lines_sum == null) continue;
-      const altOff = Math.abs(alt.lines_sum - total);
-      const mainOff = main.lines_sum == null ? Infinity : Math.abs(main.lines_sum - total);
-      if (withinTolerance(alt.lines_sum, total) && altOff < mainOff) {
-        pick = { ...alt, total, lines_ok: true };
-        fallback = `${models[0]} lines off by ${round2(main.lines_sum == null ? total : main.lines_sum - total)}`;
-        if (main.store && !alt.store) pick.store = main.store;
-        if (main.date && !alt.date) pick.date = main.date;
+    if (!alt) return { ok: false, errors, usage };
+    return { ok: true, result: alt, usage, errors, fallback: `${models[0]} failed` };
+  }
+  if (!alt) return { ok: true, result: main, usage, errors };
+
+  const total = main.total ?? alt.total;
+  if (total == null) return { ok: true, result: main, usage, errors };
+  // 1) Cross-check: a price or row where the two readings disagree and the
+  //    fallback's version makes the main lines add up (a misread digit, a
+  //    dropped or doubled row).
+  const fixed = crossFix(main.lines, alt.lines, total);
+  if (fixed) {
+    const lines = fixed.lines;
+    return {
+      ok: true, usage, errors,
+      result: { ...main, total, lines, lines_sum: sumPrices(lines), lines_ok: true, notes: [...main.notes, ...fixed.notes] },
+    };
+  }
+  // 2) The fallback's lines add up and the main ones don't: take its lines.
+  const mainOff = main.lines_sum == null ? Infinity : Math.abs(main.lines_sum - total);
+  if (alt.lines_sum != null && withinTolerance(alt.lines_sum, total) && Math.abs(alt.lines_sum - total) < mainOff) {
+    return {
+      ok: true, usage, errors,
+      result: { ...alt, total, store: main.store || alt.store, date: main.date || alt.date, lines_ok: true },
+      fallback: `${models[0]} lines off by ${round2(main.lines_sum == null ? total : main.lines_sum - total)}`,
+    };
+  }
+  return { ok: true, result: main, usage, errors };
+}
+
+// Aligns two readings of the same receipt by name and looks for one or two
+// differences (price changed, row only in one reading) whose fallback
+// version makes `lines` sum to `total` within 2 grosze. Returns
+// {lines, notes} or null.
+function crossFix(lines, other, total) {
+  const sum = sumPrices(lines);
+  if (sum == null) return null;
+  const need = round2(total - sum);
+  const used = new Set(), pairOf = new Map(); // main index -> other index
+  for (let i = 0; i < lines.length; i++) {
+    let best = null;
+    for (let j = 0; j < other.length; j++) {
+      if (used.has(j)) continue;
+      const s = similarity(lines[i].text, other[j].text) - Math.abs(i / lines.length - j / other.length) * 0.3;
+      if (s >= 0.5 && (!best || s > best.s)) best = { s, j };
+    }
+    if (best) { used.add(best.j); pairOf.set(i, best.j); }
+  }
+  const cands = [];
+  for (const [i, j] of pairOf) {
+    const a = lines[i].price, b = other[j].price;
+    if (a != null && b != null && a !== b) cands.push({ kind: "price", i, j, delta: round2(b - a) });
+  }
+  for (let i = 0; i < lines.length; i++) {
+    if (!pairOf.has(i) && lines[i].price != null) cands.push({ kind: "drop", i, delta: -lines[i].price });
+  }
+  for (let j = 0; j < other.length; j++) {
+    if (!used.has(j) && other[j].price != null) cands.push({ kind: "add", j, delta: other[j].price });
+  }
+  // Few differences only: with many, some combination would hit the total
+  // by chance (and the readings are too different to trust either way).
+  if (cands.length > 15) return null;
+  const single = cands.find((c) => Math.abs(c.delta - need) <= 0.02);
+  let pick = single ? [single] : null;
+  if (!pick && cands.length <= 6) {
+    outer: for (let x = 0; x < cands.length; x++) {
+      for (let y = x + 1; y < cands.length; y++) {
+        const a = cands[x], b = cands[y];
+        if (a.i != null && a.i === b.i) continue;
+        if (Math.abs(a.delta + b.delta - need) <= 0.02) { pick = [a, b]; break outer; }
       }
     }
   }
-  if (!pick) return { ok: false, errors, usage };
-  return { ok: true, result: pick, usage, errors, fallback };
+  if (!pick) return null;
+
+  const out = lines.map((l) => ({ ...l }));
+  const notes = [];
+  const drop = new Set(), adds = [];
+  for (const c of pick) {
+    if (c.kind === "price") {
+      notes.push(`price of "${out[c.i].text}" ${out[c.i].price} -> ${other[c.j].price} (second reading)`);
+      out[c.i].price = other[c.j].price;
+      if (out[c.i].qty == null) out[c.i].qty = other[c.j].qty;
+      if (out[c.i].unit == null) out[c.i].unit = other[c.j].unit;
+    } else if (c.kind === "drop") {
+      notes.push(`dropped "${out[c.i].text}" ${out[c.i].price} (not in second reading)`);
+      drop.add(c.i);
+    } else {
+      notes.push(`added "${other[c.j].text}" ${other[c.j].price} (from second reading)`);
+      // Insert after the main row paired with the nearest earlier other row.
+      let at = 0;
+      for (const [i, j] of pairOf) if (j < c.j && i + 1 > at) at = i + 1;
+      adds.push({ at, line: { ...other[c.j] } });
+    }
+  }
+  const res = [];
+  for (let i = 0; i <= out.length; i++) {
+    for (const a of adds) if (a.at === i) res.push(a.line);
+    if (i < out.length && !drop.has(i)) res.push(out[i]);
+  }
+  return { lines: res, notes };
+}
+
+// Dice coefficient on character bigrams of the normalised names.
+function similarity(a, b) {
+  const x = norm(a), y = norm(b);
+  if (x === y) return 1;
+  if (x.length < 2 || y.length < 2) return 0;
+  const grams = new Map();
+  for (let i = 0; i < x.length - 1; i++) { const g = x.slice(i, i + 2); grams.set(g, (grams.get(g) || 0) + 1); }
+  let hit = 0;
+  for (let i = 0; i < y.length - 1; i++) {
+    const g = y.slice(i, i + 2), n = grams.get(g);
+    if (n) { hit++; grams.set(g, n - 1); }
+  }
+  return (2 * hit) / (x.length + y.length - 2);
 }
 
 const VISION_PROMPT = `You read a photo of a shop receipt (usually Polish: Lidl, Auchan, Biedronka, Kaufland, Orlen, Żabka...).
 
 Return one JSON object:
-{"s": store name as printed or null, "d": purchase date "YYYY-MM-DD" or null, "t": amount paid (SUMA / DO ZAPŁATY / RAZEM) as a number or null, "l": rows}
+{"s": shop name (from the logo, header or company line, e.g. "Lidl", "Auchan") or null, "d": purchase date "YYYY-MM-DD" or null, "t": amount paid (SUMA / DO ZAPŁATY / RAZEM) as a number or null, "l": rows}
 
 "l" lists every product row of the receipt exactly once, top to bottom. Each row is an array [name, qty, unit, amount]:
 - name: product name as printed, without the quantity and unit price, e.g. "Banany luz".
@@ -492,11 +590,12 @@ ${list}
 Receipt rows:
 ${rows}
 
-Return {"r":[{"i": row number, "c": category number, "m": shopping-list number or null}, ...]} with one entry per receipt row, in order.
+Return {"r":[{"i": row number, "c": category number, "m": shopping-list number or null}, ...]} with one entry per receipt row, in order. "c" is always a category number.
 
 Rules for "m":
 - Use a list number only when the row is clearly that same product. Another size, variety, brand or the plural is fine ("Pomidory kiść 500g" is Помидоры, "Lay's Chipsy" is Чипсы, "Szczypiorek" is the herbs item when the list item mentions szczypiorek).
 - A different product is not a match even if related: cherry tomatoes are not Помидоры, potato chips are not Картофель, carrots are not Огурцы. When unsure, use null.
+- Names may have OCR errors (a wrong or missing letter). Check that the size fits the product: "60l" or "35l" is a bag size, "1kg" fits carrots or sugar, "500g" fits vegetables.
 - Several rows may match the same list number. Most rows match nothing; never pick a list item just because it is similar in category.
 
 Answer with the JSON object only.`;
