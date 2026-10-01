@@ -238,16 +238,54 @@ dialog.viewer.out::backdrop{opacity:0}
 .thumb img{display:block;width:100%;height:100%;object-fit:cover}
 .thumb svg{width:18px;height:18px}
 
-/* expenses: add */
-.addx{display:grid;gap:8px;margin-top:16px}
-.addx .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.addx .link{color:var(--text)}
+/* expenses: payment sheet (full height; the form is self-contained) */
+.newpay{width:100%;margin-top:16px}
 .btn.lg{min-height:48px;font-size:15px}
-/* expenses: editor */
-.ed{margin-top:16px;padding:14px;border-radius:var(--r);background:var(--surface)}
-.ed-h{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
-.ed-h h3{margin:0;color:var(--ink);font-size:16px;font-weight:500}
-.ed .in{background:var(--surface-2)}
+dialog.pg .sheet{top:calc(env(safe-area-inset-top,0px) + 10px);max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.pg-h{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 6px}
+.pg-b{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 16px 28px}
+.pg-f{flex:none;display:flex;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--bg)}
+.pg-f .sp{flex:1}
+.pg-f .btn.pri{min-width:46%}
+.pg .in{background:var(--surface)}
+.pick{display:flex;gap:8px;margin-bottom:16px}
+.pick .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
+.pick .btn.pri{flex:1;font-size:15px}
+.pick .btn:not(.pri){width:56px;padding:0}
+.pick svg{width:20px;height:20px}
+.hint{margin:6px 2px 0;font-size:13px;color:var(--muted)}
+.pg .amt{margin-bottom:14px}
+.pg .amt+.hint{margin:-8px 2px 14px}
+.segc{display:flex;padding:3px;border-radius:999px;background:var(--surface)}
+.segc button{flex:1;min-width:0;height:32px;padding:0 6px;border:0;border-radius:999px;background:none;color:var(--text);font-size:13px;font-weight:500;white-space:nowrap;transition:background .25s cubic-bezier(.19,1,.22,1),color .25s}
+.segc button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.segc button.off{color:var(--muted)}
+.mode{margin-top:10px}
+.msum{margin:8px 2px 0;font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
+.msum b,.clh b{color:var(--ink);font-weight:500}
+.msum .err{display:block;margin-top:2px;color:var(--ink)}
+.msum .err:empty{display:none}
+.chks>li{align-items:center}
+.chk{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:none;color:var(--ink);font-size:15px;text-align:left}
+.chk .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chk:active,.cline:active{background:var(--surface-2)}
+.chk[aria-pressed="false"] .nm{color:var(--muted)}
+.chk[aria-pressed="true"] .box,.cline[aria-pressed="true"] .box{background:var(--ink);border-color:var(--ink)}
+.chk[aria-pressed="true"] .box svg,.cline[aria-pressed="true"] .box svg{opacity:1;transform:none}
+.chk .box,.cline .box{flex:none}
+.amr .in{flex:none;width:7.2em;min-height:36px;margin-right:6px;padding:6px 10px;border-radius:8px;background:var(--bg);text-align:right;font-variant-numeric:tabular-nums}
+.amr .in:disabled{opacity:.4}
+.clh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:2px 2px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.clh span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--muted)}
+.clme{display:flex;align-items:center;gap:8px;min-height:40px;margin:0 2px 4px;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.clme .sp{flex:1}
+.clme .link{min-height:40px;font-size:13px}
+#clWho{margin:0 0 10px}
+.cline{flex:1;min-width:0;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:48px;padding:8px 14px;border:0;background:none;text-align:left}
+.cline .name{font-size:14px}
+.cline .pl{font-size:12px}
+.cline .qty{font-size:14px;color:var(--ink)}
+.cline:disabled{opacity:.6}
 .rc{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .rc .thumb{position:relative;width:56px;height:72px}
 .rc .thumb.scan::after{content:"";position:absolute;left:0;right:0;top:0;height:36%;background:linear-gradient(to bottom,transparent,rgba(0,0,0,.14));border-bottom:1.5px solid rgba(0,0,0,.5);animation:scanl 1.6s cubic-bezier(.45,0,.55,1) infinite alternate}
@@ -280,13 +318,22 @@ dialog.viewer.out::backdrop{opacity:0}
 .ed-f{display:flex;align-items:center;gap:8px;margin-top:20px}
 .ed-f .sp{flex:1}
 .link.bad{color:var(--bad)}
-/* expenses: list */
-.exps>li{align-items:center}
-.exps .thumb{margin-left:14px}
-.xrow{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:56px;padding:9px 14px 9px 12px;border:0;background:none;text-align:left}
-.xrow:active{background:var(--surface-2)}
-.xrow .txt{flex:1}
-.xamt{flex:none;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* expenses: list. The whole row is one tap target (.xhit underneath);
+   the receipt thumb and «повторить» sit above it. */
+.pg .lines,.pg .match{background:var(--surface)}
+.exps>li{position:relative;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 14px}
+.exps>li.empty-s{display:block;padding:20px 14px}
+.exps .thumb{position:relative;z-index:2}
+.exps .xt{flex:1;min-width:0;position:relative;z-index:1;pointer-events:none}
+.exps .xt .pl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xamt{flex:none;position:relative;z-index:1;pointer-events:none;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.xamt.q{color:var(--muted);font-weight:400}
+.xhit{position:absolute;inset:0;z-index:0;width:100%;padding:0;border:0;background:none}
+.xhit:active{background:var(--surface-2)}
+.rt{position:relative;z-index:2;padding:0;border:0;background:none;color:var(--ink);font-size:13px;font-weight:500;text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:2px;pointer-events:auto}
+.rt::before{content:"";position:absolute;inset:-12px -8px}
+.shim{background:linear-gradient(90deg,var(--muted) 0,var(--muted) 35%,var(--ink) 50%,var(--muted) 65%,var(--muted) 100%) 0 0/300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shim 1.8s linear infinite}
+@keyframes shim{from{background-position:100% 0}to{background-position:0 0}}
 
 /* totals */
 .hero{margin-top:16px}
@@ -344,56 +391,8 @@ dialog.viewer.out::backdrop{opacity:0}
 
   <div id="p-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
     <div class="ro" id="roExp" hidden>Только просмотр. Чтобы добавлять чеки, попроси ссылку с ключом.</div>
-    <div class="addx" id="addx">
-      <button class="btn pri lg" type="button" id="aPick">Чек из галереи</button>
-      <div class="two">
-        <button class="btn" type="button" id="aCam">Сфотографировать</button>
-        <button class="link" type="button" id="aManual">Ввести вручную</button>
-      </div>
-      <input type="file" id="fCam" accept="image/*" capture="environment" hidden>
-      <input type="file" id="fPick" accept="image/*,application/pdf" hidden>
-    </div>
-
-    <form class="ed" id="ed" hidden novalidate aria-labelledby="edH">
-      <div class="ed-h"><h3 id="edH">Новый чек</h3><button class="x" type="button" id="edClose" aria-label="Закрыть">×</button></div>
-      <div class="rc" id="rc" hidden>
-        <button class="thumb" type="button" id="rcThumb" aria-label="Открыть чек"></button>
-        <div class="rc-t">
-          <span class="rc-s" id="rcS"></span>
-          <span class="rc-m" id="rcM"></span>
-          <button class="pill retry" type="button" id="rcRetry" hidden>Попробовать ещё раз</button>
-        </div>
-        <button class="link" type="button" id="rcRm">Убрать</button>
-      </div>
-      <details class="lines" id="lines" hidden><summary id="linesS"></summary><ul id="linesL"></ul></details>
-      <div class="match" id="match" hidden>
-        <p id="matchP"></p>
-        <button class="btn" type="button" id="matchBtn"><span id="matchBtnT">Отметить купленными</span></button>
-      </div>
-      <label class="amt"><input id="fAmount" inputmode="decimal" placeholder="0,00" autocomplete="off" aria-label="Сумма" enterkeyhint="done"><span>zł</span></label>
-      <div class="fl" id="catL">Категория</div>
-      <div class="pills" id="fCats" role="group" aria-labelledby="catL"></div>
-      <div class="fl" id="paidL">Кто платил</div>
-      <div class="pills" id="fPaid" role="group" aria-labelledby="paidL"></div>
-      <label class="fl" for="fTitle">Что купили</label>
-      <input class="in" id="fTitle" maxlength="120" placeholder="Магазин или что купили" autocomplete="off" enterkeyhint="done">
-      <label class="fl" for="fDate">Дата</label>
-      <input class="in" id="fDate" type="date">
-      <div class="fl" id="splitL">На кого делим</div>
-      <div class="seg" role="group" aria-labelledby="splitL">
-        <button class="pill" type="button" data-split="all" aria-pressed="true">На всех</button>
-        <button class="pill" type="button" data-split="some" aria-pressed="false">Выбрать людей</button>
-      </div>
-      <div class="pills" id="fSplit" hidden style="margin-top:8px"></div>
-      <div class="ed-f">
-        <button class="link bad" type="button" id="fDel" hidden>Удалить</button>
-        <span class="sp"></span>
-        <button class="btn" type="button" id="fCancel">Отмена</button>
-        <button class="btn pri" type="submit" id="fSave">Сохранить</button>
-      </div>
-    </form>
-
-    <div class="h2row"><h2>Чеки</h2><span class="sec-n" id="expN"></span></div>
+    <button class="btn pri lg newpay" type="button" id="aNew">Новый платёж</button>
+    <div class="h2row"><h2>Платежи</h2><span class="sec-n" id="expN"></span></div>
     <ul class="list exps" id="expList"></ul>
   </div>
 
@@ -433,6 +432,65 @@ dialog.viewer.out::backdrop{opacity:0}
     <button class="tab" role="tab" id="t-sum" data-tab="sum" aria-controls="p-sum" aria-selected="false" tabindex="-1" type="button">Итоги</button>
   </nav>
 </div>
+
+<dialog id="pay" class="pg" aria-labelledby="edH">
+  <form class="sheet page" id="ed" novalidate tabindex="-1" autofocus>
+    <div class="pg-h"><h3 id="edH">Новый платёж</h3><button class="x" type="button" id="edClose" aria-label="Закрыть">×</button></div>
+    <div class="pg-b" id="pgB">
+      <div class="pick" id="pick">
+        <button class="btn pri" type="button" id="aPick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><circle cx="9.5" cy="9.5" r="1.5"/><path d="M20 15l-4.5-4.5L6 20"/></svg><span>Фото чека</span></button>
+        <button class="btn" type="button" id="aCam" aria-label="Сфотографировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></button>
+      </div>
+      <div class="rc" id="rc" hidden>
+        <button class="thumb" type="button" id="rcThumb" aria-label="Открыть чек"></button>
+        <div class="rc-t">
+          <span class="rc-s" id="rcS"></span>
+          <span class="rc-m" id="rcM"></span>
+        </div>
+        <button class="pill" type="button" id="rcRetry" hidden></button>
+        <button class="link" type="button" id="rcRm">Убрать</button>
+      </div>
+      <label class="amt"><input id="fAmount" inputmode="decimal" placeholder="0,00" autocomplete="off" aria-label="Сумма" enterkeyhint="done"><span>zł</span></label>
+      <div class="hint" id="amtHint" hidden></div>
+      <input class="in" id="fTitle" maxlength="120" placeholder="Что купили — магазин, кафе…" aria-label="Что купили" autocomplete="off" enterkeyhint="done">
+      <div class="fl" id="paidL">Платил</div>
+      <div class="pills" id="fPaid" role="group" aria-labelledby="paidL"></div>
+      <div class="fl" id="splitL">Делим</div>
+      <div class="segc" id="fMode" role="group" aria-labelledby="splitL">
+        <button type="button" data-mode="equal" aria-pressed="true">Поровну</button>
+        <button type="button" data-mode="amounts" aria-pressed="false">Суммами</button>
+        <button type="button" data-mode="claims" aria-pressed="false">По чеку</button>
+      </div>
+      <div class="mode" id="mEqual"><ul class="list chks" id="eqL"></ul><div class="msum" id="eqSum"></div></div>
+      <div class="mode" id="mAmounts" hidden><ul class="list chks" id="amL"></ul><div class="msum"><span id="amSum"></span><span class="err" id="amErr"></span></div></div>
+      <div class="mode" id="mClaims" hidden>
+        <p class="hint" id="clHint"></p>
+        <div id="clBox" hidden>
+          <div class="clh"><b id="clSum"></b><span id="clWait"></span></div>
+          <div class="clme"><span id="clMe"></span><span class="sp"></span><button class="link" type="button" id="clFor">за другого</button></div>
+          <div class="pills" id="clWho" hidden></div>
+          <ul class="list cls" id="clL"></ul>
+        </div>
+      </div>
+      <div class="fl" id="catL">Категория</div>
+      <div class="pills" id="fCats" role="group" aria-labelledby="catL"></div>
+      <details class="lines" id="lines" hidden><summary id="linesS"></summary><ul id="linesL"></ul></details>
+      <div class="match" id="match" hidden>
+        <p id="matchP"></p>
+        <button class="btn" type="button" id="matchBtn"><span id="matchBtnT">Отметить купленными</span></button>
+      </div>
+      <label class="fl" for="fDate">Дата</label>
+      <input class="in" id="fDate" type="date">
+    </div>
+    <div class="pg-f">
+      <button class="link bad" type="button" id="fDel" hidden>Удалить</button>
+      <span class="sp"></span>
+      <button class="btn pri" type="submit" id="fSave">Сохранить</button>
+    </div>
+  </form>
+</dialog>
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fPick" accept="image/*,application/pdf" hidden>
 
 <dialog id="viewer" class="viewer" aria-labelledby="vwT">
   <div class="vw">
@@ -532,6 +590,8 @@ const S = {
   people: [],                 // sorted
   items: new Map(),           // id -> record
   expenses: new Map(),        // id -> record
+  claims: new Map(),          // id -> {expense, line, person}: "I had this receipt line"
+  v2: LS.get("trip.v2") === "1",   // server has payments (background scan, split modes, claims)
   tab: null,
   me: LS.get("trip.me"),
   online: null,               // null until the first connect or failure
@@ -634,15 +694,20 @@ function plural(n, one, few, many) {
 // ---------- data ----------
 async function reloadAll() {
   try {
-    const [people, items, expenses] = await Promise.all([
+    const [people, items, expenses, claims] = await Promise.all([
       pb.collection("people").getFullList({ sort: "sort,created" }),
       pb.collection("items").getFullList({ sort: "sort,created" }),
       pb.collection("expenses").getFullList({ sort: "-created" }),
+      // No claims collection yet = the server predates payments: keep the old flow.
+      pb.collection("claims").getFullList({ fields: "id,expense,line,person" }).catch((e) => { if (e && e.status === 404) return null; throw e; }),
     ]);
     S.people = people;
     S.items = new Map(items.map((r) => [r.id, r]));
     S.expenses = new Map(expenses.map((r) => [r.id, r]));
-    LS.set("trip.snap", JSON.stringify({ people, items, expenses }));
+    S.v2 = !!claims;
+    LS.set("trip.v2", S.v2 ? "1" : null);
+    S.claims = new Map((claims || []).map((r) => [r.id, r]));
+    LS.set("trip.snap", JSON.stringify({ people, items, expenses, claims: claims || [] }));
     // keep optimistic values for writes that are still queued
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
@@ -671,7 +736,7 @@ function onItemEvent(e) {
 let snapT;
 function saveSnap() {
   clearTimeout(snapT);
-  snapT = setTimeout(() => LS.set("trip.snap", JSON.stringify({ people: S.people, items: [...S.items.values()], expenses: [...S.expenses.values()] })), 500);
+  snapT = setTimeout(() => LS.set("trip.snap", JSON.stringify({ people: S.people, items: [...S.items.values()], expenses: [...S.expenses.values()], claims: [...S.claims.values()].filter((c) => !c.tmp) })), 500);
 }
 function onPeopleEvent(e) {
   const r = e.record;
@@ -696,6 +761,7 @@ async function connect() {
     await pb.collection("items").subscribe("*", onItemEvent);
     await pb.collection("people").subscribe("*", onPeopleEvent);
     await pb.collection("expenses").subscribe("*", onExpenseEvent);
+    if (S.v2) await pb.collection("claims").subscribe("*", onClaimEvent);
   } catch (e) { setOnline(false); setTimeout(connect, 4000); }
 }
 pb.realtime.onDisconnect = () => setOnline(false);
@@ -1140,7 +1206,9 @@ $(".nav").addEventListener("keydown", (e) => {
 
 // ---------- money ----------
 // Amounts are PLN numbers in the database; everything here is integer grosze.
-const CATS = ["Мясо и рыба", "Молочка и яйца", "Овощи и зелень", "Фрукты", "Бакалея", "Снеки", "Гриль и быт", "Напитки и алкоголь", "Жильё", "Транспорт и бензин", "Другое"];
+const CATS_OLD = ["Мясо и рыба", "Молочка и яйца", "Овощи и зелень", "Фрукты", "Бакалея", "Снеки", "Гриль и быт", "Напитки и алкоголь", "Жильё", "Транспорт и бензин", "Другое"];
+const CATS_V2 = [...CATS_OLD.slice(0, -1), "Кафе и рестораны", "Другое"];
+const cats = () => (S.v2 ? CATS_V2 : CATS_OLD);
 const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "PLN", currencyDisplay: "narrowSymbol" });
 const fmtG = (g) => money.format(g / 100);
 const fmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + fmtG(Math.abs(g));
@@ -1154,11 +1222,23 @@ const sortedExpenses = () => [...S.expenses.values()].sort((a, b) => String(b.cr
 const pad2 = (n) => String(n).padStart(2, "0");
 const dayStr = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
+function onClaimEvent(e) {
+  const r = e.record;
+  if (e.action === "delete") S.claims.delete(r.id);
+  else {
+    // the realtime echo of our own claim replaces its optimistic copy
+    for (const c of S.claims.values()) if (c.tmp && c.expense === r.expense && c.line === r.line && c.person === r.person) S.claims.delete(c.id);
+    S.claims.set(r.id, { id: r.id, expense: r.expense, line: r.line, person: r.person });
+  }
+  renderMoney();
+  saveSnap();
+}
 function onExpenseEvent(e) {
   if (e.action === "delete") {
     S.expenses.delete(e.record.id);
-    if (F.open && F.editing === e.record.id) { closeEditor(); toast("Этот чек удалили"); }
-  } else S.expenses.set(e.record.id, e.record);
+    for (const c of [...S.claims.values()]) if (c.expense === e.record.id) S.claims.delete(c.id);
+    if (F.open && F.editing === e.record.id) { closeEditor(); toast("Этот платёж удалили"); }
+  } else { S.expenses.set(e.record.id, e.record); syncEditor(e.record); }
   renderMoney();
   renderList();
   saveSnap();
@@ -1176,10 +1256,55 @@ function splitIds(x) {
   const ids = (x.split_between || []).filter((id) => order.includes(id));
   return (ids.length ? ids.sort((a, b) => order.indexOf(a) - order.indexOf(b)) : order);
 }
-// Who owes what for one expense: Map(personId -> grosze).
+const byOrder = (ids) => { const order = S.people.map((p) => p.id); return [...new Set(ids)].filter((id) => order.includes(id)).sort((a, b) => order.indexOf(a) - order.indexOf(b)); };
+// Lines can be split by claims only when the scan says they add up.
+const linesOk = (x) => !!x && Array.isArray(x.lines) && x.lines.some((l) => l && l.text) && x.scan_error !== "lines_mismatch";
+// Claims of one expense: Map(line index -> [personId] in list order).
+function claimsOf(xid) {
+  const m = new Map();
+  for (const c of S.claims.values()) if (c.expense === xid) { if (!m.has(c.line)) m.set(c.line, []); m.get(c.line).push(c.person); }
+  for (const [i, ids] of m) m.set(i, byOrder(ids));
+  return m;
+}
+// Who owes what for one expense: Map(personId -> grosze). An expense whose
+// amount is still unknown (0, waiting for the scan) counts for nobody.
+//  equal   - the amount evenly between split_between (or everyone)
+//  amounts - fixed shares; the rest evenly between the «авто» ones (null),
+//            or between split_between/everyone if nobody is «авто»
+//  claims  - each line between the people who had it; unclaimed lines and
+//            the difference to the total between split_between/everyone
 function shares(x) {
-  const out = new Map();
-  splitEven(grosze(x.amount), splitIds(x), out);
+  const out = new Map(), g = grosze(x.amount);
+  if (!g) return out;
+  const pool = splitIds(x);
+  const sa = x.split_amounts;
+  if (x.split_mode === "amounts" && sa && typeof sa === "object" && !Array.isArray(sa)) {
+    const ids = byOrder(Object.keys(sa));
+    if (ids.length) {
+      let fixed = 0;
+      const autos = [];
+      for (const id of ids) {
+        const v = sa[id];
+        if (v == null || v === "" || !isFinite(Number(v))) autos.push(id);
+        else { const n = Math.round(Number(v)); fixed += n; out.set(id, (out.get(id) || 0) + n); }
+      }
+      splitEven(g - fixed, autos.length ? autos : pool, out);
+      return out;
+    }
+  } else if (x.split_mode === "claims" && linesOk(x)) {
+    const cl = claimsOf(x.id);
+    let sum = 0, rest = 0;
+    x.lines.forEach((l, i) => {
+      if (!l || !l.text) return;
+      const lg = grosze(l.price);
+      sum += lg;
+      const who = cl.get(i);
+      if (who && who.length) splitEven(lg, who, out); else rest += lg;
+    });
+    splitEven(rest + g - sum, pool, out);
+    return out;
+  }
+  splitEven(g, pool, out);
   return out;
 }
 function ledger() {
@@ -1215,87 +1340,143 @@ function settle(bal) {
 
 function renderMoney() { if (!S.loaded) return; renderExpList(); renderSum(); if (F.open) renderEditor(); renderSub(); }
 
-// ---------- expenses: editor ----------
+// ---------- expenses: payment sheet ----------
+// One screen for a new payment and for editing one. A photo or an amount is
+// enough: the server reads the receipt in the background after saving and
+// fills the amount, title, category and lines (the row shows «читаю чек…»).
+// All of it lives in the self-contained <form id="ed">.
 const F = {
-  open: false, editing: null, cat: null, paid: null, split: "all", pick: new Set(),
+  open: false, editing: null, cat: "", paid: null, mode: "equal",
+  part: new Set(), amts: new Map(),           // participants; person -> typed amount ("" = «авто»)
   file: null, fileUrl: null, removeFile: false, dateOrig: "",
-  scan: null,          // {state: "busy"|"ok"|"fail", text, meta}
-  seq: 0, matched: [], marked: 0, lines: null, total: null,
+  touched: new Set(),                         // fields the user changed: amount, title, cat
+  claimFor: null, forOpen: false, claimsHint: false, busy: new Set(),
+  // old servers only: the page reads the receipt itself
+  scan: null, seq: 0, matched: [], marked: 0, lines: null, total: null, auto: null,
 };
-function openEditor(x) {
-  closeEditor(true);
+const pay = $("#pay");
+const curX = () => (F.editing && S.expenses.get(F.editing)) || null;
+const hasPhoto = () => { const x = curX(); return !!F.file || !!(x && x.receipt && !F.removeFile); };
+const g2s = (g) => (g / 100).toFixed(2).replace(".", ",");   // 5034 -> "50,34"
+const isImg = (name) => /\.(jpe?g|png|webp)$/i.test(name || "");
+const scanning = (x) => !!x && (x.scan_status === "pending" || x.scan_status === "running");
+
+function resetF() {
+  F.seq++;
+  if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
   Object.assign(F, {
-    open: true, editing: x ? x.id : null, cat: x ? x.category : null, paid: x ? x.paid_by : S.me,
-    split: x && (x.split_between || []).length ? "some" : "all", pick: new Set(x ? x.split_between || [] : []),
-    file: null, removeFile: false, scan: null, matched: [], marked: 0, lines: null, total: null, auto: null,
+    open: false, editing: null, file: null, fileUrl: null, removeFile: false, scan: null, matched: [], marked: 0,
+    lines: null, total: null, auto: null, forOpen: false, claimsHint: false,
   });
+  F.touched = new Set(); F.busy = new Set();
+  $("#fCam").value = ""; $("#fPick").value = "";
+}
+function openEditor(x) {
+  resetF();
+  const all = S.people.map((p) => p.id);
+  Object.assign(F, {
+    open: true, editing: x ? x.id : null, cat: x ? x.category || "" : "", paid: x ? x.paid_by : S.me,
+    mode: x && (x.split_mode === "amounts" || x.split_mode === "claims") ? x.split_mode : "equal",
+    part: new Set(x && (x.split_between || []).length ? byOrder(x.split_between) : all),
+    amts: new Map(), claimFor: S.me,
+  });
+  if (x && x.split_mode === "amounts" && x.split_amounts && typeof x.split_amounts === "object") {
+    const ids = byOrder(Object.keys(x.split_amounts));
+    if (ids.length) F.part = new Set(ids);
+    for (const id of ids) { const v = x.split_amounts[id]; F.amts.set(id, v == null ? "" : g2s(Number(v))); }
+  }
   const d = x ? parseDate(x.spent_at || x.created) : new Date();
   F.dateOrig = d && !isNaN(d) ? dayStr(d) : "";
-  $("#fAmount").value = x ? String(x.amount).replace(".", ",") : "";
+  $("#fAmount").value = x && x.amount > 0 ? g2s(grosze(x.amount)) : "";
   $("#fTitle").value = x ? x.title || "" : "";
   $("#fDate").value = F.dateOrig;
-  const edEl = $("#ed");
-  edEl.hidden = false; edEl.classList.remove("pin"); void edEl.offsetWidth; edEl.classList.add("pin");
-  $("#addx").hidden = true;
+  $("#eqL").innerHTML = ""; $("#amL").innerHTML = "";
   renderEditor();
-  $("#scroll").scrollTo({ top: 0 });
+  openSheet(pay);
+  $("#pgB").scrollTop = 0;
 }
-function closeEditor(quiet) {
-  F.seq++;   // drop any scan still running
-  if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
-  Object.assign(F, { open: false, editing: null, file: null, fileUrl: null, scan: null, matched: [], lines: null, total: null });
-  $("#fCam").value = ""; $("#fPick").value = "";
-  if (quiet) return;
-  $("#ed").hidden = true;
-  $("#addx").hidden = !KEY;
+function closeEditor() { F.open = false; F.seq++; closeSheet(pay); }
+pay.addEventListener("close", () => { if (!pay.classList.contains("out")) resetF(); });
+
+// The record changed on the server (scan finished, someone edited it) while
+// it is open here: take the new values for fields this person hasn't touched.
+function syncEditor(x) {
+  if (!F.open || F.editing !== x.id) return;
+  if (!F.touched.has("amount")) $("#fAmount").value = x.amount > 0 ? g2s(grosze(x.amount)) : "";
+  if (!F.touched.has("title")) $("#fTitle").value = x.title || "";
+  if (!F.touched.has("cat")) F.cat = x.category || "";
 }
+
 function renderEditor() {
-  const ed = F.editing && S.expenses.get(F.editing);
-  $("#edH").textContent = ed ? "Изменить чек" : "Новый чек";
-  $("#fDel").hidden = !ed;
-  $("#fCats").innerHTML = CATS.map((c) => `<button class="pill" type="button" data-cat="${esc(c)}" aria-pressed="${c === F.cat}">${esc(c)}</button>`).join("");
+  if (!F.open) return;
+  const x = curX(), photo = hasPhoto();
+  $("#edH").textContent = x ? "Платёж" : "Новый платёж";
+  $("#fDel").hidden = !x;
+  const opts = (photo && S.v2 ? [["", "из чека"]] : []).concat(cats().map((c) => [c, c]));
+  if (F.cat && !cats().includes(F.cat)) opts.push([F.cat, F.cat]);
+  $("#fCats").innerHTML = opts.map(([v, t]) => `<button class="pill" type="button" data-cat="${esc(v)}" aria-pressed="${v === F.cat && (v !== "" || photo)}">${esc(t)}</button>`).join("");
   const paid = F.paid || S.me;
   $("#fPaid").innerHTML = S.people.map((p) => `<button class="pill" type="button" data-pid="${p.id}" aria-pressed="${p.id === paid}">${esc(p.name)}</button>`).join("");
-  for (const b of document.querySelectorAll(".seg .pill")) b.setAttribute("aria-pressed", String(b.dataset.split === F.split));
-  const pick = $("#fSplit");
-  pick.hidden = F.split !== "some";
-  pick.innerHTML = S.people.map((p) => `<button class="pill" type="button" data-pid="${p.id}" aria-pressed="${F.pick.has(p.id)}">${esc(p.name)}</button>`).join("");
+  const claimsOk = S.v2 && linesOk(x) && !F.file;
+  if (F.mode === "claims" && !claimsOk) F.mode = "equal";
+  if (!S.v2 && F.mode !== "equal") F.mode = "equal";
+  $("#fMode").hidden = !S.v2;
+  $("#splitL").textContent = S.v2 ? "Делим" : "На кого делим";
+  for (const b of $("#fMode").children) {
+    b.setAttribute("aria-pressed", String(b.dataset.mode === F.mode));
+    b.classList.toggle("off", b.dataset.mode === "claims" && !claimsOk);
+  }
   renderReceipt();
+  renderSplit();
+  renderLines();
 }
+
+// ----- receipt block -----
 function renderReceipt() {
-  const ed = F.editing && S.expenses.get(F.editing);
+  const x = curX();
+  const hasOld = !!(x && x.receipt && !F.removeFile && !F.file);
+  $("#pick").hidden = !!F.file || hasOld;
   const box = $("#rc"), th = $("#rcThumb");
-  const hasOld = ed && ed.receipt && !F.removeFile && !F.file;
   box.hidden = !F.file && !hasOld;
+  let s = "", m = "", busy = false, retry = "";
+  if (F.file) {
+    th.innerHTML = F.file.type === "application/pdf" ? "PDF" : `<img src="${F.fileUrl}" alt="">`;
+    if (S.v2) {
+      s = "Фото чека";
+      m = /^image\/(jpeg|png|webp)$/.test(F.file.type) ? "прочитаем после сохранения, можно закрыть" : "этот формат не читаю — введи сумму";
+    } else if (F.scan) {
+      s = F.scan.text; m = F.scan.meta || ""; busy = F.scan.state === "busy";
+      if (F.scan.state === "fail" && F.scan.retry) retry = "Ещё раз";
+    } else s = "Фото чека";
+  } else if (hasOld) {
+    if (th.dataset.rc !== x.receipt) { th.innerHTML = receiptInner(x); th.dataset.rc = x.receipt; }
+    const n = Array.isArray(x.lines) ? x.lines.filter((l) => l && l.text).length : 0;
+    if (scanning(x)) { s = "Читаю чек…"; m = "обычно минута-две, можно закрыть"; busy = true; }
+    else if (x.scan_status === "failed") {
+      s = "Не распознали";
+      m = x.scan_error === "unsupported_format" ? "этот формат не читаю — введи сумму" : "можно повторить или ввести сумму";
+      if (x.scan_error !== "unsupported_format") retry = "Повторить";
+    } else if (n) {
+      s = `Прочитали ${n} ${plural(n, "позицию", "позиции", "позиций")}`;
+      m = x.scan_error === "lines_mismatch" ? "позиции не сошлись с суммой" : "";
+    } else {
+      s = "Чек приложен";
+      if (S.v2 && isImg(x.receipt)) retry = "Распознать";
+    }
+  }
+  if (F.file) delete th.dataset.rc;
   if (!box.hidden) {
-    if (F.file) {
-      const isPdf = F.file.type === "application/pdf";
-      th.innerHTML = isPdf ? "PDF" : `<img src="${F.fileUrl}" alt="">`;
-    } else th.innerHTML = receiptInner(ed);
-    const sc = F.scan;
-    morph($("#rcS"), sc ? sc.text : F.file ? "Фото чека" : "Чек приложен");
-    $("#rcM").textContent = sc && sc.meta || "";
-    $("#rcRetry").hidden = !(sc && sc.state === "fail" && sc.retry && F.file);
-    th.classList.toggle("scan", !!(sc && sc.state === "busy"));
+    morph($("#rcS"), s);
+    $("#rcM").textContent = m;
+    th.classList.toggle("scan", busy);
   }
-  const L = F.file && F.lines || [];
-  $("#lines").hidden = !L.length;
-  if (L.length) {
-    $("#linesS").textContent = `Позиции чека · ${L.length}`;
-    const tot = F.total > 0 ? `<li class="tot"><span>Итого по чеку</span><span>${fmtG(grosze(F.total))}</span></li>` : "";
-    $("#linesL").innerHTML = L.map((l) => `<li><span>${esc(l.text)}</span><span>${l.price == null ? "" : fmtSigned2(grosze(l.price))}</span></li>`).join("") + tot;
-  }
-  const m = F.matched.map((id) => S.items.get(id)).filter(Boolean);
-  const left = m.filter((it) => !it.done);
-  $("#match").hidden = !m.length;
-  if (m.length) {
-    const names = m.map((it) => it.name.charAt(0).toLowerCase() + it.name.slice(1)).join(", ");
-    $("#matchP").innerHTML = F.marked && !left.length
-      ? `Отмечено купленными: <b>${esc(names)}</b>`
-      : `Нашлось в списке: <b>${esc(names)}</b>`;
-    $("#matchBtn").hidden = !left.length;
-    if (left.length) morph($("#matchBtnT"), `Отметить купленными (${left.length})`);
-  }
+  $("#rcRetry").hidden = !retry;
+  $("#rcRetry").textContent = retry;
+  const raw = $("#fAmount").value.trim();
+  const hint = !raw && photo() ? (F.file && !S.v2 ? "" : "можно не вводить — прочитаем с чека") : "";
+  $("#amtHint").hidden = !hint;
+  $("#amtHint").textContent = hint;
+  function photo() { return hasPhoto() && (S.v2 && (F.file ? /^image\/(jpeg|png|webp)$/.test(F.file.type) : isImg(x && x.receipt))); }
 }
 function receiptInner(x) {
   if (!x.receipt) return ICON_RECEIPT;
@@ -1303,12 +1484,209 @@ function receiptInner(x) {
   return `<img src="${pb.files.getURL(x, x.receipt, { thumb: "400x0" })}" alt="" loading="lazy">`;
 }
 function parseAmount(s) {
-  const t = String(s).replace(/[\s ]|zł|pln/gi, "").replace(",", ".");
+  const t = String(s).replace(/[\s ]|zł|pln/gi, "").replace(",", ".");
   if (!/^\d*\.?\d*$/.test(t) || !t || t === ".") return NaN;
   return Math.round(Number(t) * 100) / 100;
 }
+const amountG = () => { const v = parseAmount($("#fAmount").value); return v > 0 ? Math.round(v * 100) : 0; };
 
-// Downscale photos to <= 1600 px JPEG: quick to upload and to recognise.
+// ----- split -----
+// Rows are built once per people list and then updated in place, so typing
+// in an amount never loses focus.
+function checkRow(p, input) {
+  return `<li class="${input ? "amr" : ""}" data-pid="${p.id}"><button class="chk" type="button" data-pid="${p.id}" aria-pressed="false">`
+    + `<span class="box">${CHECK}</span><span class="nm">${esc(p.name)}</span></button>`
+    + (input ? `<input class="in" data-pid="${p.id}" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Сумма: ${esc(p.name)}">` : "")
+    + `</li>`;
+}
+function syncRows(ul, input) {
+  const sig = S.people.map((p) => p.id + ":" + p.name).join("|");
+  if (ul.dataset.sig !== sig) { ul.dataset.sig = sig; ul.innerHTML = S.people.map((p) => checkRow(p, input)).join(""); }
+  for (const li of ul.children) li.firstElementChild.setAttribute("aria-pressed", String(F.part.has(li.dataset.pid)));
+}
+// The «Суммами» state: what is written down, what is left, who is «авто».
+function amState() {
+  const ids = byOrder([...F.part]);
+  let fixed = 0, bad = false;
+  const autos = [];
+  for (const id of ids) {
+    const v = (F.amts.get(id) || "").trim();
+    if (!v) { autos.push(id); continue; }
+    const n = parseAmount(v);
+    if (isNaN(n)) bad = true; else fixed += Math.round(n * 100);
+  }
+  const photo = hasPhoto() && S.v2;
+  // No amount and no photo: the amount is simply what is written down.
+  const total = amountG() || (!photo && !autos.length ? fixed : 0);
+  const rem = total - fixed;
+  const auto = new Map();
+  if (total) splitEven(rem, autos, auto);
+  let err = "";
+  if (!ids.length) err = "Отметь, на кого делим";
+  else if (bad) err = "Проверь суммы";
+  else if (!total) err = autos.length ? (photo ? "" : "Введи сумму") : photo ? "Оставь кого-то на «авто» — сумму прочитаем с чека" : "";
+  else if (rem < 0) err = `Расписано больше суммы на ${fmtG(-rem)}`;
+  else if (rem > 0 && !autos.length) err = `Остаток ${fmtG(rem)} — допиши или оставь кого-то на «авто»`;
+  return { ids, fixed, total, rem, autos, auto, err };
+}
+function renderSplit() {
+  const m = F.mode;
+  $("#mEqual").hidden = m !== "equal";
+  $("#mAmounts").hidden = m !== "amounts";
+  $("#mClaims").hidden = m !== "claims" && !F.claimsHint;
+  if (m === "equal") {
+    syncRows($("#eqL"), false);
+    const n = byOrder([...F.part]).length, A = amountG();
+    let t = n ? `${n === S.people.length ? "На всех" : "На " + n} · ` : "Отметь, на кого делим";
+    if (n) t += A ? `по ${fmtG(Math.floor(A / n))}` : hasPhoto() && S.v2 ? "сумму прочитаем с чека" : "впиши сумму";
+    morph($("#eqSum"), t);
+  }
+  if (m === "amounts") {
+    const ul = $("#amL");
+    syncRows(ul, true);
+    const st = amState();
+    for (const li of ul.children) {
+      const id = li.dataset.pid, inp = li.querySelector("input"), on = F.part.has(id);
+      inp.disabled = !on;
+      const v = on ? F.amts.get(id) || "" : "";
+      if (document.activeElement !== inp && inp.value !== v) inp.value = v;
+      inp.placeholder = !on ? "" : st.auto.has(id) ? `авто ${g2s(st.auto.get(id))}` : "авто";
+    }
+    let t;
+    if (st.total) t = `Расписано <b>${fmtG(st.fixed)}</b> из <b>${fmtG(st.total)}</b> · остаток <b>${fmtG(st.rem)}</b>` + (st.autos.length && st.rem > 0 ? ` — поровну на ${st.autos.length} «авто»` : "");
+    else t = `Расписано <b>${fmtG(st.fixed)}</b>` + (st.autos.length ? ` · остальное поровну на ${st.autos.length} «авто»` : "");
+    $("#amSum").innerHTML = t;
+    $("#amErr").textContent = st.err;
+  }
+  renderClaims();
+  paintSave();
+}
+function paintSave() {
+  const b = $("#fSave");
+  if (b.dataset.busy) return;
+  b.disabled = F.mode === "amounts" && !!amState().err;
+}
+
+// ----- claims: everyone taps the lines they had -----
+function renderClaims() {
+  const x = curX(), box = $("#clBox"), hint = $("#clHint");
+  if ($("#mClaims").hidden) return;
+  const ok = S.v2 && linesOk(x) && !F.file;
+  if (!ok || F.mode !== "claims") {
+    box.hidden = true; hint.hidden = false;
+    hint.textContent = !x || F.file || !x.receipt ? (hasPhoto() ? "Станет доступно, когда прочитаем чек: каждый отметит, что брал." : "Нужно фото чека: по нему каждый отметит, что брал.")
+      : scanning(x) ? "Читаю чек — позиции скоро появятся."
+      : x.scan_error === "lines_mismatch" ? "Позиции не сошлись с суммой чека — дели поровну или суммами."
+      : "В этом чеке нет позиций — дели поровну или суммами.";
+    return;
+  }
+  hint.hidden = true; box.hidden = false;
+  const cl = claimsOf(x.id), L = x.lines;
+  let all = 0, got = 0;
+  L.forEach((l, i) => { if (!l || !l.text) return; const g = grosze(l.price); all += g; if ((cl.get(i) || []).length) got += g; });
+  const A = grosze(x.amount) || all;
+  morph($("#clSum"), `Разобрано ${fmtG(got)} из ${fmtG(A)}`);
+  const who = new Set([...cl.values()].flat());
+  const wait = splitIds(x).filter((id) => !who.has(id)).map((id) => person(id).name);
+  $("#clWait").textContent = !wait.length ? "все отметились" : "ждём " + (wait.length > 3 ? wait.slice(0, 2).join(", ") + ` и ещё ${wait.length - 2}` : wait.join(", "));
+  const sh = shares({ ...x, split_mode: "claims" });
+  const me = person(S.me), forP = person(F.claimFor) || me;
+  morph($("#clMe"), !me ? "" : forP && forP.id !== me.id ? `Отмечаю за: ${forP.name} · ${fmtG(sh.get(forP.id) || 0)}` : `Твоя часть ${fmtG(sh.get(me.id) || 0)}`);
+  const payer = me && x.paid_by === me.id;
+  $("#clFor").hidden = !payer;
+  $("#clFor").textContent = forP && me && forP.id !== me.id ? "за себя" : "за другого";
+  $("#clWho").hidden = !(payer && F.forOpen);
+  if (!$("#clWho").hidden) $("#clWho").innerHTML = S.people.filter((p) => p.id !== S.me).map((p) => `<button class="pill" type="button" data-pid="${p.id}" aria-pressed="${forP && p.id === forP.id}">${esc(p.name)}</button>`).join("");
+  const pid = forP ? forP.id : null;
+  $("#clL").innerHTML = L.map((l, i) => {
+    if (!l || !l.text) return "";
+    const ids = cl.get(i) || [], g = grosze(l.price);
+    const names = ids.map((id) => person(id).name).join(", ");
+    const per = ids.length > 1 ? ` · по ${fmtG(Math.round(g / ids.length))}` : "";
+    const q = lineQty(l);
+    return `<li><button class="cline" type="button" data-i="${i}" aria-pressed="${ids.includes(pid)}"${F.busy.has(x.id + ":" + i) ? " disabled" : ""}>`
+      + `<span class="box">${CHECK}</span><span class="txt"><span class="name">${esc(l.text)}</span>`
+      + `<span class="pl">${esc([q, names ? names + per : "никто не отметил"].filter(Boolean).join(" · "))}</span></span>`
+      + `<span class="qty">${l.price == null ? "" : fmtSigned2(g)}</span></button></li>`;
+  }).join("");
+}
+async function toggleClaim(i) {
+  const x = curX();
+  if (!x || !canWrite()) return;
+  const pid = person(F.claimFor) ? F.claimFor : S.me, k = x.id + ":" + i;
+  if (F.busy.has(k)) return;
+  const mine = [...S.claims.values()].filter((c) => c.expense === x.id && c.line === i && c.person === pid);
+  F.busy.add(k);
+  if (mine.length) {
+    for (const c of mine) S.claims.delete(c.id);
+    renderMoney();
+    try { for (const c of mine) if (!c.tmp) await pb.collection("claims").delete(c.id); }
+    catch (e) { if (e.status !== 404) { for (const c of mine) S.claims.set(c.id, c); toast(isNetErr(e) ? "Нет связи — отметка не снялась" : "Не получилось: " + errMsg(e)); } }
+  } else {
+    const tmp = { id: "tmp" + Math.random().toString(36).slice(2), tmp: true, expense: x.id, line: i, person: pid };
+    S.claims.set(tmp.id, tmp);
+    if (navigator.vibrate) navigator.vibrate(8);
+    renderMoney();
+    try {
+      const r = await pb.collection("claims").create({ expense: x.id, line: i, person: pid });
+      S.claims.delete(tmp.id);
+      S.claims.set(r.id, { id: r.id, expense: r.expense, line: r.line, person: r.person });
+    } catch (e) {
+      S.claims.delete(tmp.id);
+      toast(isNetErr(e) ? "Нет связи — отметка не сохранилась" : "Не получилось: " + errMsg(e));
+    }
+  }
+  F.busy.delete(k);
+  renderMoney();
+  saveSnap();
+}
+
+// ----- lines + "found on the list" -----
+function renderLines() {
+  const x = curX();
+  const L = (F.file ? F.lines : x && x.lines) || [];
+  const rows = Array.isArray(L) ? L.filter((l) => l && l.text) : [];
+  $("#lines").hidden = !rows.length || F.mode === "claims";
+  if (rows.length) {
+    $("#linesS").textContent = `Позиции чека · ${rows.length}`;
+    const tot = F.file ? F.total : x && x.amount;
+    $("#linesL").innerHTML = rows.map((l) => `<li><span>${esc(l.text)}${lineQty(l) ? ` <i>${esc(lineQty(l))}</i>` : ""}</span><span>${l.price == null ? "" : fmtSigned2(grosze(l.price))}</span></li>`).join("")
+      + (tot > 0 ? `<li class="tot"><span>Итого по чеку</span><span>${fmtG(grosze(tot))}</span></li>` : "");
+  }
+  // v2: list items the scan matched; old servers: what the page's own scan matched
+  if (!F.file && x && Array.isArray(x.lines)) F.matched = [...new Set(x.lines.map((l) => l && l.item_id).filter(Boolean))];
+  else if (!F.file) F.matched = [];
+  const m = F.matched.map((id) => S.items.get(id)).filter(Boolean);
+  const left = m.filter((it) => !it.done);
+  $("#match").hidden = !left.length && !F.marked;
+  if (!$("#match").hidden) {
+    const names = (left.length ? left : m).map((it) => it.name.charAt(0).toLowerCase() + it.name.slice(1)).join(", ");
+    $("#matchP").innerHTML = !left.length ? `Отмечено купленными: <b>${esc(names)}</b>` : `Есть в списке, ещё не отмечено: <b>${esc(names)}</b>`;
+    $("#matchBtn").hidden = !left.length;
+    if (left.length) morph($("#matchBtnT"), `Отметить купленными (${left.length})`);
+  }
+}
+function markMatched() {
+  if (!canWrite()) return;
+  const at = new Date().toISOString();
+  let n = 0;
+  for (const id of F.matched) {
+    const it = S.items.get(id);
+    if (!it || it.done) continue;
+    const patch = { done: true, done_by: S.me, done_at: at };
+    Object.assign(it, patch);
+    queueUpdate("items", id, patch);
+    n++;
+  }
+  F.marked += n;
+  renderList();
+  renderLines();
+  if (n) toast(`Отмечено: ${n}`);
+}
+
+// ----- photo -----
+// Downscale photos to <= 1600 px JPEG: quick to upload and to recognise
+// (and HEIC from iPhones becomes a JPEG the scan can read).
 async function compressImage(file) {
   if (!/^image\//.test(file.type)) return file;
   try {
@@ -1327,18 +1705,21 @@ async function compressImage(file) {
 async function onPicked(input) {
   const f0 = input.files && input.files[0];
   input.value = "";
-  if (!f0) return;
-  if (!F.open) openEditor(null);
+  if (!f0 || !F.open) return;
+  const x = curX(), n = x ? [...S.claims.values()].filter((c) => c.expense === x.id).length : 0;
+  if (n && !confirm(`В этом чеке уже отмечены позиции (${n}). Новое фото их сбросит. Заменить?`)) return;
   const seq = ++F.seq;
-  F.scan = { state: "busy", text: "Загружаю фото…" };
+  if (!S.v2) F.scan = { state: "busy", text: "Загружаю фото…" };
   F.matched = []; F.marked = 0; F.lines = null; F.total = null;
-  renderEditor();
+  renderReceipt();
   const f = await compressImage(f0);
   if (seq !== F.seq) return;
   if (f.size > 10 * 1024 * 1024) { F.scan = null; renderReceipt(); toast("Файл больше 10 МБ"); return; }
   if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
   F.file = f; F.fileUrl = URL.createObjectURL(f); F.removeFile = false;
-  renderReceipt();
+  if (!F.cat || !F.touched.has("cat")) F.cat = "";
+  renderEditor();
+  if (S.v2) return;   // the server reads it after saving
   if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
     F.scan = { state: "fail", text: f.type === "application/pdf" ? "PDF приложен" : "Фото приложено", meta: "Этот формат не распознаю — введи сумму вручную" };
     renderReceipt();
@@ -1347,7 +1728,8 @@ async function onPicked(input) {
   scanReceipt(f, seq);
 }
 
-// POST /scan (Cloudflare Worker on the site's origin). Fills only empty fields.
+// Old servers only: POST /scan (Cloudflare Worker on the site's origin)
+// right from the page. Fills only empty fields.
 async function scanReceipt(file, seq) {
   const t0 = Date.now();
   const tick = () => {
@@ -1359,7 +1741,6 @@ async function scanReceipt(file, seq) {
   };
   const iv = setInterval(tick, 1000);
   tick();
-  // Long receipts take the model ~30 s, plus a slow mobile upload.
   const ac = new AbortController(), to = setTimeout(() => ac.abort(), 100000);
   let res = null, err = null, body = null;
   try {
@@ -1372,62 +1753,47 @@ async function scanReceipt(file, seq) {
   } catch (e) { err = e; }
   clearInterval(iv); clearTimeout(to);
   if (seq !== F.seq) return;
-  // On failure the photo stays attached; "retry" re-sends the same compressed file.
   const fail = (why, retry = true) => {
     F.scan = { state: "fail", text: why.charAt(0).toUpperCase() + why.slice(1), meta: retry ? "Попробуй ещё раз или введи сумму вручную" : "Введи сумму вручную", retry };
     renderReceipt();
-    if (!retry && !$("#fAmount").value) $("#fAmount").focus();
   };
   if (err) return fail(err.name === "AbortError" ? "не успели прочитать" : "нет связи");
   if (res.status === 404 || res.status === 405) return fail("распознавание недоступно", false);
   if (res.status === 401) return fail("ключ не подошёл", false);
   if (res.status === 413 || res.status === 415) return fail("не тот формат фото", false);
-  const slow = res.status === 504 || res.status === 524 || (res.status === 502 && /time ?out|timed out|abort/i.test(JSON.stringify(body || "")));
-  if (slow) return fail("не успели прочитать");
   if (!res.ok || !body || typeof body !== "object") return fail("не получилось распознать");
-
-  // Fill empty fields, and ones that still hold what an earlier scan put there.
   const A = F.auto || {}, free = (el, k) => !el.value.trim() || el.value === A[k];
   const na = {};
   if (body.total > 0 && free($("#fAmount"), "amount")) $("#fAmount").value = na.amount = String(Math.round(body.total * 100) / 100).replace(".", ",");
   if (body.store && free($("#fTitle"), "title")) $("#fTitle").value = na.title = niceStore(body.store);
-  if (body.category && CATS.includes(body.category) && (!F.cat || F.cat === A.cat)) F.cat = na.cat = body.category;
+  if (body.category && cats().includes(body.category) && (!F.cat || F.cat === A.cat)) F.cat = na.cat = body.category;
   if (body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !F.editing) $("#fDate").value = body.date;
   F.auto = na;
   F.lines = Array.isArray(body.lines) ? body.lines.filter((l) => l && l.text) : null;
   F.total = body.total > 0 ? body.total : null;
   F.matched = (Array.isArray(body.matched) ? body.matched : []).filter((id) => { const it = S.items.get(id); return it && !it.done; });
-  const meta = [body.store && niceStore(body.store), body.total > 0 ? fmtG(grosze(body.total)) : "сумму не нашёл", body.date ? fmtDay.format(new Date(body.date + "T12:00")) : ""].filter(Boolean).join(" · ");
   const nl = F.lines ? F.lines.length : 0;
-  F.scan = { state: "ok", text: nl ? `Нашёл ${nl} ${plural(nl, "позицию", "позиции", "позиций")}` : "Распознано — проверь", meta };
+  F.scan = { state: "ok", text: nl ? `Нашёл ${nl} ${plural(nl, "позицию", "позиции", "позиций")}` : "Распознано — проверь", meta: [body.store && niceStore(body.store), body.total > 0 ? fmtG(grosze(body.total)) : "сумму не нашёл"].filter(Boolean).join(" · ") };
   renderEditor();
-  if (!(body.total > 0)) $("#fAmount").focus();
 }
-
 // Receipts print the shop in capitals ("AUCHAN"); "Auchan" reads better as a title.
 function niceStore(s) {
   s = String(s).trim();
   if (s !== s.toUpperCase() || !/[A-ZА-ЯŁŚŻŹĆŃÓĘĄ]/.test(s)) return s;
   return s.toLowerCase().replace(/(^|[\s\-\/.(])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
 }
-function markMatched() {
-  if (!canWrite()) return;
-  const at = new Date().toISOString();
-  let n = 0;
-  for (const id of F.matched) {
-    const it = S.items.get(id);
-    if (!it || it.done) continue;
-    const patch = { done: true, done_by: S.me, done_at: at };
-    Object.assign(it, patch);
-    queueUpdate("items", id, patch);
-    n++;
-  }
-  F.marked += n;
-  renderList();
-  renderReceipt();
-  if (n) toast(`Отмечено: ${n}`);
+// Ask the server to read (again) the receipt of a saved expense.
+async function rescan(x) {
+  if (!x || !canWrite()) return;
+  const prev = x.scan_status;
+  x.scan_status = "pending"; x.scan_error = "";
+  renderMoney();
+  try { S.expenses.set(x.id, await pb.collection("expenses").update(x.id, { scan_status: "pending", scan_error: "" })); }
+  catch (e) { x.scan_status = prev; toast(isNetErr(e) ? "Нет связи" : "Не получилось: " + errMsg(e)); }
+  renderMoney();
 }
 
+// ----- save -----
 function spentAtValue() {
   const v = $("#fDate").value;
   if (F.editing && v === F.dateOrig) return undefined;          // unchanged
@@ -1437,56 +1803,80 @@ function spentAtValue() {
 }
 async function saveExpense() {
   if (!canWrite()) return;
-  const amount = parseAmount($("#fAmount").value);
-  if (!(amount >= 0.01)) { toast("Введи сумму"); $("#fAmount").focus(); return; }
+  const x = curX(), v2 = S.v2;
+  const raw = $("#fAmount").value.trim();
+  let amount = raw ? parseAmount(raw) : 0;
+  if (raw && !(amount >= 0.01)) { toast("Проверь сумму"); $("#fAmount").focus(); return; }
   if (amount > 1000000) { toast("Слишком большая сумма"); return; }
-  if (!F.cat) { toast("Выбери категорию"); $("#fCats").scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+  const readable = v2 && hasPhoto() && (F.file ? /^image\/(jpeg|png|webp)$/.test(F.file.type) : isImg(x && x.receipt));
+  const st = F.mode === "amounts" ? amState() : null;
+  if (st && st.err) { toast(st.err); return; }
+  if (!amount && st && st.total && !readable) amount = st.total / 100;
+  if (!amount && !readable && !(x && x.amount > 0 && !F.touched.has("amount"))) {
+    toast(hasPhoto() ? "Введи сумму" : "Добавь фото чека или введи сумму"); $("#fAmount").focus(); return;
+  }
+  if (!v2 && !F.cat) { toast("Выбери категорию"); $("#fCats").scrollIntoView({ block: "center", behavior: "smooth" }); return; }
   const paid = F.paid || S.me;
   if (!person(paid)) { toast("Выбери, кто платил"); return; }
-  const pick = [...F.pick].filter((id) => person(id));
-  if (F.split === "some" && !pick.length) { toast("Выбери, на кого делим"); return; }
+  const part = byOrder([...F.part]);
+  if (!part.length) { toast("Отметь, на кого делим"); return; }
   const data = {
-    amount, currency: "PLN", category: F.cat, paid_by: paid,
-    title: $("#fTitle").value.trim(),
-    split_between: F.split === "some" && pick.length < S.people.length ? pick : [],
+    currency: "PLN", paid_by: paid,
+    split_between: part.length < S.people.length ? part : [],
   };
+  // On edits, send only what this person changed: the scan may have filled
+  // the amount, title or category while the sheet was open.
+  if (!x || F.touched.has("amount") || amount) data.amount = amount;
+  if (!x || F.touched.has("title")) data.title = $("#fTitle").value.trim();
+  if (!x || F.touched.has("cat")) data.category = F.cat || "";
+  if (v2) {
+    data.split_mode = F.mode;
+    data.split_amounts = st ? Object.fromEntries(st.ids.map((id) => { const v = (F.amts.get(id) || "").trim(); return [id, v ? Math.round(parseAmount(v) * 100) : null]; })) : null;
+  }
   const at = spentAtValue();
   if (at) data.spent_at = at;
-  if (F.file) data.receipt = F.file;
-  else if (F.editing && F.removeFile) data.receipt = null;
-  if (navigator.onLine === false) { toast("Нет связи — чек не сохранён, форма осталась"); return; }
-  const btn = $("#fSave"), wasEdit = !!F.editing;
-  btn.disabled = true; btn.textContent = F.file ? "Загружаю…" : "Сохраняю…";
+  let drop = [];
+  if (F.file) {
+    data.receipt = F.file;
+    if (x) {
+      drop = [...S.claims.values()].filter((c) => c.expense === x.id);
+      if (v2) { data.lines = null; data.scan_error = ""; if (F.mode === "claims") data.split_mode = "equal"; }
+    }
+  } else if (x && F.removeFile) data.receipt = null;
+  if (navigator.onLine === false) { toast("Нет связи — платёж не сохранён, форма осталась"); return; }
+  const btn = $("#fSave");
+  btn.disabled = true; btn.dataset.busy = "1"; btn.textContent = F.file ? "Загружаю…" : "Сохраняю…";
   try {
-    const rec = wasEdit ? await pb.collection("expenses").update(F.editing, data) : await pb.collection("expenses").create(data);
+    const rec = x ? await pb.collection("expenses").update(x.id, data) : await pb.collection("expenses").create(data);
+    for (const c of drop) { S.claims.delete(c.id); if (!c.tmp) pb.collection("claims").delete(c.id).catch(() => {}); }
     S.expenses.set(rec.id, rec);
     closeEditor();
-    renderMoney();
-    saveSnap();
-    toast(wasEdit ? "Сохранено" : "Чек добавлен · " + fmtG(grosze(rec.amount)));
+    renderMoney(); renderList(); saveSnap();
+    toast(!(rec.amount > 0) ? "Сохранено · читаю чек" : x ? "Сохранено" : "Платёж добавлен · " + fmtG(grosze(rec.amount)));
   } catch (e) {
-    toast(isNetErr(e) ? "Нет связи — чек не сохранён, форма осталась" : "Не сохранилось: " + errMsg(e));
+    toast(isNetErr(e) ? "Нет связи — платёж не сохранён, форма осталась" : "Не сохранилось: " + errMsg(e));
   } finally {
-    btn.disabled = false; btn.textContent = "Сохранить";
+    delete btn.dataset.busy; btn.textContent = "Сохранить"; btn.disabled = false; paintSave();
   }
 }
 async function deleteExpense() {
-  const x = F.editing && S.expenses.get(F.editing);
+  const x = curX();
   if (!x || !canWrite()) return;
-  if (!confirm(`Удалить чек «${x.title || x.category}» на ${fmtG(grosze(x.amount))}?`)) return;
+  if (!confirm(`Удалить «${x.title || x.category || "платёж"}»${x.amount > 0 ? " на " + fmtG(grosze(x.amount)) : ""}?`)) return;
   try {
     await pb.collection("expenses").delete(x.id);
     S.expenses.delete(x.id);
+    for (const c of [...S.claims.values()]) if (c.expense === x.id) S.claims.delete(c.id);
     closeEditor();
-    renderMoney();
-    saveSnap();
-    toast("Чек удалён");
+    renderMoney(); renderList(); saveSnap();
+    toast("Платёж удалён");
   } catch (e) { toast(isNetErr(e) ? "Нет связи — не удалилось" : "Не удалилось: " + errMsg(e)); }
 }
 
-$("#aCam").addEventListener("click", () => { if (canWrite()) $("#fCam").click(); });
-$("#aPick").addEventListener("click", () => { if (canWrite()) $("#fPick").click(); });
-$("#aManual").addEventListener("click", () => { if (canWrite()) { openEditor(null); $("#fAmount").focus(); } });
+// ----- events -----
+$("#aNew").addEventListener("click", () => { if (canWrite()) openEditor(null); });
+$("#aCam").addEventListener("click", () => $("#fCam").click());
+$("#aPick").addEventListener("click", () => $("#fPick").click());
 $("#fCam").addEventListener("change", (e) => onPicked(e.target));
 $("#fPick").addEventListener("change", (e) => onPicked(e.target));
 $("#rcRm").addEventListener("click", () => {
@@ -1494,43 +1884,88 @@ $("#rcRm").addEventListener("click", () => {
   if (F.file) { URL.revokeObjectURL(F.fileUrl); F.file = null; F.fileUrl = null; }
   else F.removeFile = true;
   F.scan = null; F.matched = []; F.lines = null; F.total = null;
-  renderReceipt();
+  renderEditor();
 });
 $("#matchBtn").addEventListener("click", markMatched);
 $("#rcRetry").addEventListener("click", () => {
-  if (!F.file || !KEY) return;
-  const seq = ++F.seq;
-  F.scan = { state: "busy", text: "Загружаю фото…" };
-  renderReceipt();
-  scanReceipt(F.file, seq);
+  if (F.file && !S.v2) {
+    if (!KEY) return;
+    const seq = ++F.seq;
+    F.scan = { state: "busy", text: "Загружаю фото…" };
+    renderReceipt();
+    scanReceipt(F.file, seq);
+  } else rescan(curX());
 });
 $("#rcThumb").addEventListener("click", () => {
-  const ed = F.editing && S.expenses.get(F.editing);
+  const x = curX();
   if (F.file) openViewer({ src: F.fileUrl, pdf: F.file.type === "application/pdf", title: $("#fTitle").value.trim() || "Чек", meta: "ещё не сохранён" });
-  else if (ed && ed.receipt) viewExpense(ed);
+  else if (x && x.receipt) viewExpense(x);
 });
-$("#fCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (b) { F.cat = F.cat === b.dataset.cat ? null : b.dataset.cat; renderEditor(); } });
+$("#fCats").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cat]");
+  if (!b) return;
+  F.cat = F.cat === b.dataset.cat ? "" : b.dataset.cat;
+  F.touched.add("cat");
+  renderEditor();
+});
 $("#fPaid").addEventListener("click", (e) => { const b = e.target.closest("[data-pid]"); if (b) { F.paid = b.dataset.pid; renderEditor(); } });
-$(".seg").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-split]");
+$("#fMode").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-mode]");
   if (!b) return;
-  F.split = b.dataset.split;
-  if (F.split === "some" && !F.pick.size) for (const p of S.people) F.pick.add(p.id);
+  if (b.classList.contains("off")) { F.claimsHint = !F.claimsHint || F.mode === "claims"; renderSplit(); return; }
+  F.claimsHint = false;
+  F.mode = b.dataset.mode;
   renderEditor();
 });
-$("#fSplit").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-pid]");
+function onCheck(e) {
+  const b = e.target.closest(".chk");
   if (!b) return;
-  F.pick.has(b.dataset.pid) ? F.pick.delete(b.dataset.pid) : F.pick.add(b.dataset.pid);
-  renderEditor();
+  const id = b.dataset.pid;
+  F.part.has(id) ? F.part.delete(id) : F.part.add(id);
+  renderSplit();
+  if (F.mode === "amounts" && F.part.has(id)) { const inp = b.parentElement.querySelector("input"); if (inp && matchMedia("(hover: hover)").matches) inp.focus(); }
+}
+$("#eqL").addEventListener("click", onCheck);
+$("#amL").addEventListener("click", onCheck);
+$("#amL").addEventListener("input", (e) => {
+  const inp = e.target.closest("input");
+  if (!inp) return;
+  const v = inp.value.replace(/[^\d.,\s]/g, "");
+  if (v !== inp.value) inp.value = v;
+  F.amts.set(inp.dataset.pid, v);
+  renderSplit();
 });
-$("#fAmount").addEventListener("input", (e) => { const v = e.target.value.replace(/[^\d.,\s]/g, ""); if (v !== e.target.value) e.target.value = v; });
+$("#clL").addEventListener("click", (e) => { const b = e.target.closest(".cline"); if (b) toggleClaim(Number(b.dataset.i)); });
+$("#clFor").addEventListener("click", () => {
+  const me = S.me;
+  if (F.claimFor && F.claimFor !== me) { F.claimFor = me; F.forOpen = false; }
+  else F.forOpen = !F.forOpen;
+  renderClaims();
+});
+$("#clWho").addEventListener("click", (e) => { const b = e.target.closest("[data-pid]"); if (b) { F.claimFor = b.dataset.pid; F.forOpen = false; renderClaims(); } });
+$("#fAmount").addEventListener("input", (e) => {
+  const v = e.target.value.replace(/[^\d.,\s]/g, "");
+  if (v !== e.target.value) e.target.value = v;
+  F.touched.add("amount");
+  renderSplit(); renderReceipt();
+});
+$("#fTitle").addEventListener("input", () => F.touched.add("title"));
 $("#ed").addEventListener("submit", (e) => { e.preventDefault(); saveExpense(); });
-$("#fCancel").addEventListener("click", () => closeEditor());
-$("#edClose").addEventListener("click", () => closeEditor());
+$("#edClose").addEventListener("click", closeEditor);
 $("#fDel").addEventListener("click", deleteExpense);
 
 // ---------- expenses: list ----------
+// One keyed <li> per expense, so a scan that fills the amount morphs it in place.
+function expMeta(x) {
+  if (scanning(x)) return { text: "читаю чек…", shim: true };
+  if (x.scan_status === "failed" && !(x.amount > 0)) return { text: "не распознали · ", retry: x.scan_error !== "unsupported_format" };
+  const p = person(x.paid_by);
+  const n = (x.split_between || []).filter((id) => person(id)).length;
+  const how = x.split_mode === "amounts" ? "суммами" : x.split_mode === "claims" ? "по чеку" : n && n < S.people.length ? "на " + n : "на всех";
+  const when = parseDate(x.spent_at || x.created);
+  return { text: [x.title ? x.category : "", "платил " + (p ? p.name : "?"), how, when && !isNaN(when) ? fmtDay.format(when) : ""].filter(Boolean).join(" · ") };
+}
+const expName = (x) => x.title || x.category || (x.receipt ? "Чек" : "Платёж");
 const seenExp = new Set();
 function renderExpList() {
   const xs = sortedExpenses();
@@ -1538,29 +1973,42 @@ function renderExpList() {
   renderExpList.done = true;
   morph($("#expN"), xs.length ? `${xs.length} · ${fmtG(totalG())}` : "");
   const ul = $("#expList");
-  if (!xs.length) { ul.innerHTML = `<li class="empty-s">Чеков пока нет. ${KEY ? "Выбери фото чека из галереи — сумма, категория и позиции подставятся сами." : ""}</li>`; return; }
-  ul.innerHTML = xs.map((x) => {
-    const p = person(x.paid_by);
-    const n = (x.split_between || []).filter((id) => person(id)).length;
-    const when = parseDate(x.spent_at || x.created);
-    const meta = [x.title ? x.category : "", "платил " + (p ? p.name : "?"), n && n < S.people.length ? "на " + n : "на всех", when && !isNaN(when) ? fmtDay.format(when) : ""].filter(Boolean).join(" · ");
-    const thumb = x.receipt
-      ? `<button class="thumb" type="button" data-view aria-label="Открыть чек">${receiptInner(x)}</button>`
-      : `<span class="thumb">${ICON_RECEIPT}</span>`;
-    const fresh = !first && !seenExp.has(x.id);
-    seenExp.add(x.id);
-    return `<li data-id="${x.id}"${fresh ? ' class="rowin"' : ""}>${thumb}<button class="xrow" type="button"${KEY ? ' aria-label="Изменить: ' + esc(x.title || x.category) + '"' : ""}>
-        <span class="txt"><span class="name">${esc(x.title || x.category)}</span><span class="pl">${esc(meta)}</span></span>
-        <span class="xamt">${fmtG(grosze(x.amount))}</span>
-      </button></li>`;
-  }).join("");
+  if (!xs.length) { ul.innerHTML = `<li class="empty-s">Платежей пока нет. ${KEY ? "Сфотографируй чек или впиши сумму — остальное подставится само." : ""}</li>`; return; }
+  const em = ul.querySelector(".empty-s");
+  if (em) em.remove();
+  keyedList(ul, xs.map((x) => ({ k: x.id, x })),
+    () => `<span class="thumb"></span><span class="txt xt"><span class="name"></span><span class="pl"><span class="m"></span><button class="rt" type="button" data-retry hidden>повторить</button></span></span><span class="xamt"></span><button class="xhit" type="button"></button>`,
+    (li, { x }) => {
+      if (!first && !seenExp.has(x.id) && !reduced()) li.classList.add("rowin");
+      seenExp.add(x.id);
+      const th = li.firstElementChild;
+      if (th.dataset.rc !== (x.receipt || "")) {
+        th.dataset.rc = x.receipt || "";
+        const btn = !!x.receipt;
+        const nt = document.createElement(btn ? "button" : "span");
+        nt.className = "thumb"; nt.dataset.rc = x.receipt || "";
+        if (btn) { nt.type = "button"; nt.dataset.view = ""; nt.setAttribute("aria-label", "Открыть чек"); }
+        nt.innerHTML = receiptInner(x);
+        th.replaceWith(nt);
+      }
+      li.querySelector(".name").textContent = expName(x);
+      const m = expMeta(x), me = li.querySelector(".m");
+      me.textContent = m.text;
+      me.classList.toggle("shim", !!m.shim);
+      li.querySelector(".rt").hidden = !m.retry;
+      const a = li.querySelector(".xamt");
+      a.classList.toggle("q", !(x.amount > 0));
+      morph(a, x.amount > 0 ? fmtG(grosze(x.amount)) : scanning(x) ? "…" : "—");
+      li.querySelector(".xhit").setAttribute("aria-label", (KEY ? "Открыть: " : "") + expName(x));
+    });
 }
 $("#expList").addEventListener("click", (e) => {
-  const li = e.target.closest("li[data-id]");
-  const x = li && S.expenses.get(li.dataset.id);
+  const li = e.target.closest("li[data-k]");
+  const x = li && S.expenses.get(li.dataset.k);
   if (!x) return;
   if (e.target.closest("[data-view]")) return viewExpense(x);
-  if (!e.target.closest(".xrow")) return;
+  if (e.target.closest("[data-retry]")) return rescan(x);
+  if (!e.target.closest(".xhit")) return;
   if (!KEY) return toast("Только просмотр — попроси ссылку с ключом");
   openEditor(x);
 });
@@ -1771,7 +2219,7 @@ placeInd.ready();
 S.booted = true;
 $("#ro").hidden = !!KEY;
 $("#roExp").hidden = !!KEY;
-$("#addx").hidden = !KEY;
+$("#aNew").hidden = !KEY;
 $("#resetLi").hidden = !KEY;
 renderSync();
 // Show the last known list right away (works offline), then refresh.
@@ -1781,6 +2229,7 @@ try {
     S.people = snap.people || [];
     S.items = new Map(snap.items.map((r) => [r.id, r]));
     S.expenses = new Map((snap.expenses || []).map((r) => [r.id, r]));
+    S.claims = new Map((snap.claims || []).map((r) => [r.id, r]));
     for (const op of pending.values()) if (op.coll === "items" && S.items.has(op.id)) Object.assign(S.items.get(op.id), op.data);
     if (S.me && !person(S.me)) S.me = null;
     S.loaded = true;
