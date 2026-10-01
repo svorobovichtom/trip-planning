@@ -362,3 +362,74 @@
 .st-actions .btn {
   flex: 1;
 }
+
+/* one-tap transfer on «Ты должен» rows: «Перевести» (Revolut) / «BLIK» */
+.t-rows > li {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.t-acts {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+.t-rows > li.wide {
+  padding-bottom: 10px;
+}
+.t-rows > li.wide .t-acts {
+  flex-basis: 100%;
+}
+.t-rows > li.wide .t-acts > * {
+  flex: 1 1 auto;
+}
+a.t-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.t-card p.t-nopay {
+  flex-basis: 100%;
+  margin: -6px 0 2px 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.list.t-list > li.t-nudge {
+  padding: 0;
+}
+.t-nudge .link {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+/* the BLIK sheet */
+.list.bk-list > li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 10px 8px 10px 14px;
+}
+.bk-k {
+  grid-column: 1;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bk-v {
+  grid-column: 1;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.bk-list .t-copy {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 40px;
+}

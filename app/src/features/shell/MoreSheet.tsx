@@ -3,7 +3,7 @@ import { doneCount, resetAllItems } from "../../lib/actions";
 import { useListStats } from "../../lib/hooks";
 import { canWriteKey, shareUrl } from "../../lib/pb";
 import { plural } from "../../lib/plural";
-import { openMore, useUi } from "../../lib/stores";
+import { openMore, openPay, useMe, useUi } from "../../lib/stores";
 import { showCopy } from "../../ui/Confirm";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
@@ -13,6 +13,7 @@ import { exportCsv } from "../totals/csv";
 export function MoreSheet() {
   const open = useUi((s) => s.moreOpen);
   const { done } = useListStats();
+  const me = useMe();
   const [confirming, setConfirming] = useState(false);
 
   const share = async () => {
@@ -64,6 +65,14 @@ export function MoreSheet() {
             <button className="prow" type="button" onClick={share}>
               <span className="nm">Ссылка для группы</span>
               <span className="cur">поделиться</span>
+            </button>
+          </li>
+        )}
+        {canWriteKey && me && (
+          <li>
+            <button className="prow" type="button" onClick={openPay}>
+              <span className="nm">Как мне переводить</span>
+              <span className="cur">{[me.revolut && "Revolut", me.phone && "BLIK"].filter(Boolean).join(" · ") || "не указано"}</span>
             </button>
           </li>
         )}

@@ -12,6 +12,10 @@ export interface BaseRecord {
 export interface Person extends BaseRecord {
   name: string;
   sort?: number;
+  /** Revtag / revolut.me username without "@" ("" = not set) */
+  revolut?: string;
+  /** phone for a BLIK transfer, as typed ("" = not set) */
+  phone?: string;
 }
 
 export interface Item extends BaseRecord {

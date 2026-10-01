@@ -375,3 +375,30 @@ body.typing .nav {
   font-size: 12px;
   text-align: center;
 }
+
+/* «Как тебе переводить» (PayForm) */
+.pay-form {
+  margin-top: 12px;
+}
+.pay-lab {
+  display: block;
+  margin: 14px 2px 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pay-form .in {
+  background: var(--surface);
+}
+.sh-content p.pay-hint {
+  min-height: 1.4em;
+  margin: 10px 2px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.sh-content p.pay-hint.bad {
+  color: var(--bad);
+}
+.pay-save {
+  width: 100%;
+  margin-top: 16px;
+}

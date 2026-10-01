@@ -1,6 +1,8 @@
 // «Перевёл» / «Получил»: confirm a transfer and its amount (defaults to what's
 // left; decimal comma ok). Saving closes the sheet at once — the balance
-// moves optimistically and the toast says what was marked.
+// moves optimistically and the toast says what was marked. With `prompt` it
+// is the question after coming back from Revolut / the bank app
+// («Отметить перевод → Юля 50,34?», «Да, перевёл» / «Ещё нет»).
 import { type RefObject, useRef, useState } from "react";
 import { fmtG, parseAmount } from "../../lib/money";
 import { Sheet } from "../../ui/Sheet";
@@ -14,6 +16,8 @@ export interface SettleAsk {
   g: number;
   /** "out": I sent it (from = me); "in": I received it (to = me) */
   dir: "out" | "in";
+  /** asked after returning from a transfer app (see usePayReturn) */
+  prompt?: boolean;
   seq: number;
 }
 
@@ -27,7 +31,7 @@ export function SettleSheet({ ask, onClose, name }: { ask: SettleAsk | null; onC
     <Sheet
       open={!!ask}
       onOpenChange={(o) => !o && onClose()}
-      title="Отметить перевод"
+      title={a?.prompt ? `Отметить перевод → ${name(a.to)} ${fmtDec(a.g)}?` : "Отметить перевод"}
       initialFocus={inputRef}
       keyboard
     >
@@ -100,10 +104,10 @@ function SettleForm({ a, name, inputRef, onDone }: {
       </p>
       <div className="st-actions">
         <button className="btn" type="button" onClick={onDone}>
-          Отмена
+          {a.prompt ? "Ещё нет" : "Отмена"}
         </button>
         <button className="btn pri" type="submit" disabled={!ok}>
-          {a.dir === "out" ? "Перевёл" : "Получил"}
+          {a.prompt ? "Да, перевёл" : a.dir === "out" ? "Перевёл" : "Получил"}
         </button>
       </div>
     </form>

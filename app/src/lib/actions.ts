@@ -69,6 +69,20 @@ export function renamePerson(id: string, rawName: string): void {
   void queue.flush();
 }
 
+/** «Как тебе переводить»: saves my Revtag / BLIK phone (already normalised); works offline (queued). */
+export function setPayInfo(id: string, info: { revolut: string; phone: string }): boolean {
+  const p = dataStore.get().people.find((x) => x.id === id);
+  if (!p) return false;
+  const patch: Partial<Person> = {};
+  if (info.revolut !== (p.revolut ?? "")) patch.revolut = info.revolut;
+  if (info.phone !== (p.phone ?? "")) patch.phone = info.phone;
+  if (!Object.keys(patch).length) return false;
+  queue.enqueue("people", id, patch, { flush: false });
+  upsertLocal("people", { ...p, ...patch });
+  void queue.flush();
+  return true;
+}
+
 // ---------- items ----------
 
 const itemPatch = (done: boolean, me: string) =>

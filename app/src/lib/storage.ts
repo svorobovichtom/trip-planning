@@ -7,6 +7,7 @@
 //   trip.tab      last tab: "exp" | "sum" (absent = list)
 // New-app only:
 //   trip.next.snap  data snapshot for instant/offline start
+//   trip.payTap     last «Перевести»/«BLIK» tap, for the «Отметить перевод?» question on return
 
 export interface KV {
   get(key: string): string | null;

@@ -3,28 +3,35 @@
 // what's left for everyone, the balance table and CSV behind spoilers. All
 // numbers come from lib/ledger.ts (transfers marked «Перевёл»/«Получил»
 // included) and morph in place when something arrives over realtime.
+// «Ты должен» rows open the transfer in one tap when the other person said
+// how to pay them (lib/pay.ts): «Перевести» → Revolut with the amount,
+// «BLIK» → phone + amount to copy; coming back asks to mark it (payReturn.ts).
 import { Collapsible } from "@base-ui/react/collapsible";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
-import { haptic } from "../../lib/haptics";
 import { useLedger } from "../../lib/hooks";
 import { type Ledger, settle, sortedCats, type Transfer } from "../../lib/ledger";
 import { fmtG } from "../../lib/money";
+import { revolutLink } from "../../lib/pay";
 import { canWriteKey } from "../../lib/pb";
 import { plural } from "../../lib/plural";
-import { openWho, setTab, useData, useExpenses, useLoaded, useMe, usePeople, useSettlements } from "../../lib/stores";
+import { openPay, openWho, setTab, useData, useExpenses, useLoaded, useMe, usePeople, useSettlements } from "../../lib/stores";
 import type { Person, Settlement } from "../../lib/types";
-import { confirmAction, showCopy } from "../../ui/Confirm";
+import { confirmAction } from "../../ui/Confirm";
 import { ChevronIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
-import { toast } from "../../ui/toast";
 import { deleteSettlement } from "./api";
+import { type BlikAsk, BlikSheet } from "./BlikSheet";
+import { copyText } from "./copy";
 import { exportCsv } from "./csv";
 import { copyDec, fmtDec, fmtDecSigned, fmtWhen } from "./format";
+import { notePayTap, type PayTap, usePayReturn } from "./payReturn";
 import { type SettleAsk, SettleSheet } from "./SettleSheet";
 import "./totals.css";
 
 type NameOf = (id: string) => string;
+type PersonOf = (id: string) => Person | undefined;
 type Ask = (a: Omit<SettleAsk, "seq">) => void;
+type AskBlik = (a: Omit<BlikAsk, "seq">) => void;
 
 export function TotalsPage() {
   const loaded = useLoaded();
@@ -51,20 +58,43 @@ function Totals({ n }: { n: number }) {
   const people = usePeople();
   const me = useMe();
   const tx = useMemo(() => settle(L.bal), [L]);
-  const name = useMemo<NameOf>(() => {
-    const m = new Map(people.map((p) => [p.id, p.name]));
-    return (id) => m.get(id) ?? "?";
-  }, [people]);
+  const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
+  const name = useCallback<NameOf>((id) => byId.get(id)?.name ?? "?", [byId]);
+  const person = useCallback<PersonOf>((id) => byId.get(id), [byId]);
   // «Перевёл»/«Получил» need the key and a server with settlements
   const canSettle = useData((s) => s.hasSettlements) && canWriteKey;
   const [ask, setAsk] = useState<SettleAsk | null>(null);
   const open = useCallback<Ask>((a) => setAsk((prev) => ({ ...a, seq: (prev?.seq ?? 0) + 1 })), []);
+  const [blik, setBlik] = useState<BlikAsk | null>(null);
+  const openBlik = useCallback<AskBlik>((a) => setBlik((prev) => ({ ...a, seq: (prev?.seq ?? 0) + 1 })), []);
+  // Back from Revolut / the bank app: «Отметить перевод → Юля 50,34?» — only
+  // if that debt is still open (the other side may have marked it meanwhile).
+  usePayReturn((t: PayTap) => {
+    if (!canSettle || !me || t.from !== me.id) return;
+    const left = tx.find((x) => x.from === t.from && x.to === t.to);
+    if (!left) return;
+    setBlik(null);
+    open({ from: t.from, to: t.to, g: left.g, dir: "out", prompt: true });
+  });
   return (
     <>
-      {me ? <ForMe me={me} L={L} tx={tx} name={name} onSettle={canSettle ? open : undefined} /> : <PickMe />}
+      {me ? (
+        <ForMe
+          me={me}
+          L={L}
+          tx={tx}
+          name={name}
+          person={person}
+          onSettle={canSettle ? open : undefined}
+          onBlik={openBlik}
+        />
+      ) : (
+        <PickMe />
+      )}
       <Trip L={L} n={n} people={people.length} />
       <More L={L} tx={tx} people={people} name={name} meId={me?.id} />
       <SettleSheet ask={ask} onClose={() => setAsk(null)} name={name} />
+      <BlikSheet ask={blik} onClose={() => setBlik(null)} name={name} />
     </>
   );
 }
@@ -81,18 +111,17 @@ function PickMe() {
   );
 }
 
-async function copyAmount(g: number) {
-  const s = copyDec(g);
-  haptic();
-  try {
-    await navigator.clipboard.writeText(s);
-    toast("Скопировано");
-  } catch {
-    void showCopy("Скопируй сумму", s);
-  }
-}
+const copyAmount = (g: number) => copyText(copyDec(g), "Скопируй сумму");
 
-function ForMe({ me, L, tx, name, onSettle }: { me: Person; L: Ledger; tx: Transfer[]; name: NameOf; onSettle?: Ask }) {
+function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
+  me: Person;
+  L: Ledger;
+  tx: Transfer[];
+  name: NameOf;
+  person: PersonOf;
+  onSettle?: Ask;
+  onBlik: AskBlik;
+}) {
   const b = L.bal.get(me.id) ?? 0;
   const paid = L.paid.get(me.id) ?? 0;
   const owes = L.owes.get(me.id) ?? 0;
@@ -123,33 +152,7 @@ function ForMe({ me, L, tx, name, onSettle }: { me: Person; L: Ledger; tx: Trans
         {out.length > 0 && (
           <ul className="t-rows">
             {out.map((t) => (
-              <li key={t.to}>
-                <span className="t-who">
-                  <i>→</i>
-                  {name(t.to)}
-                </span>
-                <span className="t-amt num">
-                  <Morph>{fmtDec(t.g)}</Morph>
-                </span>
-                <button
-                  className="t-copy"
-                  type="button"
-                  aria-label={`Скопировать ${copyDec(t.g)} для ${name(t.to)}`}
-                  onClick={() => void copyAmount(t.g)}
-                >
-                  скопировать
-                </button>
-                {onSettle && (
-                  <button
-                    className="t-copy pri"
-                    type="button"
-                    aria-label={`Перевёл ${name(t.to)} ${copyDec(t.g)}`}
-                    onClick={() => onSettle({ from: me.id, to: t.to, g: t.g, dir: "out" })}
-                  >
-                    Перевёл
-                  </button>
-                )}
-              </li>
+              <OweRow key={t.to} t={t} to={person(t.to)} name={name(t.to)} onSettle={onSettle} onBlik={onBlik} />
             ))}
           </ul>
         )}
@@ -183,8 +186,80 @@ function ForMe({ me, L, tx, name, onSettle }: { me: Person; L: Ledger; tx: Trans
         ) : (
           <li className="t-none">{nobody}</li>
         )}
+        {canWriteKey && inc.length > 0 && !me.revolut && !me.phone && (
+          <li className="t-nudge">
+            <button className="link" type="button" onClick={openPay}>
+              Укажи Revolut или телефон, чтобы тебе переводили в один тап
+            </button>
+          </li>
+        )}
       </ul>
     </>
+  );
+}
+
+/** One «Ты должен» row: → name, amount, then Перевести / BLIK / скопировать / Перевёл. */
+function OweRow({ t, to, name, onSettle, onBlik }: {
+  t: Transfer;
+  to?: Person;
+  name: string;
+  onSettle?: Ask;
+  onBlik: AskBlik;
+}) {
+  const link = to?.revolut ? revolutLink(to.revolut, t.g) : null;
+  const phone = to?.phone || "";
+  const tap = () => onSettle && notePayTap({ from: t.from, to: t.to, g: t.g });
+  return (
+    <li className="wide">
+      <span className="t-who">
+        <i>→</i>
+        {name}
+      </span>
+      <span className="t-amt num">
+        <Morph>{fmtDec(t.g)}</Morph>
+      </span>
+      {!link && !phone && <p className="t-nopay">Способ перевода не указан</p>}
+      <div className="t-acts">
+        {link && (
+          <a
+            className="t-copy pri"
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Перевести ${name} ${copyDec(t.g)} в Revolut`}
+            onClick={tap}
+          >
+            Перевести
+          </a>
+        )}
+        {phone && (
+          <button
+            className={link ? "t-copy" : "t-copy pri"}
+            type="button"
+            aria-label={`BLIK: телефон и сумма для ${name}`}
+            onClick={() => {
+              tap();
+              onBlik({ to: t.to, phone, g: t.g });
+            }}
+          >
+            BLIK
+          </button>
+        )}
+        <button className="t-copy" type="button" aria-label={`Скопировать ${copyDec(t.g)} для ${name}`} onClick={() => void copyAmount(t.g)}>
+          скопировать
+        </button>
+        {onSettle && (
+          <button
+            className={link || phone ? "t-copy" : "t-copy pri"}
+            type="button"
+            aria-label={`Перевёл ${name} ${copyDec(t.g)}`}
+            onClick={() => onSettle({ from: t.from, to: t.to, g: t.g, dir: "out" })}
+          >
+            Перевёл
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
 

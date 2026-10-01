@@ -117,6 +117,8 @@ export const TABS: Tab[] = ["list", "exp", "sum"];
 export interface UiState {
   tab: Tab;
   whoOpen: boolean;
+  /** «Кто ты?» opened on «Как тебе переводить» */
+  whoPay: boolean;
   moreOpen: boolean;
 }
 
@@ -124,6 +126,7 @@ const savedTab = LS.get("trip.tab");
 export const uiStore = createStore<UiState>({
   tab: savedTab === "exp" || savedTab === "sum" ? savedTab : "list",
   whoOpen: false,
+  whoPay: false,
   moreOpen: false,
 });
 
@@ -133,5 +136,8 @@ export function setTab(tab: Tab): void {
   LS.set("trip.tab", tab === "list" ? null : tab);
   uiStore.set((s) => (s.tab === tab ? s : { ...s, tab }));
 }
-export const openWho = (open = true) => uiStore.set((s) => ({ ...s, whoOpen: open, moreOpen: open ? false : s.moreOpen }));
+export const openWho = (open = true, pay = false) =>
+  uiStore.set((s) => ({ ...s, whoOpen: open, whoPay: open ? pay : s.whoPay, moreOpen: open ? false : s.moreOpen }));
+/** «Как тебе переводить»: my Revtag and BLIK phone. */
+export const openPay = () => openWho(true, true);
 export const openMore = (open = true) => uiStore.set((s) => ({ ...s, moreOpen: open, whoOpen: open ? false : s.whoOpen }));
