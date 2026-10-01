@@ -290,3 +290,75 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/* «Перевёл» / «Получил» on my rows; transfers already made */
+.t-rows > li {
+  gap: 8px;
+}
+.t-copy.pri {
+  background: var(--ink);
+  color: var(--bg);
+}
+.t-copy:disabled {
+  opacity: 0.5;
+}
+.t-moved {
+  margin-top: 2px;
+  color: var(--muted);
+}
+.list.t-list > li {
+  padding-right: 6px;
+}
+.t-done .t-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.t-when {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+.t-done > li {
+  padding-right: 6px;
+}
+
+/* the confirm sheet */
+.st-pair {
+  margin: 4px 2px 16px;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 500;
+}
+.st-pair i {
+  font-style: normal;
+  color: var(--muted);
+  padding: 0 4px;
+}
+.st-lab {
+  display: block;
+  margin: 0 2px 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.st-in {
+  font-size: 22px;
+  font-weight: 500;
+}
+.st-hint {
+  min-height: 1.4em;
+  margin: 8px 2px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.st-hint.bad {
+  color: var(--bad);
+}
+.st-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+.st-actions .btn {
+  flex: 1;
+}
