@@ -1,13 +1,20 @@
-// Cloudflare Worker that only serves the static frontend in web/.
+// Cloudflare Worker: static frontend from web/ plus a small script
+// (worker/index.js) for POST /scan, the receipt-recognition endpoint.
 // Builds run on every push to main (Workers Builds, connected to GitHub).
 // The API is PocketBase on the Oracle VM; see README.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "trip-planning",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./web",
-    "not_found_handling": "none"
+    "binding": "ASSETS",
+    "not_found_handling": "none",
+    // Static files are served without running the script; /scan always
+    // goes to the script.
+    "run_worker_first": ["/scan"]
   },
-  "observability": { "enabled": false }
+  "ai": { "binding": "AI" },
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
 }
