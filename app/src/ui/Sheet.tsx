@@ -31,7 +31,10 @@ export function Sheet({
     return popup.current;
   };
   return (
-    <Drawer.Root open={open} onOpenChange={(o) => onOpenChange(o)}>
+    // modal="trap-focus": keep focus inside, but skip Base UI's page scroll
+    // lock. The page itself never scrolls (only #scroll does), and the lock's
+    // body styles shifted the layout under the opening sheet on iOS.
+    <Drawer.Root open={open} onOpenChange={(o) => onOpenChange(o)} modal="trap-focus">
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal>
           <Drawer.Backdrop className="sh-backdrop" />
