@@ -9,7 +9,7 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-// Offline shell (scope /next/). Production builds only.
+// Offline shell (scope /). Production builds only.
 const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
 if (import.meta.env.PROD && "serviceWorker" in navigator && (location.protocol === "https:" || local)) {
   navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => {});

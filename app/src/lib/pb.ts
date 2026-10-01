@@ -27,7 +27,7 @@ function initKey(): string | null {
   const m = location.hash.match(/^#(?:k=)?([A-Za-z0-9_-]{12,64})$/);
   if (m?.[1]) {
     LS.set("trip.key", m[1]);
-    // Keep the key out of the address bar (screenshots, re-shares of /next/).
+    // Keep the key out of the address bar (screenshots, re-shares).
     try {
       history.replaceState(null, "", location.pathname + location.search);
     } catch {

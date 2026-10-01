@@ -15,7 +15,7 @@
 ## Архитектура
 
 ```
-браузер ── статика ──► Cloudflare Workers (web/, собирается из GitHub)
+браузер ── статика ──► Cloudflare Workers (app/ → dist/, собирается из GitHub)
    │
    │  REST + realtime (SSE), записи с заголовком X-Trip-Key
    ▼
@@ -62,10 +62,10 @@ systemd-лимиты. Caddy, порты 80/443 и сертификаты Flatsy 
 
 | Путь | Что это |
 |---|---|
-| `web/index.html` | старая страница (HTML, CSS, JS в одном файле), раздаётся на `/` |
-| `app/` | новое приложение (Vite + React + TypeScript), раздаётся на `/next/`; `npm test`, `npm run typecheck` |
-| `package.json`, `scripts/assemble.mjs` | сборка: `npm run build` собирает `app/` и кладёт в `dist/` = `web/` + `app/dist` в `dist/next/` |
-| `web/sw.js`, `web/_headers` | service worker (офлайн) и заголовки кэша для Cloudflare |
+| `app/` | приложение (Vite + React 19 + TypeScript + Base UI + torph), раздаётся на `/`; `npm test`, `npm run typecheck` |
+| `web/index.html` | старая одностраничная версия, оставлена на `/old/` как запасной вариант |
+| `package.json`, `scripts/assemble.mjs` | сборка: `npm run build` собирает `app/` в `dist/`, кладёт `web/` в `dist/old/`, пишет `_headers` и `_redirects` (`/next/*` → `/`) |
+| `web/sw.js` | service worker старой версии (scope `/old/`); у приложения свой, генерируется в `app/vite.config.ts` (`/sw.js`, scope `/`) |
 | `web/vendor/pocketbase.umd.js` | JS SDK PocketBase |
 | `web/vendor/torph.mjs` | torph 0.1.3 (MIT, Lochie Axon), морфинг текста |
 | `wrangler.jsonc` | Worker `trip-planning`: раздаёт `dist/` как статику (`build.command` = `npm run build`) |
@@ -80,14 +80,14 @@ systemd-лимиты. Caddy, порты 80/443 и сертификаты Flatsy 
 
 Cloudflare Workers Builds подключён к GitHub: каждый push в `main` ставит
 зависимости (`npm ci`, workspaces: `app`), `npx wrangler deploy` запускает
-`npm run build` и публикует `dist/`: старая страница на `/`, новое приложение
-на `/next/` (около 1–2 минут). Preview-сборки выключены. GitHub Pages выключен.
+`npm run build` и публикует `dist/`: приложение на `/`, старая версия на
+`/old/` (около 1–2 минут). Preview-сборки выключены. GitHub Pages выключен.
 Проверить сборку локально: `npx wrangler deploy --dry-run --outdir /tmp/wout`.
 
 Новое приложение (`app/`) читает те же ключи `localStorage` (`trip.key`,
 `trip.me`, `trip.pending`, `trip.got`, `trip.tab`), так что люди переходят без
 повторного входа; снимок данных — `trip.next.snap`. Разработка:
-`npm run dev` (http://127.0.0.1:5196/next/, `/api` проксируется на локальный
+`npm run dev` (http://127.0.0.1:5196/, `/api` проксируется на локальный
 PocketBase `PB_URL`, по умолчанию http://127.0.0.1:8096).
 `SERVER` в `web/index.html` указывает на `https://trip-api.svorobovich.com`;
 если страницу отдаёт сам PocketBase (локально), она ходит в свой origin.

@@ -1,7 +1,7 @@
 {
   "name": "trip-planning",
   "private": true,
-  "description": "Build orchestration: legacy web/ at /, the React app (app/) at /next/.",
+  "description": "Build orchestration: the React app (app/) at /, the legacy web/ page at /old/.",
   "workspaces": ["app"],
   "engines": { "node": ">=22" },
   "scripts": {
