@@ -854,3 +854,16 @@
 .cat-scan .btn {
   justify-self: start;
 }
+
+/* avatars: «платил [·] Юля» in meta lines, «Платил» chips */
+.x-av {
+  display: inline-block;
+  margin: -2px 4px 0 1px;
+  vertical-align: middle;
+}
+.pill.pill-av {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 7px;
+}

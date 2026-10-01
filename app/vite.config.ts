@@ -73,7 +73,7 @@ self.addEventListener("fetch", (e) => {
 `;
 }
 
-// Short commit (or build time) shown in «Ещё», to tell which build a phone runs.
+// Short commit (or build time) shown at the bottom of the profile, to tell which build a phone runs.
 const BUILD = (() => {
   try {
     return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();

@@ -12,7 +12,7 @@ import { SheetBody, SheetFoot } from "../../ui/FullSheet";
 import { Morph } from "../../ui/Morph";
 import { toast } from "../../ui/toast";
 import { patchExpense, rescan } from "./api";
-import { expenseName, fmtDay, Thumb, useNames, viewReceipt } from "./bits";
+import { expenseName, fmtDay, PaidBy, Thumb, useNames, viewReceipt } from "./bits";
 import { ClaimsPanel, LinesList, useExpenseClaims } from "./Lines";
 import { isScanning, parseDate, scanView, unboughtMatches } from "./logic";
 import { setPayView } from "./state";
@@ -44,7 +44,8 @@ export function DetailsView({ x }: { x: Expense }) {
               <Morph>{g ? fmtG(g) : isScanning(x) ? "…" : "—"}</Morph>
             </div>
             <div className="dt-meta">
-              {[`платил ${name(x.paid_by)}`, when ? fmtDay.format(when) : "", x.title ? x.category : ""].filter(Boolean).join(" · ")}
+              <PaidBy id={x.paid_by} />
+              {[when ? fmtDay.format(when) : "", x.title ? x.category : ""].filter(Boolean).map((s) => ` · ${s}`).join("")}
             </div>
           </div>
         </div>

@@ -10,14 +10,6 @@ export const ChevronIcon = () => (
   </svg>
 );
 
-export const DotsIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-    <circle cx="3.5" cy="8" r="1.4" />
-    <circle cx="8" cy="8" r="1.4" />
-    <circle cx="12.5" cy="8" r="1.4" />
-  </svg>
-);
-
 export const ReceiptIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />

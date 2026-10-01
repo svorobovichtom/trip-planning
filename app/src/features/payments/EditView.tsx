@@ -8,6 +8,7 @@ import { fmtG, grosze } from "../../lib/money";
 import { plural } from "../../lib/plural";
 import { sessionStore, usePeople, useStore } from "../../lib/stores";
 import { CATEGORIES, type Expense } from "../../lib/types";
+import { Avatar } from "../../ui/Avatar";
 import { confirmAction } from "../../ui/Confirm";
 import { SheetBody, SheetFoot } from "../../ui/FullSheet";
 import { Morph } from "../../ui/Morph";
@@ -235,7 +236,8 @@ export function EditView({ x, initialFile, manual, amountRef }: {
         <div className="fl" id="paidL">Платил</div>
         <div className="pills" role="group" aria-labelledby="paidL">
           {people.map((p) => (
-            <button key={p.id} className="pill" type="button" aria-pressed={p.id === f.paid} onClick={() => set({ paid: p.id })}>
+            <button key={p.id} className="pill pill-av" type="button" aria-pressed={p.id === f.paid} onClick={() => set({ paid: p.id })}>
+              <Avatar person={p} size={20} />
               {p.name}
               {p.id === me ? <span className="pill-me"> · я</span> : null}
             </button>

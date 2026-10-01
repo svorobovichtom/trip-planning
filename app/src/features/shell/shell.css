@@ -90,15 +90,17 @@
     transform: scale(0.92);
   }
 }
+/* my profile pill: [avatar · name · chevron]; nobody chosen: «Кто ты?» in ink */
 .me {
-  flex: none;
+  flex: 0 1 auto;
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-width: 0;
-  max-width: 40%;
+  max-width: 45%;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 10px 0 3px;
   border: 0;
   border-radius: 999px;
   background: var(--surface-2);
@@ -107,9 +109,8 @@
   font-weight: 500;
   transition: background 0.25s var(--ease), color 0.25s;
 }
-/* 44px tap targets around the 32px pills */
-.me::before,
-.dots::before {
+/* 44px tap target around the 32px pill */
+.me::before {
   content: "";
   position: absolute;
   inset: -6px -3px;
@@ -120,9 +121,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.me > svg:last-child {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: -1px;
+  color: var(--muted);
+}
 .me.empty {
+  padding-left: 12px;
   background: var(--ink);
   color: var(--bg);
+}
+.me.empty > svg:last-child {
+  color: var(--bg);
+  opacity: 0.6;
 }
 .me.flash {
   animation: flash 0.6s var(--ease);
@@ -131,23 +144,6 @@
   from {
     transform: scale(1.06);
   }
-}
-.dots {
-  flex: none;
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--surface-2);
-  color: var(--ink);
-}
-.dots svg {
-  width: 16px;
-  height: 16px;
 }
 .sub {
   margin-top: 1px;
@@ -291,7 +287,7 @@ body.typing .nav {
   transform: translate(-50%, 24px);
 }
 
-/* sheets: who am I, more */
+/* the profile sheet (ProfileSheet.tsx) and its «Кто ты?» step */
 .join {
   display: flex;
   gap: 8px;
@@ -309,9 +305,6 @@ body.typing .nav {
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 16px;
-}
-.foot .rename {
-  flex: 1;
 }
 .menu {
   margin-top: 16px;
@@ -347,7 +340,7 @@ body.typing .nav {
 .sh-content p.note {
   margin: 12px 2px 0;
 }
-.acts {
+.list.acts {
   margin-top: 16px;
 }
 .acts .prow {
@@ -357,17 +350,6 @@ body.typing .nav {
 .acts .prow .cur {
   font-size: 13px;
 }
-.acts li.confirm {
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 4px 4px 4px 14px;
-  color: var(--ink);
-}
-.acts li.confirm .nm {
-  flex: 1;
-  min-width: 0;
-}
 
 .sh-content p.build {
   margin: 14px 2px 0;
@@ -376,7 +358,7 @@ body.typing .nav {
   text-align: center;
 }
 
-/* «Как тебе переводить» (PayForm) */
+/* «Как тебе переводить» (PayForm.tsx), inside the profile */
 .pay-form {
   margin-top: 12px;
 }
@@ -385,9 +367,6 @@ body.typing .nav {
   margin: 14px 2px 6px;
   font-size: 13px;
   color: var(--muted);
-}
-.pay-form .in {
-  background: var(--surface);
 }
 .sh-content p.pay-hint {
   min-height: 1.4em;
@@ -398,7 +377,229 @@ body.typing .nav {
 .sh-content p.pay-hint.bad {
   color: var(--bad);
 }
-.pay-save {
+
+/* profile: me */
+.pf-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin-top: 4px;
+}
+.pf-idt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.pf-name {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+button.pf-name {
+  position: relative;
+  text-decoration: underline;
+  text-decoration-color: var(--surface-2);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+button.pf-name::before {
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
+.pf-name.none {
+  color: var(--muted);
+  font-weight: 400;
+}
+.pf-sub {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pf-switch {
+  flex: none;
+}
+.btn.pf-switch {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.pf-rename {
   width: 100%;
-  margin-top: 16px;
+  margin: 0;
+}
+
+/* profile: my money in one line -> «Итоги» */
+.pf-money {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  margin-top: 14px;
+  padding: 12px 10px 12px 14px;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  transition: transform 0.12s var(--ease);
+}
+.pf-money:active {
+  transform: scale(0.985);
+}
+.pf-mt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pf-mb {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.pf-mb.zero {
+  color: var(--text);
+}
+.pf-ms {
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 13px;
+}
+.pf-go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pf-go svg,
+.acts .prow > svg,
+.pf-pay .prow > svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+  transform: rotate(-90deg);
+}
+
+/* profile: rows */
+.sh-content h2 + .list.acts {
+  margin-top: 0;
+}
+.acts .prow .nm,
+.pf-pay .prow .nm,
+.pf-people .prow .nm {
+  flex: 1;
+}
+.pf-n {
+  color: var(--muted);
+}
+.acts .prow.pf-danger {
+  color: var(--bad);
+}
+.pf-pay .prow {
+  color: var(--ink);
+}
+.pf-pay .prow .cur {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-pay .prow .pf-val.on {
+  color: var(--ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pf-pay > li.pf-edit {
+  display: block;
+  padding: 2px 14px 10px;
+}
+.pf-edit .pay-form {
+  margin: 0;
+}
+.pf-edit .pay-lab {
+  margin: 10px 0 6px;
+}
+.pf-edit .pay-form .in {
+  background: var(--surface-2);
+}
+.sh-content .pf-edit p.pay-hint {
+  margin: 8px 0 0;
+}
+.pf-cancel {
+  min-height: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+.sh-content p.pf-note {
+  margin: 8px 2px 0;
+}
+
+/* «Кто ты?» people and «Участники» */
+.pf-people .prow {
+  justify-content: flex-start;
+}
+.list.pf-people > li.pf-pp {
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+}
+.pf-ppt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pf-ppt .nm {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.pf-ppay {
+  color: var(--text);
+  font-size: 12px;
+}
+.pf-ppay.none {
+  color: var(--muted);
+}
+.pf-pp .cur {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* «Меню и заметки» / «Участники» open as nested drawers over the profile
+   (Base UI sets data-nested-drawer-open on it): dim the profile under them. */
+.pf-sheet > .sh-box {
+  position: relative;
+}
+.pf-sheet > .sh-box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--backdrop);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in;
+}
+.pf-sheet[data-nested-drawer-open] > .sh-box::after {
+  opacity: 1;
 }

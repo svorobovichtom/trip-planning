@@ -17,6 +17,7 @@ import { plural } from "../../lib/plural";
 import { openPay, openWho, setTab, useData, useExpenses, useLoaded, useMe, usePeople, useSettlements } from "../../lib/stores";
 import type { Person, Settlement } from "../../lib/types";
 import { confirmAction } from "../../ui/Confirm";
+import { Avatar } from "../../ui/Avatar";
 import { ChevronIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
 import { deleteSettlement } from "./api";
@@ -32,6 +33,9 @@ type NameOf = (id: string) => string;
 type PersonOf = (id: string) => Person | undefined;
 type Ask = (a: Omit<SettleAsk, "seq">) => void;
 type AskBlik = (a: Omit<BlikAsk, "seq">) => void;
+
+/** Avatar in front of a name in a row; `p` unknown -> neutral circle. */
+const Av = ({ p, size = 20 }: { p?: Person; size?: number }) => <Avatar person={p} size={size} className="t-av" />;
 
 export function TotalsPage() {
   const loaded = useLoaded();
@@ -92,7 +96,7 @@ function Totals({ n }: { n: number }) {
         <PickMe />
       )}
       <Trip L={L} n={n} people={people.length} />
-      <More L={L} tx={tx} people={people} name={name} meId={me?.id} />
+      <More L={L} tx={tx} people={people} name={name} person={person} meId={me?.id} />
       <SettleSheet ask={ask} onClose={() => setAsk(null)} name={name} />
       <BlikSheet ask={blik} onClose={() => setBlik(null)} name={name} />
     </>
@@ -165,6 +169,7 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
           inc.map((t) => (
             <li key={t.from}>
               <span className="t-who">
+                <Av p={person(t.from)} size={24} />
                 {name(t.from)}
                 <i>→</i>
               </span>
@@ -213,6 +218,7 @@ function OweRow({ t, to, name, onSettle, onBlik }: {
     <li className="wide">
       <span className="t-who">
         <i>→</i>
+        <Av p={to} size={24} />
         {name}
       </span>
       <span className="t-amt num">
@@ -328,7 +334,7 @@ function Spoiler({ title, count, children }: { title: string; count?: string; ch
   );
 }
 
-function Done({ name, meId }: { name: NameOf; meId?: string }) {
+function Done({ name, person, meId }: { name: NameOf; person: PersonOf; meId?: string }) {
   const map = useSettlements();
   const list = useMemo(() => [...map.values()].sort((a, b) => String(b.created ?? "").localeCompare(String(a.created ?? ""))), [map]);
   if (!list.length) return null;
@@ -347,9 +353,13 @@ function Done({ name, meId }: { name: NameOf; meId?: string }) {
         {list.map((t) => (
           <li key={t.id} className={t.from === meId || t.to === meId ? "mine" : undefined}>
             <span className="t-who">
-              {name(t.from)}
-              <i>→</i>
-              {name(t.to)}
+              <span className="t-pair">
+                <Av p={person(t.from)} />
+                {name(t.from)}
+                <i>→</i>
+                <Av p={person(t.to)} />
+                {name(t.to)}
+              </span>
               <small className="t-when">{fmtWhen(t.created)}</small>
             </span>
             <span className="t-amt num">{fmtDec(t.amount)}</span>
@@ -371,18 +381,27 @@ function Done({ name, meId }: { name: NameOf; meId?: string }) {
   );
 }
 
-function More({ L, tx, people, name, meId }: { L: Ledger; tx: Transfer[]; people: Person[]; name: NameOf; meId?: string }) {
+function More({ L, tx, people, name, person, meId }: {
+  L: Ledger;
+  tx: Transfer[];
+  people: Person[];
+  name: NameOf;
+  person: PersonOf;
+  meId?: string;
+}) {
   return (
     <div className="t-more">
-      <Done name={name} meId={meId} />
+      <Done name={name} person={person} meId={meId} />
       <Spoiler title="Осталось перевести" count={String(tx.length)}>
         {tx.length ? (
           <ul className="t-all">
             {tx.map((t) => (
               <li key={`${t.from}>${t.to}`} className={t.from === meId || t.to === meId ? "mine" : undefined}>
                 <span className="t-who">
+                  <Av p={person(t.from)} />
                   {name(t.from)}
                   <i>→</i>
+                  <Av p={person(t.to)} />
                   {name(t.to)}
                 </span>
                 <span className="t-amt num">
@@ -412,7 +431,10 @@ function More({ L, tx, people, name, meId }: { L: Ledger; tx: Transfer[]; people
               const b = L.bal.get(p.id) ?? 0;
               return (
                 <tr key={p.id} className={p.id === meId ? "mine" : undefined}>
-                  <th scope="row">{p.name}</th>
+                  <th scope="row">
+                    <Av p={p} />
+                    {p.name}
+                  </th>
                   <td>{fmtDec(L.paid.get(p.id) ?? 0)}</td>
                   <td>{fmtDec(L.owes.get(p.id) ?? 0)}</td>
                   <td className="t-bal">

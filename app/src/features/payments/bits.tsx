@@ -5,6 +5,7 @@ import { pb } from "../../lib/pb";
 import { usePeople } from "../../lib/stores";
 import type { Expense } from "../../lib/types";
 import { isPdf } from "../../lib/image";
+import { Avatar } from "../../ui/Avatar";
 import { CheckIcon, ReceiptIcon } from "../../ui/icons";
 import { openViewer } from "./state";
 
@@ -16,6 +17,18 @@ export function useNames(): (id: string | null | undefined) => string {
     const m = new Map(people.map((p) => [p.id, p.name]));
     return (id) => (id && m.get(id)) || "?";
   }, [people]);
+}
+
+/** «платил [avatar] Юля» in a meta line. */
+export function PaidBy({ id }: { id: string }) {
+  const people = usePeople();
+  const p = people.find((x) => x.id === id);
+  return (
+    <>
+      платил <Avatar person={p} size={18} className="x-av" />
+      {p?.name ?? "?"}
+    </>
+  );
 }
 
 export const expenseName = (x: Expense): string => x.title || x.category || (x.receipt ? "Чек" : "Платёж");

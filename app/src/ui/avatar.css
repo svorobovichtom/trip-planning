@@ -1,0 +1,9 @@
+/* Generative avatars (ui/Avatar.tsx): round, no border. */
+.av {
+  flex: none;
+  display: block;
+  border-radius: 50%;
+}
+.av-none {
+  background: var(--surface-2);
+}

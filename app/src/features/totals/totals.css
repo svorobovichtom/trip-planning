@@ -433,3 +433,25 @@ a.t-copy {
   grid-row: 1 / span 2;
   min-height: 40px;
 }
+
+/* avatars in front of names (ui/Avatar.tsx) */
+.t-av {
+  display: inline-block;
+  margin: -3px 6px 0 0;
+  vertical-align: middle;
+}
+.t-done .t-pair {
+  flex-basis: 100%;
+}
+.t-tbl tbody th .t-av {
+  margin-right: 8px;
+}
+/* four actions (Перевести · BLIK · скопировать · Перевёл) fit a 375px row;
+   narrower phones wrap the last one instead of clipping it */
+.t-rows > li.wide .t-acts {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.t-rows > li.wide .t-acts > * {
+  padding: 0 8px;
+}

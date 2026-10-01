@@ -1,7 +1,8 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useListStats } from "../../lib/hooks";
-import { openMore, openWho, type Tab, useLoaded, useMe, useUi } from "../../lib/stores";
-import { DotsIcon } from "../../ui/icons";
+import { openProfile, type Tab, useLoaded, useMe, useUi } from "../../lib/stores";
+import { Avatar } from "../../ui/Avatar";
+import { ChevronIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
 import { SectionChips } from "../list/SectionChips";
 import { useListSummary } from "../list/summary";
@@ -11,7 +12,7 @@ import { SyncPill } from "./SyncPill";
 
 export const TITLES: Record<Tab, string> = { list: "Покупки в Ашан", exp: "Расходы", sum: "Итоги" };
 
-/** Same two rows on every tab (title + me + ⋯; one-line summary); the list adds chips and a progress line. */
+/** Same two rows on every tab (title + my profile pill; one-line summary); the list adds chips and a progress line. */
 export function Header() {
   const tab = useUi((s) => s.tab);
   const loaded = useLoaded();
@@ -34,9 +35,6 @@ export function Header() {
           <SyncPill />
           <span className="sp" />
           <MeButton />
-          <button className="dots" type="button" aria-haspopup="dialog" aria-label="Ещё" onClick={() => openMore(true)}>
-            <DotsIcon />
-          </button>
         </div>
         <div className="sub">{loaded ? <Morph>{summaries[tab]}</Morph> : " "}</div>
         {tab === "list" && <SectionChips />}
@@ -46,6 +44,7 @@ export function Header() {
   );
 }
 
+/** [avatar · name · chevron] opens the profile; nobody chosen yet: «Кто ты?» in ink, straight to that step. */
 function MeButton() {
   const me = useMe();
   const name = me ? me.name : "Кто ты?";
@@ -66,10 +65,13 @@ function MeButton() {
       className={`me${me ? "" : " empty"}`}
       type="button"
       aria-haspopup="dialog"
-      aria-label={me ? `Отмечаю как ${me.name}. Сменить` : "Выбрать, кто ты"}
-      onClick={() => openWho(true)}
+      aria-label={me ? `Профиль: ${me.name}` : "Кто ты? Выбрать себя"}
+      onClick={() => openProfile(me ? "main" : "who")}
     >
-      <Morph className="nm">{name}</Morph>
+      {me && <Avatar person={me} size={26} />}
+      {/* plain text, not <Morph>: a long name must end in an ellipsis */}
+      <span className="nm">{name}</span>
+      <ChevronIcon />
     </button>
   );
 }

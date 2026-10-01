@@ -114,20 +114,26 @@ export function currentPerson(): Person | undefined {
 export type Tab = "list" | "exp" | "sum";
 export const TABS: Tab[] = ["list", "exp", "sum"];
 
+/** The profile sheet: «main» (me, money, how to pay me, the trip) or the «Кто ты?» step. */
+export type ProfileStep = "main" | "who";
+
 export interface UiState {
   tab: Tab;
-  whoOpen: boolean;
-  /** «Кто ты?» opened on «Как тебе переводить» */
-  whoPay: boolean;
-  moreOpen: boolean;
+  profileOpen: boolean;
+  profileStep: ProfileStep;
+  /** the step it was opened on: «Кто ты?» opened directly closes after choosing */
+  profileEntry: ProfileStep;
+  /** > 0: open «Как тебе переводить» for editing (Revolut field); bumped per request */
+  profilePay: number;
 }
 
 const savedTab = LS.get("trip.tab");
 export const uiStore = createStore<UiState>({
   tab: savedTab === "exp" || savedTab === "sum" ? savedTab : "list",
-  whoOpen: false,
-  whoPay: false,
-  moreOpen: false,
+  profileOpen: false,
+  profileStep: "main",
+  profileEntry: "main",
+  profilePay: 0,
 });
 
 export const useUi = <U>(selector: (s: UiState) => U): U => useStore(uiStore, selector);
@@ -136,8 +142,15 @@ export function setTab(tab: Tab): void {
   LS.set("trip.tab", tab === "list" ? null : tab);
   uiStore.set((s) => (s.tab === tab ? s : { ...s, tab }));
 }
-export const openWho = (open = true, pay = false) =>
-  uiStore.set((s) => ({ ...s, whoOpen: open, whoPay: open ? pay : s.whoPay, moreOpen: open ? false : s.moreOpen }));
-/** «Как тебе переводить»: my Revtag and BLIK phone. */
-export const openPay = () => openWho(true, true);
-export const openMore = (open = true) => uiStore.set((s) => ({ ...s, moreOpen: open, whoOpen: open ? false : s.whoOpen }));
+
+let paySeq = 0;
+export function openProfile(step: ProfileStep = "main", pay = false): void {
+  uiStore.set((s) => ({ ...s, profileOpen: true, profileStep: step, profileEntry: step, profilePay: pay ? ++paySeq : 0 }));
+}
+export const closeProfile = () => uiStore.set((s) => (s.profileOpen ? { ...s, profileOpen: false, profilePay: 0 } : s));
+/** Switches steps inside the open profile («Сменить» / «Назад»). */
+export const setProfileStep = (step: ProfileStep) => uiStore.set((s) => ({ ...s, profileStep: step, profilePay: 0 }));
+/** «Кто ты?»: the profile on its who-am-I step. */
+export const openWho = (open = true) => (open ? openProfile("who") : closeProfile());
+/** «Как тебе переводить»: the profile with my Revtag field open. */
+export const openPay = () => openProfile("main", true);

@@ -1,9 +1,8 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Header } from "./features/shell/Header";
-import { MoreSheet } from "./features/shell/MoreSheet";
+import { ProfileSheet } from "./features/shell/ProfileSheet";
 import { TabBar } from "./features/shell/TabBar";
-import { WhoSheet } from "./features/shell/WhoSheet";
 import { ListPage } from "./features/list/ListPage";
 import { canWriteKey } from "./lib/pb";
 import { currentPerson, dataStore, openWho, setTab, type Tab, TABS, useUi } from "./lib/stores";
@@ -106,8 +105,7 @@ export function App() {
           </div>
           <TabBar tab={tab} />
         </Tabs.Root>
-        <WhoSheet />
-        <MoreSheet />
+        <ProfileSheet />
         <ConfirmHost />
       </ScrollContext.Provider>
     </ToastProvider>

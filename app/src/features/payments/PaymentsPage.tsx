@@ -11,7 +11,7 @@ import type { Expense } from "../../lib/types";
 import { lazyPart, PartBoundary } from "../../ui/lazy";
 import { Morph } from "../../ui/Morph";
 import { rescan } from "./api";
-import { CameraIcon, expenseName, fmtDay, GalleryIcon, Thumb, useNames, viewReceipt } from "./bits";
+import { CameraIcon, expenseName, fmtDay, GalleryIcon, PaidBy, Thumb, useNames, viewReceipt } from "./bits";
 import { isScanning, parseDate, scanView, splitLabel } from "./logic";
 import { openNewPayment, openPayment } from "./state";
 import "./payments.css";
@@ -97,14 +97,17 @@ const ExpenseRow = memo(function ExpenseRow({ x, payer, order }: { x: Expense; p
   const g = grosze(x.amount);
   const sv = scanView(x);
   const when = parseDate(x.spent_at || x.created);
-  const meta = [`платил ${payer}`, splitLabel(x, order ? order.split(",") : []), when ? fmtDay.format(when) : ""].filter(Boolean).join(" · ");
+  const meta = [splitLabel(x, order ? order.split(",") : []), when ? fmtDay.format(when) : ""].filter(Boolean).join(" · ");
   return (
     <li className="xrow">
       <button className="xhit" type="button" aria-label={`Открыть: ${expenseName(x)}`} onClick={() => openPayment(x.id)} />
       <Thumb x={x} scanning={isScanning(x)} onOpen={() => viewReceipt(x, payer)} />
       <span className="xt">
         <span className="name">{expenseName(x)}</span>
-        <span className="pl">{meta}</span>
+        <span className="pl">
+          <PaidBy id={x.paid_by} />
+          {meta && ` · ${meta}`}
+        </span>
         {sv.kind === "scanning" && <span className="st shim">читаю чек…</span>}
         {sv.kind === "failed" && (
           <span className="st">
