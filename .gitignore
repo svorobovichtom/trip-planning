@@ -1,0 +1,8 @@
+pocketbase
+pb_data/
+*.zip
+.env*
+deploy/.secrets
+.DS_Store
+node_modules/
+test-results/
