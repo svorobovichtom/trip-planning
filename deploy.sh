@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Push the app to the VM: index.html + vendor/ -> pb_public, migrations -> pb_migrations.
+# Push the app to the VM: web/ -> pb_public, migrations -> pb_migrations.
+# The public site itself deploys from GitHub via Cloudflare; this keeps the VM copy
+# (old link, local fallback) and the database schema in sync.
 # Usage: ./deploy.sh            (frontend only, no restart)
 #        ./deploy.sh --restart  (also migrations + restart PocketBase)
 set -euo pipefail
@@ -8,11 +10,11 @@ HOST="${TRIP_HOST:-ubuntu@89.168.118.89}"
 SSH_KEY="${TRIP_SSH_KEY:-$HOME/.ssh/flatsy_oracle}"
 SSH=(ssh -i "$SSH_KEY" -o BatchMode=yes)
 
-rsync -az --delete -e "${SSH[*]}" index.html sw.js vendor pb_migrations "$HOST:~/trip-src/"
+rsync -az --delete -e "${SSH[*]}" web pb_migrations "$HOST:~/trip-src/"
 "${SSH[@]}" "$HOST" 'set -e
-  sudo install -m 644 -o trip -g trip ~/trip-src/index.html ~/trip-src/sw.js /opt/trip/pb_public/
+  sudo install -m 644 -o trip -g trip ~/trip-src/web/index.html ~/trip-src/web/sw.js /opt/trip/pb_public/
   sudo mkdir -p /opt/trip/pb_public/vendor
-  sudo install -m 644 -o trip -g trip ~/trip-src/vendor/* /opt/trip/pb_public/vendor/
+  sudo install -m 644 -o trip -g trip ~/trip-src/web/vendor/* /opt/trip/pb_public/vendor/
   if [ "'"${1:-}"'" = --restart ]; then
     sudo install -m 644 -o trip -g trip ~/trip-src/pb_migrations/*.js /opt/trip/pb_migrations/
     sudo systemctl restart trip-pb

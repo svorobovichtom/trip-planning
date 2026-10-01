@@ -54,9 +54,9 @@ fi
 
 # --- app files --------------------------------------------------------------
 install -m 644 "$REPO"/pb_migrations/*.js "$APP/pb_migrations/"
-install -m 644 "$REPO/index.html" "$REPO/sw.js" "$APP/pb_public/"
+install -m 644 "$REPO/web/index.html" "$REPO/web/sw.js" "$APP/pb_public/"
 mkdir -p "$APP/pb_public/vendor"
-install -m 644 "$REPO"/vendor/* "$APP/pb_public/vendor/"
+install -m 644 "$REPO"/web/vendor/* "$APP/pb_public/vendor/"
 chown -R trip:trip "$APP"
 chmod 600 "$ENV_FILE"; chown root:root "$ENV_FILE"
 

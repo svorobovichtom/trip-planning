@@ -1,0 +1,13 @@
+// Cloudflare Worker that only serves the static frontend in web/.
+// Builds run on every push to main (Workers Builds, connected to GitHub).
+// The API is PocketBase on the Oracle VM; see README.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trip-planning",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./web",
+    "not_found_handling": "none"
+  },
+  "observability": { "enabled": false }
+}
