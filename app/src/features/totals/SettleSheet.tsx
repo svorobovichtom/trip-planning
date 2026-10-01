@@ -5,6 +5,8 @@
 // («Отметить перевод → Юля 50,34?», «Да, перевёл» / «Ещё нет»).
 import { type RefObject, useRef, useState } from "react";
 import { fmtG, parseAmount } from "../../lib/money";
+import { AmountInput } from "../../ui/AmountInput";
+import { Morph } from "../../ui/Morph";
 import { Sheet } from "../../ui/Sheet";
 import { addSettlement, MAX_G } from "./api";
 import { copyDec, fmtDec } from "./format";
@@ -84,23 +86,22 @@ function SettleForm({ a, name, inputRef, onDone }: {
         )}
       </p>
       <label className="st-lab" htmlFor="stAmt">
-        {a.dir === "out" ? "Сколько перевёл, zł" : "Сколько получил, zł"}
+        {a.dir === "out" ? "Сколько перевёл" : "Сколько получил"}
       </label>
-      <input
+      <AmountInput
         ref={inputRef}
-        className="in num st-in"
+        className="ai-lg st-in"
+        suffix="zł"
         id="stAmt"
         name="amount"
-        inputMode="decimal"
-        autoComplete="off"
         enterKeyHint="done"
         value={v}
-        onChange={(e) => setV(e.target.value)}
+        onChange={setV}
         aria-describedby="stHint"
         aria-invalid={!ok || undefined}
       />
       <p className={`st-hint${ok ? "" : " bad"}`} id="stHint" aria-live="polite">
-        {hint}
+        <Morph>{hint}</Morph>
       </p>
       <div className="st-actions">
         <button className="btn" type="button" onClick={onDone}>

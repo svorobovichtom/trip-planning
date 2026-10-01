@@ -8,6 +8,7 @@ import { fmtG, grosze } from "../../lib/money";
 import { plural } from "../../lib/plural";
 import { sessionStore, usePeople, useStore } from "../../lib/stores";
 import { CATEGORIES, type Expense } from "../../lib/types";
+import { AmountInput } from "../../ui/AmountInput";
 import { Avatar } from "../../ui/Avatar";
 import { confirmAction } from "../../ui/Confirm";
 import { SheetBody, SheetFoot } from "../../ui/FullSheet";
@@ -200,22 +201,18 @@ export function EditView({ x, initialFile, manual, amountRef }: {
           }}
         />
 
-        <label className="amt">
-          <input
-            ref={amountRef}
-            inputMode="decimal"
-            placeholder="0,00"
-            autoComplete="off"
-            enterKeyHint="done"
-            aria-label="Сумма"
-            value={f.amount}
-            onChange={(e) => {
-              const v = cleanAmountInput(e.target.value);
-              setF((prev) => touch("amount")({ ...prev, amount: v }));
-            }}
-          />
-          <span>zł</span>
-        </label>
+        <AmountInput
+          ref={amountRef}
+          className="ai-lg amt"
+          suffix="zł"
+          enterKeyHint="done"
+          aria-label="Сумма"
+          value={f.amount}
+          onChange={(raw) => {
+            const v = cleanAmountInput(raw);
+            setF((prev) => touch("amount")({ ...prev, amount: v }));
+          }}
+        />
         {!f.amount.trim() && readable && <p className="hint amt-hint">Можно не вводить — подставится из чека</p>}
         {!manual && !photo && !f.amount.trim() && <p className="hint amt-hint">Сумма или фото чека</p>}
 
@@ -475,7 +472,7 @@ function EqualPanel({ people, part, total, photo, onToggle, all }: {
               <button className="chk" type="button" aria-pressed={on} onClick={() => onToggle(p.id)}>
                 <CheckBox />
                 <span className="nm">{p.name}</span>
-                <span className="sh">{on && total ? fmtG(shares.get(p.id) ?? 0) : ""}</span>
+                <span className="sh">{on && total ? <Morph>{fmtG(shares.get(p.id) ?? 0)}</Morph> : null}</span>
               </button>
             </li>
           );
@@ -518,16 +515,16 @@ function AmountsPanel({ people, f, st, photo, onToggle, onAmount }: {
                 <CheckBox />
                 <span className="nm">{p.name}</span>
               </button>
-              <input
+              <AmountInput
                 className={`in am-in${st.bad.includes(p.id) ? " bad" : ""}`}
-                inputMode="decimal"
-                autoComplete="off"
+                align="end"
                 enterKeyHint="done"
                 aria-label={`Сумма: ${p.name}`}
+                aria-invalid={st.bad.includes(p.id) || undefined}
                 disabled={!on}
                 value={v}
                 placeholder={!on ? "" : st.total ? g2s(ag) : photo ? "из чека" : "0,00"}
-                onChange={(e) => onAmount(p.id, e.target.value)}
+                onChange={(raw) => onAmount(p.id, raw)}
               />
               <button
                 className="pill am-auto"

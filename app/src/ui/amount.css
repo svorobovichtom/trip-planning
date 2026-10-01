@@ -1,0 +1,119 @@
+/* AmountInput.tsx: the real input on top (text and caret transparent), the
+   morphing value + fake caret drawn underneath. Both inherit the root's font,
+   so sizes are set on the root (≥ 16px: iOS zooms into smaller fields). */
+.ai {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+}
+.ai[data-align="end"] {
+  justify-content: flex-end;
+}
+.ai-view {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ai-v {
+  color: var(--ink);
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.15s;
+}
+.ai[data-empty] .ai-v {
+  color: var(--muted);
+}
+/* «select all» to retype: the range is invisible in the input, show it here */
+.ai[data-range] .ai-v {
+  background-color: var(--surface-2);
+}
+.ai-caret {
+  flex: none;
+  align-self: center;
+  width: 2px;
+  height: 1.05em;
+  margin: 0 0 0 1px;
+  border-radius: 1px;
+  background: var(--ink);
+  opacity: 0;
+}
+/* empty: the caret stands before the placeholder, like a native field */
+.ai[data-empty] .ai-caret {
+  order: -1;
+  margin: 0 2px 0 0;
+}
+.ai[data-focus] .ai-caret {
+  opacity: 1;
+  animation: ai-blink 1.1s steps(1, end) 0.5s infinite;
+}
+/* Reduced motion: global.css removes the animation, the caret stays on. */
+@keyframes ai-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.ai-sx {
+  flex: none;
+}
+.ai-in {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  opacity: 1;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.ai-in::selection {
+  background: transparent;
+}
+.ai-in::placeholder {
+  color: transparent;
+}
+.ai[data-disabled] {
+  cursor: default;
+}
+/* a boxed field (`in` class on the root): focus ring around the box */
+.ai.in:focus-within {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 0;
+}
+
+/* the big field (payment amount, «Перевёл»): digits that morph, «zł» right after them */
+.ai-lg {
+  min-height: 52px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid var(--surface-2);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  transition: border-color 0.2s var(--ease);
+}
+.ai-lg:focus-within {
+  border-color: var(--ink);
+}
+.ai-lg .ai-sx {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
