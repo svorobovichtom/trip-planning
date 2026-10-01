@@ -3,7 +3,7 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { requireWriter } from "../../lib/actions";
 import { compressImage, isPdf, MAX_BYTES, SCANNABLE_TYPE } from "../../lib/image";
-import { byOrder, splitEven } from "../../lib/ledger";
+import { byOrder, expenseCats, sortedCats, splitEven } from "../../lib/ledger";
 import { fmtG, grosze } from "../../lib/money";
 import { plural } from "../../lib/plural";
 import { sessionStore, usePeople, useStore } from "../../lib/stores";
@@ -170,6 +170,8 @@ export function EditView({ x, initialFile, manual, amountRef }: {
   // ----- derived -----
   const photo = hasPhoto(f, x);
   const readable = readablePhoto(f, x) || (processing && !!preview && !preview.pdf);
+  const hasLines = !!x && (x.lines ?? []).some((l) => l && l.text);
+  const reading = !!x && (x.scan_status === "pending" || x.scan_status === "running");
   const part = byOrder(f.part, order);
   const A = formAmountG(f);
   const canClaims = claimsAvailable(f, x);
@@ -281,20 +283,57 @@ export function EditView({ x, initialFile, manual, amountRef }: {
         )}
         {mode === "claims" && x && (canClaims ? <ClaimsPanel x={x} compact /> : <p className="hint mode-hint">{claimsHint(f, x)}</p>)}
 
-        <div className="fl" id="catL">Категория</div>
-        <div className="pills pills-x" role="group" aria-labelledby="catL">
-          {[...(readable ? [["", "из чека"]] : []), ...CATEGORIES.map((c) => [c, c]), ...(f.cat && !(CATEGORIES as readonly string[]).includes(f.cat) ? [[f.cat, f.cat]] : [])].map(([v, t]) => (
-            <button
-              key={v}
-              className="pill"
-              type="button"
-              aria-pressed={v === f.cat && (v !== "" || readable)}
-              onClick={() => setF((prev) => touch("cat")({ ...prev, cat: prev.cat === v ? "" : v! }))}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        {/* A receipt is split into categories by its lines; one category for the
+            whole payment is only for payments without a receipt (fuel, rent…). */}
+        {hasLines && x ? (
+          <>
+            <div className="fl">Категории из чека</div>
+            <ul className="cat-break">
+              {sortedCats(expenseCats(x)).map(([c, g]) => (
+                <li key={c}>
+                  <span>{c}</span>
+                  <span className="num">{fmtG(g)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <div className="fl" id="catL">
+              {readable ? "Категории" : "Категория"}
+            </div>
+            {readable && (
+              <div className="cat-scan">
+                <p className="hint">
+                  {reading
+                    ? "Читаю чек — позиции разложатся по категориям сами."
+                    : x
+                      ? "Позиции чека разложатся по категориям сами."
+                      : "После сохранения позиции чека разложатся по категориям сами."}
+                </p>
+                {x && !reading && x.receipt && (
+                  <button className="btn" type="button" onClick={() => void rescan(x)}>
+                    Разложить по категориям
+                  </button>
+                )}
+                <p className="hint">Или одна категория на весь платёж:</p>
+              </div>
+            )}
+            <div className="pills pills-x" role="group" aria-labelledby="catL">
+              {[...CATEGORIES.map((c) => [c, c]), ...(f.cat && !(CATEGORIES as readonly string[]).includes(f.cat) ? [[f.cat, f.cat]] : [])].map(([v, t]) => (
+                <button
+                  key={v}
+                  className="pill"
+                  type="button"
+                  aria-pressed={v === f.cat}
+                  onClick={() => setF((prev) => touch("cat")({ ...prev, cat: prev.cat === v ? "" : v! }))}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <label className="fl" htmlFor="payDate">
           Дата

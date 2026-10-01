@@ -819,3 +819,34 @@
   width: 200%;
   cursor: zoom-out;
 }
+
+/* Category breakdown from receipt lines (payment editor) */
+.cat-break {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px;
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.cat-break li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.cat-break li + li {
+  border-top: 1px solid var(--line);
+}
+.cat-break .num {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.cat-scan {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cat-scan .btn {
+  justify-self: start;
+}
