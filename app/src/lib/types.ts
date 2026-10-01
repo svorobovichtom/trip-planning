@@ -101,3 +101,33 @@ export const CATEGORIES = [
   "Снеки", "Гриль и быт", "Напитки и алкоголь", "Жильё",
   "Транспорт и бензин", "Кафе и рестораны", "Другое",
 ] as const;
+
+// «Поездка» (pb_migrations/1790000008_trip.js). Readable only with the trip key.
+
+/** The one house record (id HOUSE_ID). All fields free text, "" = not set. */
+export interface House extends BaseRecord {
+  address?: string;
+  /** dates / check-in, as typed */
+  dates?: string;
+  wifi_name?: string;
+  wifi_pass?: string;
+  /** door code, host contact, rules */
+  info?: string;
+}
+export const HOUSE_ID = "house0000000001";
+
+/** A meal in the menu; days are ordered by their first meal's `order`. */
+export interface Meal extends BaseRecord {
+  /** «Пятница» */
+  day: string;
+  /** «ужин» */
+  meal?: string;
+  dish: string;
+  order: number;
+}
+
+export interface Note extends BaseRecord {
+  text: string;
+  /** person id or "" */
+  author?: string;
+}

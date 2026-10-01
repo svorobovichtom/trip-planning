@@ -4,11 +4,11 @@
 
 import type { RecordModel, RecordSubscription } from "pocketbase";
 import { toast } from "../ui/toast";
-import { errMsg, isNetErr, pb } from "./pb";
+import { errMsg, isNetErr, pb, TRIP_KEY } from "./pb";
 import { type PendingOp, WriteQueue } from "./queue";
 import { type DataState, dataStore, setOnline, sortPeople } from "./stores";
 import { LS, readJSON } from "./storage";
-import type { Claim, Expense, Item, Person, Settlement } from "./types";
+import type { Claim, Expense, House, Item, Meal, Note, Person, Settlement } from "./types";
 
 export const SNAP_KEY = "trip.next.snap";
 const LEGACY_SNAP_KEY = "trip.snap";
@@ -20,7 +20,7 @@ export const queue = new WriteQueue({
   // The server's copy (newer `updated`) replaces the optimistic one.
   send: async (op: PendingOp) => {
     const rec = await pb.collection(op.coll).update(op.id, op.data);
-    if (op.coll === "items" || op.coll === "people") upsertLocal(op.coll, rec);
+    if (QUEUED.has(op.coll as Coll)) upsertLocal(op.coll as Coll, rec);
   },
   isNetErr,
   onFail: (_op, e) => {
@@ -43,6 +43,9 @@ interface Snapshot {
   expenses?: Expense[];
   claims?: Claim[] | null;
   settlements?: Settlement[] | null;
+  house?: House | null;
+  meals?: Meal[] | null;
+  notes?: Note[] | null;
 }
 
 function applySnapshot(snap: Snapshot): boolean {
@@ -56,6 +59,10 @@ function applySnapshot(snap: Snapshot): boolean {
     claims: new Map((snap.claims ?? []).map((r) => [r.id, r])),
     hasSettlements: Array.isArray(snap.settlements),
     settlements: new Map((snap.settlements ?? []).map((r) => [r.id, r])),
+    hasTrip: Array.isArray(snap.meals),
+    house: snap.house ? queue.overlay("house", snap.house) : null,
+    meals: new Map(overlayAll("meals", snap.meals ?? []).map((r) => [r.id, r])),
+    notes: new Map(overlayAll("notes", snap.notes ?? []).map((r) => [r.id, r])),
   }));
   return true;
 }
@@ -70,6 +77,9 @@ function saveSnapSoon(s: DataState) {
       expenses: [...s.expenses.values()],
       claims: [...s.claims.values()].filter((c) => !c.tmp),
       settlements: s.hasSettlements ? [...s.settlements.values()].filter((t) => !t.tmp) : null,
+      house: s.house,
+      meals: s.hasTrip ? [...s.meals.values()] : null,
+      notes: s.hasTrip ? [...s.notes.values()] : null,
     };
     try {
       LS.set(SNAP_KEY, JSON.stringify(snap));
@@ -105,7 +115,7 @@ export function reloadAll(): Promise<boolean> {
 async function doReload(): Promise<boolean> {
   during = { touched: new Set(), removed: new Set() };
   try {
-    const [people, items, expenses, claims, settlements] = await Promise.all([
+    const [people, items, expenses, claims, settlements, house, meals, notes] = await Promise.all([
       pb.collection("people").getFullList<Person>({ sort: "sort,created" }),
       pb.collection("items").getFullList<Item>({ sort: "sort,created" }),
       pb.collection("expenses").getFullList<Expense>({ sort: "-created" }),
@@ -125,6 +135,11 @@ async function doReload(): Promise<boolean> {
           if ((e as { status?: number })?.status === 404) return null;
           throw e;
         }),
+      // «Поездка»: readable only with the key (no key = empty lists); no
+      // collection (404) = a server from before it.
+      tripList<House>("house", ""),
+      tripList<Meal>("meals", "order,created"),
+      tripList<Note>("notes", "created"),
     ]);
     dataStore.set((s) => ({
       ...s,
@@ -150,8 +165,13 @@ async function doReload(): Promise<boolean> {
         // optimistic ones the server hasn't echoed yet
         ...[...s.settlements.values()].filter((t) => t.tmp).map((t) => [t.id, t] as const),
       ]),
+      hasTrip: meals !== null,
+      house: mergeList("house", overlayAll("house", house ?? []), s.house ? [s.house] : [])[0] ?? null,
+      meals: new Map(mergeList("meals", overlayAll("meals", meals ?? []), s.meals.values()).map((r) => [r.id, r])),
+      notes: new Map(mergeList("notes", overlayAll("notes", notes ?? []), s.notes.values()).map((r) => [r.id, r])),
     }));
     ensureSettlementsSub();
+    ensureTripSub();
     setOnline(true);
     return true;
   } catch (e) {
@@ -165,14 +185,26 @@ async function doReload(): Promise<boolean> {
 
 // ---------- local record updates (also used by optimistic writes) ----------
 
-type Coll = "people" | "items" | "expenses" | "claims" | "settlements";
+type Coll = "people" | "items" | "expenses" | "claims" | "settlements" | "house" | "meals" | "notes";
+/** collections whose records take queued patches (the server's copy comes back through upsertLocal) */
+const QUEUED = new Set<Coll>(["people", "items", "house", "meals", "notes"]);
+
+function tripList<T>(coll: "house" | "meals" | "notes", sort: string): Promise<T[] | null> {
+  return pb
+    .collection(coll)
+    .getFullList<T>(sort ? { sort } : {})
+    .catch((e: unknown) => {
+      if ((e as { status?: number })?.status === 404) return null;
+      throw e;
+    });
+}
 
 const slimSettlement = (r: Settlement): Settlement => ({
   id: r.id, from: r.from, to: r.to, amount: r.amount, note: r.note ?? "", created: r.created,
   ...(r.tmp ? { tmp: true } : {}),
 });
 
-export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expense | Claim | Settlement): void {
+export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expense | Claim | Settlement | House | Meal | Note): void {
   during?.touched.add(rk(coll, rec.id));
   during?.removed.delete(rk(coll, rec.id));
   dataStore.set((s) => {
@@ -218,6 +250,18 @@ export function upsertLocal(coll: Coll, rec: RecordModel | Person | Item | Expen
         settlements.set(t.id, t);
         return { ...s, settlements };
       }
+      case "house":
+        return { ...s, house: queue.overlay("house", rec as House) };
+      case "meals": {
+        const meals = new Map(s.meals);
+        meals.set(rec.id, queue.overlay("meals", rec as Meal));
+        return { ...s, meals };
+      }
+      case "notes": {
+        const notes = new Map(s.notes);
+        notes.set(rec.id, queue.overlay("notes", rec as Note));
+        return { ...s, notes };
+      }
     }
   });
 }
@@ -253,6 +297,20 @@ export function removeLocal(coll: Coll, id: string): void {
         settlements.delete(id);
         return { ...s, settlements };
       }
+      case "house":
+        return s.house?.id === id ? { ...s, house: null } : s;
+      case "meals": {
+        if (!s.meals.has(id)) return s;
+        const meals = new Map(s.meals);
+        meals.delete(id);
+        return { ...s, meals };
+      }
+      case "notes": {
+        if (!s.notes.has(id)) return s;
+        const notes = new Map(s.notes);
+        notes.delete(id);
+        return { ...s, notes };
+      }
     }
   });
 }
@@ -276,6 +334,20 @@ function ensureSettlementsSub(): void {
     .subscribe("*", handler("settlements"))
     .catch(() => (settlementsSub = false));
 }
+
+let tripSub = false;
+/**
+ * «Поездка» collections are readable only with the key, and realtime checks
+ * the list rule against the subscription's own headers: pass the key there.
+ */
+function ensureTripSub(): void {
+  if (!connecting || tripSub || !TRIP_KEY || !dataStore.get().hasTrip) return;
+  tripSub = true;
+  const opts = { headers: { x_trip_key: TRIP_KEY } };
+  Promise.all(
+    (["house", "meals", "notes"] as const).map((c) => pb.collection(c).subscribe("*", handler(c), opts)),
+  ).catch(() => (tripSub = false));
+}
 let connectT: ReturnType<typeof setTimeout> | undefined;
 
 async function connect(): Promise<void> {
@@ -294,6 +366,7 @@ async function connect(): Promise<void> {
     await pb.collection("expenses").subscribe("*", handler("expenses"));
     if (dataStore.get().v2) await pb.collection("claims").subscribe("*", handler("claims"));
     ensureSettlementsSub();
+    ensureTripSub();
   } catch {
     setOnline(false);
     connectT = setTimeout(() => void connect(), 4000);

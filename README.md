@@ -32,7 +32,12 @@ trip-api.svorobovich.com ── Cloudflare Tunnel "trip" ──► VM Oracle
 `settlements` («переведено»: `from`, `to` — люди, `amount` — **в грошах**, целое ≥ 1,
 в отличие от `expenses.amount` в злотых; `note`, `created`; не редактируются —
 неверный удаляют и отмечают заново; в балансе считаются как платёж от `from` к `to`). Правила: `list`/`view` открыты, `create`/`update`/`delete` требуют
-`@request.headers.x_trip_key = "<ключ>"`. Ключ подставляется из переменной
+`@request.headers.x_trip_key = "<ключ>"`. Исключение — лист «Поездка»
+(`1790000008_trip.js`): `house` (одна запись `house0000000001`: `address`,
+`dates`, `wifi_name`, `wifi_pass`, `info`; только `update`), `meals` (`day`,
+`meal`, `dish`, `order`) и `notes` (`text`, `author` → people, необязательно)
+**читаются тоже только с ключом** (адрес и пароль Wi‑Fi); realtime-подписка на
+них передаёт ключ в `options.headers` (`app/src/lib/sync.ts`). Ключ подставляется из переменной
 окружения `TRIP_KEY` в момент миграции, поэтому в репозитории его нет.
 
 На VM: `/opt/trip` (бинарник, `pb_data`, `pb_migrations`, `trip.env`; `pb_public` пустой),
@@ -80,7 +85,9 @@ systemd-лимиты. Caddy, порты 80/443 и сертификаты Flatsy 
 шаг выбора). Профиль (`app/src/features/shell/ProfileSheet.tsx`): имя (тап —
 переименовать), «Сменить» → «Кто ты?» (новое имя или «Уже заходил — выбери
 себя»), баланс одной строкой (тап → «Итоги»), «Как тебе переводить» (Revolut и
-BLIK правятся прямо в строках), «Меню и заметки» и «Участники» (вложенные листы),
+BLIK правятся прямо в строках), «Дом, меню и заметки» (лист «Поездка»:
+адрес → Карты, даты, Wi‑Fi с копированием пароля, меню по дням, общие заметки;
+правят все, у кого есть ключ — `app/src/features/trip/`) и «Участники» (вложенные листы),
 ссылка для группы, CSV, «Снять все отметки» (с подтверждением), номер сборки.
 Без ключа — только просмотр.
 
@@ -172,7 +179,8 @@ http://127.0.0.1:8099/#<ключ> работает с тем же origin.
    API Rules: в Create, Update и Delete заменить ключ в
    `@request.headers.x_trip_key = "..."`. Повторить для `items`, `expenses` и
    `claims` (у `claims` только Create и Delete) и `settlements` (Create — там ещё
-   `&& @request.body.from != @request.body.to`, — и Delete).
+   `&& @request.body.from != @request.body.to`, — и Delete). У `meals` и `notes`
+   ключ во всех пяти правилах (List и View тоже), у `house` — List, View, Update.
 3. Разослать новую ссылку `https://trip-planning.svorobovichtom.workers.dev/#<новый ключ>`.
    Старая ссылка продолжит читать, но записывать уже не сможет.
 

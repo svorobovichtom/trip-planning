@@ -1,6 +1,6 @@
 // The profile: the one sheet behind the header pill. Main step: me (rename,
 // «Сменить»), my money in one line (→ «Итоги»), how to pay me, the trip
-// (menu, participants, share link), CSV and «Снять все отметки». The «Кто
+// (house/menu/notes, participants, share link), CSV and «Снять все отметки». The «Кто
 // ты?» step (new name / pick yourself) is the same sheet; opened directly
 // (first visit, «Кто ты?» pill, a write without a person) it closes after
 // choosing, reached via «Сменить» it returns to the main step.
@@ -27,9 +27,10 @@ import { ChevronIcon } from "../../ui/icons";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { exportCsv } from "../totals/csv";
+import { TripSheet } from "../trip/TripSheet";
 import { type PayKind, PayRows } from "./PayForm";
 
-type Sub = "menu" | "people" | null;
+type Sub = "trip" | "people" | null;
 
 export function ProfileSheet() {
   const open = useUi((s) => s.profileOpen);
@@ -77,9 +78,7 @@ export function ProfileSheet() {
           onSub={setSub}
         />
       )}
-      <Sheet open={sub === "menu"} onOpenChange={(o) => !o && setSub(null)} title="Меню и заметки">
-        <TripMenu />
-      </Sheet>
+      <TripSheet open={sub === "trip"} onOpenChange={(o) => !o && setSub(null)} />
       <Sheet open={sub === "people"} onOpenChange={(o) => !o && setSub(null)} title={<PeopleTitle />}>
         <PeopleList meId={me?.id} />
       </Sheet>
@@ -192,8 +191,8 @@ function MainStep({ me, editing, setEditing, renaming, setRenaming, payRef, onSu
       <h2>Поездка</h2>
       <ul className="list acts">
         <li>
-          <button className="prow" type="button" aria-haspopup="dialog" onClick={() => onSub("menu")}>
-            <span className="nm">Меню и заметки</span>
+          <button className="prow" type="button" aria-haspopup="dialog" onClick={() => onSub("trip")}>
+            <span className="nm">Дом, меню и заметки</span>
             <ChevronIcon />
           </button>
         </li>
@@ -385,34 +384,6 @@ function PeopleList({ meId }: { meId?: string }) {
         })}
       </ul>
       <p className="note">Revolut и BLIK — можно перевести этому человеку в один тап из «Итогов».</p>
-    </>
-  );
-}
-
-/** The trip menu and the note (static text). */
-function TripMenu() {
-  return (
-    <>
-      <div className="menu">
-        <h2>Меню</h2>
-        <span className="k">ужин пт → завтрак вс · гриль</span>
-        <dl>
-          <dt>Пт ужин</dt>
-          <dd>Гриль: шея, курица, колбаски, картошка, салат. Для одного: лосось</dd>
-          <dt>Сб завтрак</dt>
-          <dd>Сырники со сметаной, яйца, хлеб, сыр, нарезка, овощи</dd>
-          <dt>Сб обед</dt>
-          <dd>Лёгкий перекус перед выездом: бутерброды, овощи, фрукты</dd>
-          <dt>Сб ужин</dt>
-          <dd>Лосось на гриле, немного шеи, пюре, овощи гриль, салат</dd>
-          <dt>Вс завтрак</dt>
-          <dd>Без готовки: йогурт с гранолой и фруктами, бутерброды, кофе</dd>
-        </dl>
-      </div>
-      <p className="note">
-        Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить
-        в доме. Напитки и алкоголь не включены.
-      </p>
     </>
   );
 }

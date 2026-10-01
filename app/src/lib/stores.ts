@@ -1,6 +1,6 @@
 // Small external stores read with useSyncExternalStore.
 //
-//   dataStore     people/items/expenses/claims/settlements as the server has them, with
+//   dataStore     people/items/expenses/claims/settlements/house/meals/notes as the server has them, with
 //                 queued (offline) patches already applied
 //   sessionStore  who I am, reachability
 //   uiStore       tab, open sheets
@@ -10,7 +10,7 @@
 
 import { useSyncExternalStore } from "react";
 import { LS } from "./storage";
-import type { Claim, Expense, Item, Person, Settlement } from "./types";
+import type { Claim, Expense, House, Item, Meal, Note, Person, Settlement } from "./types";
 
 export interface Store<T> {
   get(): T;
@@ -58,6 +58,11 @@ export interface DataState {
   /** the server has the settlements collection («переведено») */
   hasSettlements: boolean;
   settlements: Map<string, Settlement>;
+  /** the server has house/meals/notes («Поездка»; readable only with the key) */
+  hasTrip: boolean;
+  house: House | null;
+  meals: Map<string, Meal>;
+  notes: Map<string, Note>;
 }
 
 export const dataStore = createStore<DataState>({
@@ -70,6 +75,10 @@ export const dataStore = createStore<DataState>({
   claims: new Map(),
   hasSettlements: false,
   settlements: new Map(),
+  hasTrip: false,
+  house: null,
+  meals: new Map(),
+  notes: new Map(),
 });
 
 export const sortPeople = (people: Person[]): Person[] =>

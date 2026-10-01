@@ -1,0 +1,397 @@
+/* «Поездка» (TripSheet.tsx): house card, menu timeline, notes. */
+.sh-content p.tr-lead {
+  margin: 8px 2px 4px;
+  color: var(--text);
+}
+.tr-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 24px;
+  margin: 20px 2px 8px;
+}
+.sh-content .tr-h h2 {
+  margin: 0;
+}
+.tr-sheet section:first-child .tr-h {
+  margin-top: 8px;
+}
+.link.tr-edit {
+  min-height: 24px;
+  margin: -10px 0;
+  padding: 10px 0;
+  box-sizing: content-box;
+  font-size: 13px;
+}
+.tr-card {
+  min-width: 0;
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+}
+.tr-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.tr-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* house */
+.tr-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 14px;
+  border: 0;
+  text-align: left;
+  transition: transform 0.12s var(--ease);
+}
+.tr-empty:active {
+  transform: scale(0.985);
+}
+.tr-et {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tr-e1 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.tr-e2 {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.tr-house {
+  overflow: hidden;
+}
+.tr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tr-row + .tr-row,
+.tr-row + .tr-wifi,
+.tr-house > * + .tr-info {
+  border-top: 1px solid var(--line);
+}
+a.tr-row:active {
+  background: var(--surface-2);
+}
+.tr-rt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tr-r1 {
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.tr-addr .tr-r1 {
+  font-weight: 500;
+}
+.tr-r2 {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.tr-row > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+/* Wi-Fi: the password is the point, big and one tap to copy */
+.tr-wifi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.tr-wifi:active {
+  background: var(--surface-2);
+}
+.tr-wt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tr-wn {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.tr-wp {
+  margin-top: 1px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.tr-copy {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink);
+}
+.tr-copy svg {
+  width: 17px;
+  height: 17px;
+}
+.sh-content p.tr-info {
+  margin: 0;
+  padding: 12px 14px 14px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* forms */
+.tr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.tr-card.tr-form {
+  padding: 12px 14px 14px;
+}
+.tr-f {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.tr-fl {
+  color: var(--muted);
+  font-size: 12px;
+}
+.tr-form .in {
+  background: var(--bg);
+}
+.tr-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.in.tr-ta {
+  display: block;
+  resize: none;
+  line-height: 1.4;
+}
+.tr-btns {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.tr-btns .btn {
+  min-height: 40px;
+}
+.link.tr-del {
+  margin-right: auto;
+  min-height: 40px;
+  font-size: 14px;
+}
+
+/* menu: one card, days as a small timeline */
+.tr-menu {
+  padding: 4px 14px 6px;
+}
+.tr-day {
+  padding: 10px 0 4px;
+}
+.tr-day + .tr-day {
+  border-top: 1px solid var(--line);
+}
+.tr-dayh {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.tr-tl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tr-m {
+  position: relative;
+  padding-left: 18px;
+}
+/* dot per meal, a thin line joining the day's meals */
+.tr-m::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.tr-m:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 25px;
+  bottom: -10px;
+  width: 1px;
+  background: var(--muted);
+  opacity: 0.4;
+}
+.tr-m-ed::before,
+.tr-m-ed::after,
+.tr-m:has(+ .tr-m-ed)::after {
+  display: none;
+}
+.tr-mb {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.tr-mb:active .tr-md {
+  opacity: 0.6;
+}
+.tr-ml {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.tr-md {
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.tr-m-ed {
+  padding: 8px 0 10px;
+}
+.tr-m-new {
+  padding: 12px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.tr-day:first-child + .tr-m-new,
+.tr-none + .tr-m-new {
+  border-top: 0;
+}
+.sh-content p.tr-none {
+  margin: 0;
+  padding: 12px 0 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.tr-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+.tr-add svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* notes */
+.tr-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tr-note .tr-form {
+  padding: 12px 14px 14px;
+}
+.tr-nb {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.tr-nb:active {
+  background: var(--surface-2);
+}
+.tr-nt {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tr-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.tr-new {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tr-new .in {
+  background: var(--surface);
+}
+.tr-new .btn {
+  min-height: 40px;
+}
