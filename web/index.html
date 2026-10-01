@@ -170,6 +170,7 @@ dialog.viewer[open]{animation:fade .2s ease-out}
 /* expenses: add */
 .addx{display:grid;gap:8px;margin-top:20px}
 .addx .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.addx .link{color:var(--text)}
 .btn.lg{min-height:52px;font-size:15px}
 /* expenses: editor */
 .ed{margin-top:20px;padding:16px;border-radius:var(--r);background:var(--surface)}
@@ -177,14 +178,24 @@ dialog.viewer[open]{animation:fade .2s ease-out}
 .ed-h h3{margin:0;color:var(--ink);font-size:16px;font-weight:500}
 .ed .in{background:var(--surface-2)}
 .rc{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.rc .thumb{width:56px;height:56px}
+.rc .thumb{position:relative;width:56px;height:72px}
+.rc .thumb.scan::after{content:"";position:absolute;left:0;right:0;top:0;height:36%;background:linear-gradient(to bottom,transparent,rgba(0,0,0,.14));border-bottom:1.5px solid rgba(0,0,0,.5);animation:scanl 1.6s cubic-bezier(.45,0,.55,1) infinite alternate}
+.rc .thumb.scan img{opacity:.85}
+@keyframes scanl{from{transform:translateY(-60%)}to{transform:translateY(210%)}}
 .rc-t{flex:1;min-width:0}
 .rc-s{display:block;color:var(--ink);font-size:14px}
 .rc-m{display:block;margin-top:1px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .rc-m:empty{display:none}
-.busy{height:2px;margin-top:8px;border-radius:1px;background:var(--surface-2);overflow:hidden}
-.busy i{display:block;width:30%;height:100%;background:var(--ink);animation:busy 1.2s cubic-bezier(.45,0,.55,1) infinite}
-@keyframes busy{from{transform:translateX(-100%)}to{transform:translateX(340%)}}
+.lines{margin-bottom:16px;border-radius:8px;background:var(--bg)}
+.lines summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 14px;color:var(--ink);font-size:14px;cursor:pointer;list-style:none}
+.lines summary::-webkit-details-marker{display:none}
+.lines summary::after{content:"";width:7px;height:7px;margin-right:2px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+.lines[open] summary::after{transform:rotate(-135deg) translateY(-2px)}
+.lines ul{list-style:none;margin:0;padding:0 14px 8px;font-size:13px}
+.lines li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--line)}
+.lines li span:first-child{min-width:0;overflow-wrap:anywhere;color:var(--text)}
+.lines li span:last-child{flex:none;color:var(--ink);font-variant-numeric:tabular-nums}
+.lines li.tot span{color:var(--ink);font-weight:500}
 .match{margin-bottom:16px;padding:12px 14px;border-radius:8px;background:var(--bg)}
 .match p{margin:0 0 8px;font-size:14px;color:var(--text)}
 .match b{color:var(--ink);font-weight:500}
@@ -272,10 +283,10 @@ dialog.viewer[open]{animation:fade .2s ease-out}
   <div id="p-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
     <div class="ro" id="roExp" hidden>Только просмотр. Чтобы добавлять чеки, попроси ссылку с ключом.</div>
     <div class="addx" id="addx">
-      <button class="btn pri lg" type="button" id="aCam">Сфотографировать чек</button>
+      <button class="btn pri lg" type="button" id="aPick">Чек из галереи</button>
       <div class="two">
-        <button class="btn" type="button" id="aPick">Из галереи</button>
-        <button class="btn" type="button" id="aManual">Ввести вручную</button>
+        <button class="btn" type="button" id="aCam">Сфотографировать</button>
+        <button class="link" type="button" id="aManual">Ввести вручную</button>
       </div>
       <input type="file" id="fCam" accept="image/*" capture="environment" hidden>
       <input type="file" id="fPick" accept="image/*,application/pdf" hidden>
@@ -288,10 +299,10 @@ dialog.viewer[open]{animation:fade .2s ease-out}
         <div class="rc-t">
           <span class="rc-s" id="rcS"></span>
           <span class="rc-m" id="rcM"></span>
-          <div class="busy" id="rcBusy" hidden><i></i></div>
         </div>
         <button class="link" type="button" id="rcRm">Убрать</button>
       </div>
+      <details class="lines" id="lines" hidden><summary id="linesS"></summary><ul id="linesL"></ul></details>
       <div class="match" id="match" hidden>
         <p id="matchP"></p>
         <button class="btn" type="button" id="matchBtn"><span id="matchBtnT">Отметить купленными</span></button>
@@ -809,6 +820,7 @@ const CATS = ["Мясо и рыба", "Молочка и яйца", "Овощи 
 const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "PLN", currencyDisplay: "narrowSymbol" });
 const fmtG = (g) => money.format(g / 100);
 const fmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + fmtG(Math.abs(g));
+const fmtSigned2 = (g) => (g < 0 ? "−" : "") + fmtG(Math.abs(g));   // only discounts get a sign
 const grosze = (a) => Math.round(Number(a || 0) * 100);
 const fmtDayI = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" });
 const fmtDay = { format: (d) => fmtDayI.format(d).replace(/\s/g, "\u00a0") };
@@ -883,14 +895,14 @@ const F = {
   open: false, editing: null, cat: null, paid: null, split: "all", pick: new Set(),
   file: null, fileUrl: null, removeFile: false, dateOrig: "",
   scan: null,          // {state: "busy"|"ok"|"fail", text, meta}
-  seq: 0, matched: [], marked: 0, lines: null,
+  seq: 0, matched: [], marked: 0, lines: null, total: null,
 };
 function openEditor(x) {
   closeEditor(true);
   Object.assign(F, {
     open: true, editing: x ? x.id : null, cat: x ? x.category : null, paid: x ? x.paid_by : S.me,
     split: x && (x.split_between || []).length ? "some" : "all", pick: new Set(x ? x.split_between || [] : []),
-    file: null, removeFile: false, scan: null, matched: [], marked: 0, lines: x && Array.isArray(x.lines) ? x.lines : null,
+    file: null, removeFile: false, scan: null, matched: [], marked: 0, lines: null, total: null, auto: null,
   });
   const d = x ? parseDate(x.spent_at || x.created) : new Date();
   F.dateOrig = d && !isNaN(d) ? dayStr(d) : "";
@@ -905,7 +917,7 @@ function openEditor(x) {
 function closeEditor(quiet) {
   F.seq++;   // drop any scan still running
   if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
-  Object.assign(F, { open: false, editing: null, file: null, fileUrl: null, scan: null, matched: [], lines: null });
+  Object.assign(F, { open: false, editing: null, file: null, fileUrl: null, scan: null, matched: [], lines: null, total: null });
   $("#fCam").value = ""; $("#fPick").value = "";
   if (quiet) return;
   $("#ed").hidden = true;
@@ -937,7 +949,14 @@ function renderReceipt() {
     const sc = F.scan;
     morph($("#rcS"), sc ? sc.text : F.file ? "Фото чека" : "Чек приложен");
     $("#rcM").textContent = sc && sc.meta || "";
-    $("#rcBusy").hidden = !(sc && sc.state === "busy");
+    th.classList.toggle("scan", !!(sc && sc.state === "busy"));
+  }
+  const L = F.file && F.lines || [];
+  $("#lines").hidden = !L.length;
+  if (L.length) {
+    $("#linesS").textContent = `Позиции чека · ${L.length}`;
+    const tot = F.total > 0 ? `<li class="tot"><span>Итого по чеку</span><span>${fmtG(grosze(F.total))}</span></li>` : "";
+    $("#linesL").innerHTML = L.map((l) => `<li><span>${esc(l.text)}</span><span>${l.price == null ? "" : fmtSigned2(grosze(l.price))}</span></li>`).join("") + tot;
   }
   const m = F.matched.map((id) => S.items.get(id)).filter(Boolean);
   const left = m.filter((it) => !it.done);
@@ -984,14 +1003,15 @@ async function onPicked(input) {
   if (!f0) return;
   if (!F.open) openEditor(null);
   const seq = ++F.seq;
-  F.scan = { state: "busy", text: "Готовлю фото…" };
-  F.matched = []; F.marked = 0;
+  F.scan = { state: "busy", text: "Загружаю фото…" };
+  F.matched = []; F.marked = 0; F.lines = null; F.total = null;
   renderEditor();
   const f = await compressImage(f0);
   if (seq !== F.seq) return;
   if (f.size > 10 * 1024 * 1024) { F.scan = null; renderReceipt(); toast("Файл больше 10 МБ"); return; }
   if (F.fileUrl) URL.revokeObjectURL(F.fileUrl);
   F.file = f; F.fileUrl = URL.createObjectURL(f); F.removeFile = false;
+  renderReceipt();
   if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
     F.scan = { state: "fail", text: f.type === "application/pdf" ? "PDF приложен" : "Фото приложено", meta: "Этот формат не распознаю — введи сумму вручную" };
     renderReceipt();
@@ -1006,7 +1026,7 @@ async function scanReceipt(file, seq) {
   const tick = () => {
     if (seq !== F.seq || !F.scan || F.scan.state !== "busy") return;
     const s = Math.round((Date.now() - t0) / 1000);
-    F.scan.text = s < 4 ? "Распознаю чек…" : `Распознаю чек · ${s} с`;
+    F.scan.text = s < 2 ? "Загружаю фото…" : s < 8 ? "Читаю чек…" : `Читаю чек · ${s} с`;
     F.scan.meta = s >= 20 ? "Долго думает, подожди ещё немного" : "";
     renderReceipt();
   };
@@ -1030,16 +1050,20 @@ async function scanReceipt(file, seq) {
   if (res.status === 401) return fail("Ключ не подошёл — введи сумму вручную");
   if (!res.ok || !body || typeof body !== "object") return fail("Не получилось распознать — введи сумму вручную");
 
-  const filled = [];
-  if (body.total > 0 && !$("#fAmount").value.trim()) { $("#fAmount").value = String(Math.round(body.total * 100) / 100).replace(".", ","); filled.push(fmtG(grosze(body.total))); }
-  else if (body.total > 0) filled.push(fmtG(grosze(body.total)));
-  if (body.store && !$("#fTitle").value.trim()) $("#fTitle").value = niceStore(body.store);
-  if (body.category && CATS.includes(body.category) && !F.cat) F.cat = body.category;
+  // Fill empty fields, and ones that still hold what an earlier scan put there.
+  const A = F.auto || {}, free = (el, k) => !el.value.trim() || el.value === A[k];
+  const na = {};
+  if (body.total > 0 && free($("#fAmount"), "amount")) $("#fAmount").value = na.amount = String(Math.round(body.total * 100) / 100).replace(".", ",");
+  if (body.store && free($("#fTitle"), "title")) $("#fTitle").value = na.title = niceStore(body.store);
+  if (body.category && CATS.includes(body.category) && (!F.cat || F.cat === A.cat)) F.cat = na.cat = body.category;
   if (body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !F.editing) $("#fDate").value = body.date;
+  F.auto = na;
   F.lines = Array.isArray(body.lines) ? body.lines.filter((l) => l && l.text) : null;
+  F.total = body.total > 0 ? body.total : null;
   F.matched = (Array.isArray(body.matched) ? body.matched : []).filter((id) => { const it = S.items.get(id); return it && !it.done; });
   const meta = [body.store && niceStore(body.store), body.total > 0 ? fmtG(grosze(body.total)) : "сумму не нашёл", body.date ? fmtDay.format(new Date(body.date + "T12:00")) : ""].filter(Boolean).join(" · ");
-  F.scan = { state: "ok", text: "Распознано — проверь", meta };
+  const nl = F.lines ? F.lines.length : 0;
+  F.scan = { state: "ok", text: nl ? `Нашёл ${nl} ${plural(nl, "позицию", "позиции", "позиций")}` : "Распознано — проверь", meta };
   renderEditor();
   if (!(body.total > 0)) $("#fAmount").focus();
 }
@@ -1133,7 +1157,7 @@ $("#rcRm").addEventListener("click", () => {
   F.seq++;
   if (F.file) { URL.revokeObjectURL(F.fileUrl); F.file = null; F.fileUrl = null; }
   else F.removeFile = true;
-  F.scan = null; F.matched = [];
+  F.scan = null; F.matched = []; F.lines = null; F.total = null;
   renderReceipt();
 });
 $("#matchBtn").addEventListener("click", markMatched);
