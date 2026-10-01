@@ -35,10 +35,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
 .num{font-variant-numeric:tabular-nums}
-.wrap{max-width:540px;margin:0 auto;padding:0 16px calc(56px + env(safe-area-inset-bottom,0px))}
+/* App shell: the header is a fixed block and only the area below it scrolls,
+   so nothing slides under it (iOS Safari status bar, rubber-band overscroll). */
+html,body{height:100%}
+body{overflow:hidden;overscroll-behavior:none}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.wrap,.hin{max-width:540px;margin:0 auto}
+.wrap{padding:0 16px calc(56px + env(safe-area-inset-bottom,0px))}
 
 /* header */
-header{position:sticky;top:0;z-index:5;background:var(--bg);margin-inline:-16px;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 0;border-bottom:1px solid var(--line)}
+header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 h1{margin:0;color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-.005em}
 .sub{margin-top:2px;font-size:14px}
@@ -128,8 +135,8 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
 </style>
 </head>
 <body>
-<div class="wrap" id="app">
-  <header>
+<div class="app" id="app">
+  <header><div class="hin">
     <div class="top">
       <div>
         <h1 id="title">Покупки в Ашан</h1>
@@ -143,7 +150,9 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
       <button class="chip" id="reset" type="button">Сбросить</button>
       <span class="sync" id="sync" role="status" aria-live="polite">подключаюсь…</span>
     </div>
-  </header>
+  </div></header>
+
+  <div class="scroll" id="scroll"><div class="wrap">
 
   <div class="ro" id="ro" hidden>Только просмотр. Чтобы отмечать, попроси ссылку с ключом.</div>
 
@@ -160,6 +169,7 @@ dialog[open] .sheet{animation:up .35s cubic-bezier(.19,1,.22,1)}
     </dl>
   </div>
   <p class="note">Один человек ест рыбу без мяса: ему лосось в пятницу и копчёный лосось к завтракам. Соль, перец и специи сначала проверить в доме. Напитки и алкоголь не включены.</p>
+  </div></div>
 </div>
 
 <dialog id="who" aria-labelledby="whoH">
