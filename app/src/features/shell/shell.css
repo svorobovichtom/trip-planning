@@ -107,13 +107,16 @@
   color: var(--ink);
   font-size: 14px;
   font-weight: 500;
-  transition: background 0.25s var(--ease), color 0.25s;
+  transition: background 0.25s var(--ease), color 0.25s, transform 0.16s var(--ease);
 }
 /* 44px tap target around the 32px pill */
 .me::before {
   content: "";
   position: absolute;
   inset: -6px -3px;
+}
+.me:active {
+  transform: scale(0.96);
 }
 .me .nm {
   min-width: 0;
@@ -205,7 +208,10 @@
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.25s var(--ease), color 0.25s;
+  transition: background 0.25s var(--ease), color 0.25s, transform 0.16s var(--ease);
+}
+.sc:active {
+  transform: scale(0.96);
 }
 .sc::before {
   content: "";
@@ -261,6 +267,9 @@
 .nav .tab[data-active] {
   opacity: 1;
 }
+.nav .tab:active:not([data-active]) {
+  opacity: 0.85;
+}
 .nav .tab:focus-visible {
   outline: 2px solid var(--bg);
   outline-offset: -4px;
@@ -305,38 +314,6 @@ body.typing .nav {
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 16px;
-}
-.menu {
-  margin-top: 16px;
-  padding: 14px;
-  border-radius: var(--r);
-  background: var(--surface);
-}
-.sh-content .menu h2 {
-  margin: 0 0 2px;
-  color: var(--ink);
-}
-.menu .k {
-  display: block;
-  margin-bottom: 12px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--muted);
-}
-.menu dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 8px 14px;
-  font-size: 14px;
-}
-.menu dt {
-  color: var(--muted);
-  white-space: nowrap;
-}
-.menu dd {
-  margin: 0;
-  min-width: 0;
 }
 .sh-content p.note {
   margin: 12px 2px 0;
@@ -607,4 +584,11 @@ button.pf-name::before {
 }
 .pf-sheet[data-nested-drawer-open] > .sh-box::after {
   opacity: 1;
+}
+
+/* profile pill while the data loads */
+.me.me-wait {
+  width: 88px;
+  background: var(--surface);
+  animation: breathe 1.6s ease-in-out infinite;
 }

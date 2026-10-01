@@ -7,8 +7,9 @@ import { actualQty, type ItemActual, type LineRef, lineQty } from "../../lib/rec
 import { useData, useItems, usePeople } from "../../lib/stores";
 import { LS, readJSON } from "../../lib/storage";
 import type { Item, Person } from "../../lib/types";
-import { CheckIcon, ChevronIcon } from "../../ui/icons";
+import { CheckIcon, ChevronIcon, OfflineIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
+import { Skeleton } from "../../ui/Skeleton";
 import { secDomId } from "./SectionChips";
 import { useGroupMoves } from "./useGroupMoves";
 import "./list.css";
@@ -61,9 +62,15 @@ export function ListPage() {
 
   if (!loaded) {
     return loadFailed ? (
-      <p className="note">Не получилось загрузить список. Проверь интернет — страница попробует снова.</p>
+      <div className="es list-err" role="status">
+        <span className="es-i">
+          <OfflineIcon />
+        </span>
+        <p className="es-t">Список не загрузился</p>
+        <p className="es-b">Проверь интернет — страница попробует снова сама.</p>
+      </div>
     ) : (
-      <div className="skel" aria-busy="true" aria-label="Загружаю список" />
+      <Skeleton label="Загружаю список" />
     );
   }
 

@@ -1,10 +1,4 @@
 /* Список (ported from web/index.html) */
-.skel {
-  margin-top: 20px;
-  height: 300px;
-  border-radius: var(--r);
-  background: var(--surface);
-}
 .panel-list section {
   margin-top: 20px;
 }
@@ -86,6 +80,15 @@ button.row:active {
   transform: scale(0.6);
   transition: opacity 0.2s, transform 0.3s var(--ease);
 }
+/* the tick draws itself in (pathLength=1 in ui/icons.tsx) */
+.box svg path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s var(--ease) 0.04s;
+}
+.done .box svg path {
+  stroke-dashoffset: 0;
+}
 .row:active .box {
   transform: scale(0.88);
 }
@@ -97,6 +100,12 @@ button.row:active {
   color: var(--ink);
   overflow-wrap: anywhere;
   transition: color 0.2s;
+}
+/* the strike fades in instead of popping */
+.row .name,
+.row .qty {
+  text-decoration: line-through transparent;
+  transition: color 0.2s, text-decoration-color 0.3s var(--ease);
 }
 .pl {
   display: block;
@@ -285,4 +294,7 @@ button.row:active {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+.es.list-err {
+  margin-top: 20px;
 }

@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useListStats } from "../../lib/hooks";
-import { openProfile, type Tab, useLoaded, useMe, useUi } from "../../lib/stores";
+import { openProfile, type Tab, useData, useLoaded, useMe, useUi } from "../../lib/stores";
 import { Avatar } from "../../ui/Avatar";
 import { ChevronIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
@@ -47,18 +47,25 @@ export function Header() {
 /** [avatar · name · chevron] opens the profile; nobody chosen yet: «Кто ты?» in ink, straight to that step. */
 function MeButton() {
   const me = useMe();
-  const name = me ? me.name : "Кто ты?";
+  const loaded = useLoaded();
+  const failed = useData((s) => s.loadFailed);
+  const known = loaded || failed;
+  const name = me ? me.name : known ? "Кто ты?" : "";
   const ref = useRef<HTMLButtonElement>(null);
   const prev = useRef(name);
   useEffect(() => {
     if (prev.current === name) return;
+    const was = prev.current;
     prev.current = name;
+    if (!was) return; // first appearance after loading: no flash
     const b = ref.current;
     if (!b) return;
     b.classList.remove("flash");
     void b.offsetWidth;
     b.classList.add("flash");
   }, [name]);
+  // Not loaded yet: who I am is unknown, not «nobody» — a quiet placeholder, not the ink «Кто ты?».
+  if (!me && !known) return <span className="me me-wait" aria-hidden="true" />;
   return (
     <button
       ref={ref}

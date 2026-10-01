@@ -5,11 +5,13 @@
   --surface-2: #eaeaea;
   --ink: #0a0a0a;
   --text: #555555;
-  --muted: #999999;
+  --muted: #808080;
   --line: rgba(0, 0, 0, 0.06);
   --bad: #d93025;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r: 10px;
+  /* small radius: fields, buttons, thumbnails */
+  --r-s: 8px;
   --ease: cubic-bezier(0.19, 1, 0.22, 1);
   --sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --nav-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
@@ -30,7 +32,7 @@
     --surface-2: #1e1e1e;
     --ink: #ffffff;
     --text: #a8a8a8;
-    --muted: #666666;
+    --muted: #7a7a7a;
     --line: rgba(255, 255, 255, 0.06);
     --bad: #ff6b5e;
     --nav-shadow: none;
@@ -45,7 +47,7 @@
   --surface-2: #1e1e1e;
   --ink: #ffffff;
   --text: #a8a8a8;
-  --muted: #666666;
+  --muted: #7a7a7a;
   --line: rgba(255, 255, 255, 0.06);
   --bad: #ff6b5e;
   --nav-shadow: none;
@@ -123,7 +125,7 @@ button {
   min-height: 44px;
   padding: 10px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--surface-2);
   color: var(--ink);
   font-size: 16px;
@@ -155,11 +157,16 @@ button {
   min-height: 44px;
   padding: 0 16px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--surface-2);
   color: var(--ink);
   font-size: 14px;
   font-weight: 500;
+  transition: transform 0.16s var(--ease), opacity 0.16s, background-color 0.2s;
+}
+/* pressed: a small, quick give (no colour flash) */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .btn.pri {
   background: var(--ink);
@@ -176,6 +183,12 @@ button {
   color: var(--muted);
   font-size: 14px;
   font-weight: 500;
+}
+.link {
+  transition: opacity 0.16s;
+}
+.link:active {
+  opacity: 0.55;
 }
 .link.bad {
   color: var(--bad);
@@ -229,6 +242,96 @@ h2 {
   padding: 20px 14px;
   color: var(--muted);
   font-size: 14px;
+}
+/* empty / error state: a quiet centred block (icon, one line, a hint) */
+.es {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 32px 24px 28px;
+  border-radius: var(--r);
+  background: var(--surface);
+  text-align: center;
+  animation: pin 0.4s var(--ease);
+}
+.es-i {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+}
+.es-i svg {
+  width: 20px;
+  height: 20px;
+}
+.es-t {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+.es p.es-b {
+  max-width: 30ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.es .btn {
+  margin-top: 14px;
+}
+/* loading: placeholder rows that breathe */
+.skel {
+  margin-top: 20px;
+}
+.skel-h {
+  width: 96px;
+  height: 10px;
+  margin: 6px 2px 14px;
+  border-radius: 5px;
+  background: var(--surface);
+}
+.skel-c {
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+.skel-r {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  padding: 0 14px;
+}
+.skel-r + .skel-r {
+  border-top: 1px solid var(--line);
+}
+.skel-r i {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+.skel-r i:first-child {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+.skel-r i:last-child {
+  flex: none;
+  width: 40px;
+  margin-left: auto;
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.45;
+  }
 }
 /* list rows that are one button (people, actions) */
 .prow {

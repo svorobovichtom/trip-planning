@@ -18,7 +18,7 @@ import { openPay, openWho, setTab, useData, useExpenses, useLoaded, useMe, usePe
 import type { Person, Settlement } from "../../lib/types";
 import { confirmAction } from "../../ui/Confirm";
 import { Avatar } from "../../ui/Avatar";
-import { ChevronIcon } from "../../ui/icons";
+import { ChevronIcon, ScaleIcon } from "../../ui/icons";
 import { Morph } from "../../ui/Morph";
 import { deleteSettlement } from "./api";
 import { type BlikAsk, BlikSheet } from "./BlikSheet";
@@ -46,13 +46,17 @@ export function TotalsPage() {
 
 function Empty() {
   return (
-    <section className="t-card t-empty">
-      <div className="t-k">Всего потрачено</div>
-      <div className="t-big num">{fmtG(0)}</div>
-      <p>Чеков пока нет. Добавь первый во вкладке «Расходы» — и здесь появится, кто кому сколько переводит.</p>
-      <button className="btn" type="button" onClick={() => setTab("exp")}>
-        Добавить чек
-      </button>
+    <section className="es t-empty">
+      <span className="es-i">
+        <ScaleIcon />
+      </span>
+      <p className="es-t">Считать пока нечего</p>
+      <p className="es-b">Добавь первый чек во вкладке «Расходы» — и здесь появится, кто кому сколько переводит.</p>
+      {canWriteKey && (
+        <button className="btn" type="button" onClick={() => setTab("exp")}>
+          Добавить чек
+        </button>
+      )}
     </section>
   );
 }
@@ -174,7 +178,7 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
                 <i>→</i>
               </span>
               <span className="t-amt num">
-                <Morph>{fmtDec(t.g)}</Morph>
+                <Morph>{fmtG(t.g)}</Morph>
               </span>
               {onSettle && (
                 <button
@@ -222,7 +226,7 @@ function OweRow({ t, to, name, onSettle, onBlik }: {
         {name}
       </span>
       <span className="t-amt num">
-        <Morph>{fmtDec(t.g)}</Morph>
+        <Morph>{fmtG(t.g)}</Morph>
       </span>
       {!link && !phone && <p className="t-nopay">Способ перевода не указан</p>}
       <div className="t-acts">
@@ -252,7 +256,7 @@ function OweRow({ t, to, name, onSettle, onBlik }: {
           </button>
         )}
         <button className="t-copy" type="button" aria-label={`Скопировать ${copyDec(t.g)} для ${name}`} onClick={() => void copyAmount(t.g)}>
-          скопировать
+          Скопировать
         </button>
         {onSettle && (
           <button
@@ -362,7 +366,7 @@ function Done({ name, person, meId }: { name: NameOf; person: PersonOf; meId?: s
               </span>
               <small className="t-when">{fmtWhen(t.created)}</small>
             </span>
-            <span className="t-amt num">{fmtDec(t.amount)}</span>
+            <span className="t-amt num">{fmtG(t.amount)}</span>
             {canWriteKey && (
               <button
                 className="t-copy"
@@ -371,7 +375,7 @@ function Done({ name, person, meId }: { name: NameOf; person: PersonOf; meId?: s
                 aria-label={`Отменить перевод ${name(t.from)} → ${name(t.to)} ${copyDec(t.amount)}`}
                 onClick={() => void undo(t)}
               >
-                отменить
+                Отменить
               </button>
             )}
           </li>
@@ -405,7 +409,7 @@ function More({ L, tx, people, name, person, meId }: {
                   {name(t.to)}
                 </span>
                 <span className="t-amt num">
-                  <Morph>{fmtDec(t.g)}</Morph>
+                  <Morph>{fmtG(t.g)}</Morph>
                 </span>
               </li>
             ))}

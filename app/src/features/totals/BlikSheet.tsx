@@ -28,14 +28,14 @@ export function BlikSheet({ ask, onClose, name }: { ask: BlikAsk | null; onClose
               <span className="bk-k">Телефон · {name(a.to)}</span>
               <span className="bk-v num">{a.phone}</span>
               <button className="t-copy" type="button" aria-label={`Скопировать телефон ${a.phone}`} onClick={() => void copyText(phoneForCopy(a.phone))}>
-                скопировать
+                Скопировать
               </button>
             </li>
             <li>
               <span className="bk-k">Сумма, zł</span>
               <span className="bk-v num">{fmtDec(a.g)}</span>
               <button className="t-copy" type="button" aria-label={`Скопировать сумму ${copyDec(a.g)}`} onClick={() => void copyText(copyDec(a.g))}>
-                скопировать
+                Скопировать
               </button>
             </li>
           </ul>

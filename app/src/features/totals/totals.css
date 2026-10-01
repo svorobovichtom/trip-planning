@@ -30,8 +30,8 @@
   margin: 6px 0 14px;
   font-size: 14px;
 }
-.t-empty .t-big {
-  color: var(--muted);
+.es.t-empty {
+  margin-top: 16px;
 }
 
 /* my transfers, inside the card */
@@ -344,11 +344,12 @@
   display: block;
   margin: 0 2px 6px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--muted);
 }
+/* the amount: same big morphing field as the payment editor (.ai-lg) */
 .st-in {
-  font-size: 22px;
-  font-weight: 500;
+  margin-top: 2px;
 }
 .st-hint {
   min-height: 1.4em;
@@ -448,6 +449,13 @@ a.t-copy {
 }
 .t-done .t-pair {
   flex-basis: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.t-done .t-who i {
+  padding: 0 4px;
 }
 .t-tbl tbody th .t-av {
   margin-right: 8px;
@@ -460,4 +468,11 @@ a.t-copy {
 }
 .t-rows > li.wide .t-acts > * {
   padding: 0 8px;
+}
+/* «Переводы сделаны»: a little more room for the pair of names */
+.t-all.t-done > li {
+  gap: 8px;
+}
+.t-done .t-copy {
+  padding: 0 10px;
 }

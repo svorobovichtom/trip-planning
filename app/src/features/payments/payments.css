@@ -52,9 +52,6 @@
   padding: 10px 14px;
   animation: rowin 0.4s var(--ease);
 }
-.exps > li.empty-s {
-  display: block;
-}
 .xhit {
   position: absolute;
   inset: 0;
@@ -100,11 +97,24 @@
 .xt .st {
   color: var(--text);
 }
-.xamt {
+/* right column: amount, the day under it */
+.xr {
   flex: none;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   pointer-events: none;
+}
+.xd {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.xamt {
   color: var(--ink);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -160,7 +170,7 @@
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--surface-2);
   color: var(--muted);
   overflow: hidden;
@@ -262,38 +272,9 @@
   gap: 6px 18px;
   margin-top: 8px;
 }
-.amt {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+/* the amount: a big AmountInput (.ai-lg, ui/amount.css) */
+.ai-lg.amt {
   margin-bottom: 16px;
-  padding-bottom: 6px;
-  border-bottom: 1.5px solid var(--surface-2);
-  transition: border-color 0.15s;
-}
-.amt:focus-within {
-  border-color: var(--ink);
-}
-.amt input {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  outline: none;
-  color: var(--ink);
-  font-size: 32px;
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.amt input::placeholder {
-  color: var(--muted);
-}
-.amt span {
-  font-size: 18px;
-  color: var(--muted);
 }
 .hint {
   margin: 6px 2px 0;
@@ -350,7 +331,10 @@
   color: var(--text);
   font-size: 13px;
   font-weight: 500;
-  transition: background 0.2s var(--ease), color 0.2s;
+  transition: background 0.2s var(--ease), color 0.2s, transform 0.16s var(--ease);
+}
+.pill:active:not(:disabled) {
+  transform: scale(0.96);
 }
 .pill::before {
   content: "";
@@ -385,7 +369,10 @@
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.25s var(--ease), color 0.25s;
+  transition: background 0.25s var(--ease), color 0.25s, transform 0.16s var(--ease);
+}
+.segc button:active {
+  transform: scale(0.97);
 }
 .segc button[aria-pressed="true"] {
   background: var(--ink);
@@ -466,6 +453,14 @@
   opacity: 1;
   transform: none;
 }
+.pbox svg path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s var(--ease) 0.04s;
+}
+[aria-pressed="true"] > .pbox svg path {
+  stroke-dashoffset: 0;
+}
 .amr .chk {
   padding-right: 6px;
 }
@@ -475,10 +470,9 @@
   min-height: 36px;
   padding: 6px 10px;
   background: var(--bg);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-size: 16px;
 }
-.am-in:disabled {
+.am-in[data-disabled] {
   opacity: 0.35;
 }
 .am-in.bad {

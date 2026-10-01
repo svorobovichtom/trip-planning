@@ -10,6 +10,7 @@ import { startSync } from "./lib/sync";
 import { ConfirmHost } from "./ui/Confirm";
 import { lazyPart, PartBoundary, whenIdle } from "./ui/lazy";
 import { ScrollContext } from "./ui/scroll";
+import { Skeleton } from "./ui/Skeleton";
 import { ToastProvider } from "./ui/Toaster";
 import "./features/shell/shell.css";
 
@@ -18,7 +19,7 @@ import "./features/shell/shell.css";
 // which keeps tab switches instant; opening one earlier loads it on demand.
 const PaymentsPage = lazyPart(() => import("./features/payments/PaymentsPage"), (m) => m.PaymentsPage);
 const TotalsPage = lazyPart(() => import("./features/totals/TotalsPage"), (m) => m.TotalsPage);
-const tabSkel = <div className="skel" aria-busy="true" aria-label="Загружаю" />;
+const tabSkel = <Skeleton />;
 
 /** Tabs whose content is mounted: the current one, then all after the first idle. */
 function useMountedTabs(tab: Tab): (t: Tab) => boolean {

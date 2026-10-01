@@ -36,7 +36,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: var(--r-s);
   background: var(--bg);
   color: var(--ink);
 }
@@ -141,10 +141,13 @@ a.tr-row:active {
   display: flex;
   flex-direction: column;
 }
+/* one line: a long network name ends in an ellipsis next to the copy button */
 .tr-wn {
+  overflow: hidden;
   color: var(--muted);
   font-size: 13px;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .tr-wp {
   margin-top: 1px;
@@ -242,8 +245,7 @@ a.tr-row:active {
   margin: 0 0 4px;
   color: var(--ink);
   font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.005em;
+  font-weight: 500;
 }
 .tr-tl {
   list-style: none;

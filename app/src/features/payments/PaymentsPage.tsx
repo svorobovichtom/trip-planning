@@ -8,8 +8,10 @@ import { fmtG, grosze } from "../../lib/money";
 import { canWriteKey } from "../../lib/pb";
 import { useData, usePeople } from "../../lib/stores";
 import type { Expense } from "../../lib/types";
+import { ReceiptIcon } from "../../ui/icons";
 import { lazyPart, PartBoundary } from "../../ui/lazy";
 import { Morph } from "../../ui/Morph";
+import { Skeleton } from "../../ui/Skeleton";
 import { rescan } from "./api";
 import { CameraIcon, expenseName, fmtDay, GalleryIcon, PaidBy, Thumb, useNames, viewReceipt } from "./bits";
 import { isScanning, parseDate, scanView, splitLabel } from "./logic";
@@ -70,14 +72,19 @@ export function PaymentsPage() {
         <h2>Платежи</h2>
       </div>
       {!loaded ? (
-        <div className="skel" aria-busy="true" aria-label="Загружаю платежи" />
+        <Skeleton rows={4} label="Загружаю платежи" />
+      ) : !xs.length ? (
+        <div className="es">
+          <span className="es-i">
+            <ReceiptIcon />
+          </span>
+          <p className="es-t">Платежей пока нет</p>
+          <p className="es-b">
+            {canWriteKey ? "Добавь фото чека — сумма, магазин и позиции подставятся сами." : "Здесь появятся чеки, которые добавит группа."}
+          </p>
+        </div>
       ) : (
         <ul className="list exps">
-          {!xs.length && (
-            <li className="empty-s">
-              Платежей пока нет.{canWriteKey ? " Добавь фото чека — сумма, магазин и позиции подставятся сами." : ""}
-            </li>
-          )}
           {xs.map((x) => (
             <ExpenseRow key={x.id} x={x} payer={name(x.paid_by)} order={order} />
           ))}
@@ -97,7 +104,7 @@ const ExpenseRow = memo(function ExpenseRow({ x, payer, order }: { x: Expense; p
   const g = grosze(x.amount);
   const sv = scanView(x);
   const when = parseDate(x.spent_at || x.created);
-  const meta = [splitLabel(x, order ? order.split(",") : []), when ? fmtDay.format(when) : ""].filter(Boolean).join(" · ");
+  const meta = splitLabel(x, order ? order.split(",") : []);
   return (
     <li className="xrow">
       <button className="xhit" type="button" aria-label={`Открыть: ${expenseName(x)}`} onClick={() => openPayment(x.id)} />
@@ -124,8 +131,11 @@ const ExpenseRow = memo(function ExpenseRow({ x, payer, order }: { x: Expense; p
         )}
         {sv.kind === "mismatch" && <span className="st">позиции неточные</span>}
       </span>
-      <span className={`xamt${g ? "" : " q"}`}>
-        <Morph>{g ? fmtG(g) : isScanning(x) ? "…" : "—"}</Morph>
+      <span className="xr">
+        <span className={`xamt${g ? "" : " q"}`}>
+          <Morph>{g ? fmtG(g) : isScanning(x) ? "…" : "—"}</Morph>
+        </span>
+        {when && <span className="xd">{fmtDay.format(when)}</span>}
       </span>
     </li>
   );
