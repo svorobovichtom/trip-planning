@@ -37,6 +37,9 @@ const CATEGORY_HINTS = [
   "water, juice, soda, beer, wine, spirits", "accommodation", "fuel, parking, tolls, transport",
   "anything else",
 ];
+// Short keys the step-2 model answers with (index-aligned with CATEGORIES);
+// words, not numbers, so they can't be mixed up with list numbers.
+const CATEGORY_KEYS = ["meat", "dairy", "veg", "fruit", "grocery", "snacks", "household", "drinks", "stay", "transport", "other"];
 const UNITS = new Set(["kg", "g", "l", "ml", "szt"]);
 
 // Step 1, tried in parallel: the first is the main model; the second is a
@@ -627,7 +630,7 @@ const MATCH_SCHEMA = {
         required: ["i", "c", "m"],
         properties: {
           i: { type: "integer" },
-          c: { type: "integer" },
+          c: { type: "string", enum: CATEGORY_KEYS },
           m: { anyOf: [{ type: "integer" }, { type: "null" }] },
         },
       },
@@ -636,7 +639,7 @@ const MATCH_SCHEMA = {
 };
 
 function matchPrompt(lines, items) {
-  const cats = CATEGORIES.map((c, i) => `${i} ${c} (${CATEGORY_HINTS[i]})`).join("\n");
+  const cats = CATEGORY_KEYS.map((k, i) => `${k}: ${CATEGORY_HINTS[i]}`).join("\n");
   const list = items.length ? items.map((it, i) => `${i + 1}: ${it.name} / ${it.pl}`).join("\n") : "(empty)";
   const rows = lines.map((l, i) => `${i}: ${l.text}`).join("\n");
   return `Rows from a Polish shop receipt (names are abbreviated, e.g. "Ziem." = ziemniaczane, "grunt." = gruntowe, "luz" = loose) must be matched to a shopping list (Russian name / Polish name) and given a spending category.
@@ -650,7 +653,7 @@ ${list}
 Receipt rows:
 ${rows}
 
-Return {"r":[{"i": row number, "c": category number, "m": shopping-list number or null}, ...]} with one entry per receipt row, in order. "c" is always a category number.
+Return {"r":[{"i": row number, "c": category key, "m": shopping-list number or null}, ...]} with one entry per receipt row, in order. "c" is always one of the category keys above.
 
 Rules for "m":
 - Use a list number only when the row is clearly that same product. Another size, variety, brand or the plural is fine ("Pomidory kiść 500g" is Помидоры, "Lay's Chipsy" is Чипсы, "Szczypiorek" is the herbs item when the list item mentions szczypiorek).
@@ -674,8 +677,8 @@ async function matchLines(ai, model, lines, items) {
     if (!r || typeof r !== "object") continue;
     const i = toInt(r.i);
     if (i == null || i < 0 || i >= lines.length) continue;
-    const c = toInt(r.c);
-    if (c != null && c >= 0 && c < CATEGORIES.length) cats[i] = CATEGORIES[c];
+    const c = CATEGORY_KEYS.indexOf(String(r.c ?? "").trim().toLowerCase());
+    if (c >= 0) cats[i] = CATEGORIES[c];
     const m = toInt(r.m);
     if (m != null && m >= 1 && m <= items.length) ids[i] = items[m - 1].id;
   }
