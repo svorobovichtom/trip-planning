@@ -8,6 +8,7 @@ import { canWriteKey, errMsg, isNetErr, pb } from "./pb";
 import { currentPerson, dataStore, openWho, sessionStore } from "./stores";
 import { LS } from "./storage";
 import { queue, removeLocal, upsertLocal } from "./sync";
+import type { WalletPatch } from "./groups";
 import type { Item, Person } from "./types";
 
 /**
@@ -79,6 +80,23 @@ export function setPayInfo(id: string, info: { revolut: string; phone: string })
   if (!Object.keys(patch).length) return false;
   queue.enqueue("people", id, patch, { flush: false });
   upsertLocal("people", { ...p, ...patch });
+  void queue.flush();
+  return true;
+}
+
+/**
+ * «Рассчитываемся вместе»: writes the people patches from lib/groups.ts;
+ * works offline (queued). False when nothing changed.
+ */
+export function setWallets(patches: readonly WalletPatch[]): boolean {
+  if (!patches.length || !requireWriter()) return false;
+  for (const { id, wallet } of patches) {
+    const p = dataStore.get().people.find((x) => x.id === id);
+    if (!p) continue;
+    queue.enqueue("people", id, { wallet }, { flush: false });
+    upsertLocal("people", { ...p, wallet });
+  }
+  haptic();
   void queue.flush();
   return true;
 }

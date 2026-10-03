@@ -533,6 +533,35 @@ button.pf-name::before {
   margin: 8px 2px 0;
 }
 
+/* «Рассчитываемся вместе» */
+.pf-tog {
+  margin-top: 12px;
+}
+.pf-tog .prow > svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+  transform: rotate(-90deg);
+}
+.acts.pf-tog .prow .nm {
+  flex: none;
+}
+.pf-tog .prow .cur {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-grp .prow {
+  gap: 12px;
+}
+.foot .link.pf-leave {
+  color: var(--bad);
+}
+
 /* «Кто ты?» people and «Участники» */
 .pf-people .prow {
   justify-content: flex-start;

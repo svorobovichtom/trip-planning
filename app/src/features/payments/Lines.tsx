@@ -3,6 +3,7 @@
 // had the same line split it).
 import { useMemo, useState } from "react";
 import { requireWriter } from "../../lib/actions";
+import { useLuck } from "../../lib/hooks";
 import { canWriteKey } from "../../lib/pb";
 import { expenseShares, indexClaims, participants } from "../../lib/ledger";
 import { fmtG, fmtMinus } from "../../lib/money";
@@ -22,7 +23,9 @@ export function useExpenseClaims(x: Expense) {
     () => indexClaims([...claims.values()].filter((c) => c.expense === x.id), order).get(x.id) ?? new Map<number, string[]>(),
     [claims, x.id, order],
   );
-  const shares = useMemo(() => expenseShares(x, order, byLine), [x, order, byLine]);
+  // the leftover grosze exactly as the ledger gives them out
+  const luck = useLuck(x.id);
+  const shares = useMemo(() => expenseShares(x, order, byLine, new Map(luck)), [x, order, byLine, luck]);
   return { order, byLine, shares };
 }
 

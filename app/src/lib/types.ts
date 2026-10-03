@@ -16,6 +16,11 @@ export interface Person extends BaseRecord {
   revolut?: string;
   /** phone for a BLIK transfer, as typed ("" = not set) */
   phone?: string;
+  /**
+   * «Рассчитываемся вместе»: the person who transfers and receives for this
+   * one — the head of their group ("" = themselves). See groupHeads.
+   */
+  wallet?: string;
 }
 
 export interface Item extends BaseRecord {

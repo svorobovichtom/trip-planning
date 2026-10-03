@@ -6,9 +6,13 @@
 // «Ты должен» rows open the transfer in one tap when the other person said
 // how to pay them (lib/pay.ts): «Перевести» → Revolut with the amount,
 // «BLIK» → phone + amount to copy; coming back asks to mark it (payReturn.ts).
+// Groups («рассчитываемся вместе», lib/groups.ts) settle as one: the card
+// shows the group's balance, transfers go between groups (named «Том и
+// Юля»), and any member may send, receive and mark them.
 import { Collapsible } from "@base-ui/react/collapsible";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useLedger } from "../../lib/hooks";
+import { groupLabel } from "../../lib/groups";
 import { type Ledger, settle, sortedCats, type Transfer } from "../../lib/ledger";
 import { fmtG } from "../../lib/money";
 import { revolutLink } from "../../lib/pay";
@@ -30,6 +34,8 @@ import { type SettleAsk, SettleSheet } from "./SettleSheet";
 import "./totals.css";
 
 type NameOf = (id: string) => string;
+/** a group by its head: «Том и Юля» (just the name when alone) */
+type GroupOf = (head: string) => string;
 type PersonOf = (id: string) => Person | undefined;
 type Ask = (a: Omit<SettleAsk, "seq">) => void;
 type AskBlik = (a: Omit<BlikAsk, "seq">) => void;
@@ -65,9 +71,10 @@ function Totals({ n }: { n: number }) {
   const L = useLedger();
   const people = usePeople();
   const me = useMe();
-  const tx = useMemo(() => settle(L.bal), [L]);
+  const tx = useMemo(() => settle(L.gbal), [L]);
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const name = useCallback<NameOf>((id) => byId.get(id)?.name ?? "?", [byId]);
+  const group = useCallback<GroupOf>((h) => groupLabel(h, L.members.get(h) ?? [h], name), [L, name]);
   const person = useCallback<PersonOf>((id) => byId.get(id), [byId]);
   // «Перевёл»/«Получил» need the key and a server with settlements
   const canSettle = useData((s) => s.hasSettlements) && canWriteKey;
@@ -79,7 +86,7 @@ function Totals({ n }: { n: number }) {
   // if that debt is still open (the other side may have marked it meanwhile).
   usePayReturn((t: PayTap) => {
     if (!canSettle || !me || t.from !== me.id) return;
-    const left = tx.find((x) => x.from === t.from && x.to === t.to);
+    const left = tx.find((x) => x.from === L.head.get(t.from) && x.to === L.head.get(t.to));
     if (!left) return;
     setBlik(null);
     open({ from: t.from, to: t.to, g: left.g, dir: "out", prompt: true });
@@ -91,7 +98,7 @@ function Totals({ n }: { n: number }) {
           me={me}
           L={L}
           tx={tx}
-          name={name}
+          group={group}
           person={person}
           onSettle={canSettle ? open : undefined}
           onBlik={openBlik}
@@ -100,7 +107,7 @@ function Totals({ n }: { n: number }) {
         <PickMe />
       )}
       <Trip L={L} n={n} people={people.length} />
-      <More L={L} tx={tx} people={people} name={name} person={person} meId={me?.id} />
+      <More L={L} tx={tx} people={people} name={name} group={group} person={person} meId={me?.id} />
       <SettleSheet ask={ask} onClose={() => setAsk(null)} name={name} />
       <BlikSheet ask={blik} onClose={() => setBlik(null)} name={name} />
     </>
@@ -121,25 +128,46 @@ function PickMe() {
 
 const copyAmount = (g: number) => copyText(copyDec(g), "Скопируй сумму");
 
-function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
+const sumOf = (m: Map<string, number>, ids: readonly string[]) => ids.reduce((s, id) => s + (m.get(id) ?? 0), 0);
+
+/** Who in group `head` to pay: the first with Revolut or a phone (the head first), else the head. */
+function payeeOf(head: string, L: Ledger, person: PersonOf): Person | undefined {
+  const ids = [head, ...(L.members.get(head) ?? []).filter((id) => id !== head)];
+  return ids.map(person).find((p) => p?.revolut || p?.phone) ?? person(head);
+}
+
+function ForMe({ me, L, tx, group, person, onSettle, onBlik }: {
   me: Person;
   L: Ledger;
   tx: Transfer[];
-  name: NameOf;
+  group: GroupOf;
   person: PersonOf;
   onSettle?: Ask;
   onBlik: AskBlik;
 }) {
-  const b = L.bal.get(me.id) ?? 0;
-  const paid = L.paid.get(me.id) ?? 0;
-  const owes = L.owes.get(me.id) ?? 0;
-  const sent = L.sent.get(me.id) ?? 0;
-  const got = L.received.get(me.id) ?? 0;
-  const moved = [sent ? `перевёл ${fmtG(sent)}` : "", got ? `получил ${fmtG(got)}` : ""].filter(Boolean).join(" · ");
-  const out = tx.filter((t) => t.from === me.id);
-  const inc = tx.filter((t) => t.to === me.id);
-  const label = b < 0 ? "Ты должен" : b > 0 ? "Ты получишь" : "Ты в расчёте";
-  const nobody = !paid ? "никто — ты ничего не оплачивал" : b < 0 ? "никто — твоя доля больше, чем ты оплатил" : "все рассчитались";
+  // alone this is just me; in a group everything is the group's
+  const head = L.head.get(me.id) ?? me.id;
+  const ids = L.members.get(head) ?? [me.id];
+  const we = ids.length > 1;
+  const b = L.gbal.get(head) ?? 0;
+  const paid = sumOf(L.paid, ids);
+  const owes = sumOf(L.owes, ids);
+  const sent = sumOf(L.sent, ids);
+  const got = sumOf(L.received, ids);
+  const moved = [sent ? `${we ? "перевели" : "перевёл"} ${fmtG(sent)}` : "", got ? `${we ? "получили" : "получил"} ${fmtG(got)}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const out = tx.filter((t) => t.from === head);
+  const inc = tx.filter((t) => t.to === head);
+  const label = we
+    ? b < 0 ? "Вы должны" : b > 0 ? "Вы получите" : "Вы в расчёте"
+    : b < 0 ? "Ты должен" : b > 0 ? "Ты получишь" : "Ты в расчёте";
+  const nobody = !paid
+    ? we ? "никто — вы ничего не оплачивали" : "никто — ты ничего не оплачивал"
+    : b < 0
+      ? we ? "никто — ваша доля больше, чем вы оплатили" : "никто — твоя доля больше, чем ты оплатил"
+      : "все рассчитались";
+  const canBePaid = ids.some((id) => person(id)?.revolut || person(id)?.phone);
   return (
     <>
       <section className="t-card t-me" aria-label="Итоги для тебя">
@@ -149,8 +177,9 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
         <div className={`t-big num${b ? "" : " zero"}`}>
           <Morph>{fmtG(Math.abs(b))}</Morph>
         </div>
+        {we && <div className="t-s t-we">{group(head)} — рассчитываетесь вместе</div>}
         <div className="t-s num">
-          <Morph>{`потратил ${fmtG(paid)} · твоя доля ${fmtG(owes)}`}</Morph>
+          <Morph>{we ? `потратили ${fmtG(paid)} · ваша доля ${fmtG(owes)}` : `потратил ${fmtG(paid)} · твоя доля ${fmtG(owes)}`}</Morph>
         </div>
         {moved && (
           <div className="t-s t-moved num">
@@ -160,13 +189,13 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
         {out.length > 0 && (
           <ul className="t-rows">
             {out.map((t) => (
-              <OweRow key={t.to} t={t} to={person(t.to)} name={name(t.to)} onSettle={onSettle} onBlik={onBlik} />
+              <OweRow key={t.to} t={t} me={me.id} to={payeeOf(t.to, L, person)} name={group(t.to)} onSettle={onSettle} onBlik={onBlik} />
             ))}
           </ul>
         )}
       </section>
       <div className="h2row">
-        <h2>Тебе должны</h2>
+        <h2>{we ? "Вам должны" : "Тебе должны"}</h2>
       </div>
       <ul className="list t-list">
         {inc.length ? (
@@ -174,7 +203,7 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
             <li key={t.from}>
               <span className="t-who">
                 <Av p={person(t.from)} size={24} />
-                {name(t.from)}
+                {group(t.from)}
                 <i>→</i>
               </span>
               <span className="t-amt num">
@@ -184,7 +213,7 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
                 <button
                   className="t-copy"
                   type="button"
-                  aria-label={`Получил от ${name(t.from)} ${copyDec(t.g)}`}
+                  aria-label={`Получил от ${group(t.from)} ${copyDec(t.g)}`}
                   onClick={() => onSettle({ from: t.from, to: me.id, g: t.g, dir: "in" })}
                 >
                   Получил
@@ -195,7 +224,7 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
         ) : (
           <li className="t-none">{nobody}</li>
         )}
-        {canWriteKey && inc.length > 0 && !me.revolut && !me.phone && (
+        {canWriteKey && inc.length > 0 && !canBePaid && (
           <li className="t-nudge">
             <button className="link" type="button" onClick={openPay}>
               Укажи Revolut или телефон, чтобы тебе переводили в один тап
@@ -207,17 +236,23 @@ function ForMe({ me, L, tx, name, person, onSettle, onBlik }: {
   );
 }
 
-/** One «Ты должен» row: → name, amount, then Перевести / BLIK / скопировать / Перевёл. */
-function OweRow({ t, to, name, onSettle, onBlik }: {
+/**
+ * One «Ты должен» row: → group, amount, then Перевести / BLIK / скопировать /
+ * Перевёл. `t` is between groups; I send it to `to` (the one in that group
+ * who said how to pay them) and it is marked as from me.
+ */
+function OweRow({ t, me, to, name, onSettle, onBlik }: {
   t: Transfer;
+  me: string;
   to?: Person;
   name: string;
   onSettle?: Ask;
   onBlik: AskBlik;
 }) {
+  const toId = to?.id ?? t.to;
   const link = to?.revolut ? revolutLink(to.revolut, t.g) : null;
   const phone = to?.phone || "";
-  const tap = () => onSettle && notePayTap({ from: t.from, to: t.to, g: t.g });
+  const tap = () => onSettle && notePayTap({ from: me, to: toId, g: t.g });
   return (
     <li className="wide">
       <span className="t-who">
@@ -249,7 +284,7 @@ function OweRow({ t, to, name, onSettle, onBlik }: {
             aria-label={`BLIK: телефон и сумма для ${name}`}
             onClick={() => {
               tap();
-              onBlik({ to: t.to, phone, g: t.g });
+              onBlik({ to: toId, phone, g: t.g });
             }}
           >
             BLIK
@@ -263,7 +298,7 @@ function OweRow({ t, to, name, onSettle, onBlik }: {
             className={link || phone ? "t-copy" : "t-copy pri"}
             type="button"
             aria-label={`Перевёл ${name} ${copyDec(t.g)}`}
-            onClick={() => onSettle({ from: t.from, to: t.to, g: t.g, dir: "out" })}
+            onClick={() => onSettle({ from: me, to: toId, g: t.g, dir: "out" })}
           >
             Перевёл
           </button>
@@ -385,14 +420,17 @@ function Done({ name, person, meId }: { name: NameOf; person: PersonOf; meId?: s
   );
 }
 
-function More({ L, tx, people, name, person, meId }: {
+function More({ L, tx, people, name, group, person, meId }: {
   L: Ledger;
   tx: Transfer[];
   people: Person[];
   name: NameOf;
+  group: GroupOf;
   person: PersonOf;
   meId?: string;
 }) {
+  const myHead = meId && L.head.get(meId);
+  const groups = [...L.members].filter(([, ids]) => ids.length > 1);
   return (
     <div className="t-more">
       <Done name={name} person={person} meId={meId} />
@@ -400,13 +438,13 @@ function More({ L, tx, people, name, person, meId }: {
         {tx.length ? (
           <ul className="t-all">
             {tx.map((t) => (
-              <li key={`${t.from}>${t.to}`} className={t.from === meId || t.to === meId ? "mine" : undefined}>
+              <li key={`${t.from}>${t.to}`} className={t.from === myHead || t.to === myHead ? "mine" : undefined}>
                 <span className="t-who">
                   <Av p={person(t.from)} />
-                  {name(t.from)}
+                  {group(t.from)}
                   <i>→</i>
                   <Av p={person(t.to)} />
-                  {name(t.to)}
+                  {group(t.to)}
                 </span>
                 <span className="t-amt num">
                   <Morph>{fmtG(t.g)}</Morph>
@@ -448,8 +486,28 @@ function More({ L, tx, people, name, person, meId }: {
               );
             })}
           </tbody>
+          {groups.length > 0 && (
+            <tbody className="t-groups">
+              {groups.map(([h, ids]) => (
+                <tr key={h} className={h === myHead ? "mine" : undefined}>
+                  <th scope="row">
+                    <Av p={person(h)} />
+                    {group(h)}
+                  </th>
+                  <td>{fmtDec(sumOf(L.paid, ids))}</td>
+                  <td>{fmtDec(sumOf(L.owes, ids))}</td>
+                  <td className="t-bal">
+                    <Morph>{fmtDecSigned(L.gbal.get(h) ?? 0)}</Morph>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
         </table>
-        <p className="t-foot">В zł. Баланс — с учётом сделанных переводов: «+» — получит, «−» — должен перевести.</p>
+        <p className="t-foot">
+          В zł. Баланс — с учётом сделанных переводов: «+» — получит, «−» — должен перевести.
+          {groups.length > 0 && " Внизу — те, кто рассчитывается вместе: переводы идут между ними целиком."}
+        </p>
       </Spoiler>
       <button className="t-trig" type="button" onClick={exportCsv}>
         <span>Скачать CSV</span>

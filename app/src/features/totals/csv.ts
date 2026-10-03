@@ -3,10 +3,12 @@
 //   1. expenses: date, what, category, amount, payer, split mode, for whom,
 //      then one column per person with their share (from the ledger), receipt
 //   2. «Переводы сделаны»: settlements (who → whom, amount, when)
-//   3. balances: paid, share, sent, received, balance after transfers
-//   4. «Осталось перевести»: what settle() suggests now
+//   3. balances: paid, share, sent, received, balance after transfers, and
+//      who settles for the person when they're in a group
+//   4. «Осталось перевести»: what settle() suggests now (between groups)
 // buildCsv is pure (the caller passes how to link a receipt); exportCsv
 // builds it from the store and saves the file.
+import { groupLabel } from "../../lib/groups";
 import { computeLedger, settle, splitModeOf } from "../../lib/ledger";
 import { grosze } from "../../lib/money";
 import { pb } from "../../lib/pb";
@@ -71,16 +73,18 @@ export function buildCsv(data: CsvData, receiptUrl: (x: Expense) => string = () 
   }
 
   rows.push([]);
-  rows.push(["Кто", "Заплатил", "Доля", "Перевёл", "Получил", "Баланс"]);
+  rows.push(["Кто", "Заплатил", "Доля", "Перевёл", "Получил", "Баланс", "Рассчитывается"]);
   for (const p of people) {
     const g = (m: Map<string, number>) => dec(m.get(p.id) ?? 0);
-    rows.push([p.name, g(L.paid), g(L.owes), g(L.sent), g(L.received), g(L.bal)]);
+    const h = L.head.get(p.id)!;
+    rows.push([p.name, g(L.paid), g(L.owes), g(L.sent), g(L.received), g(L.bal), h === p.id ? "" : name(h)]);
   }
 
   rows.push([]);
   rows.push(["Осталось перевести"]);
   rows.push(["Кто", "Кому", "Сумма"]);
-  for (const t of settle(L.bal)) rows.push([name(t.from), name(t.to), dec(t.g)]);
+  const group = (h: string) => groupLabel(h, L.members.get(h) ?? [h], name);
+  for (const t of settle(L.gbal)) rows.push([group(t.from), group(t.to), dec(t.g)]);
 
   return `\uFEFF${rows.map((r) => r.map(q).join(";")).join("\r\n")}`;
 }

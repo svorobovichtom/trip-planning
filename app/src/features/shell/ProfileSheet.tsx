@@ -1,12 +1,15 @@
 // The profile: the one sheet behind the header pill. Main step: me (rename,
 // «Сменить»), my money in one line (→ «Итоги»), how to pay me, the trip
-// (house/menu/notes, participants, share link), CSV and «Снять все отметки». The «Кто
+// (house/menu/notes, participants, share link), CSV and «Снять все отметки».
+// «Рассчитываемся вместе» (nested sheet): who settles together with me —
+// tick people into my group, pick who transfers for it, or leave. The «Кто
 // ты?» step (new name / pick yourself) is the same sheet; opened directly
 // (first visit, «Кто ты?» pill, a write without a person) it closes after
 // choosing, reached via «Сменить» it returns to the main step.
 // Read-only phones (no key) see everything but the editors and writes.
 import { useRef, useState } from "react";
-import { doneCount, joinAs, renamePerson, resetAllItems, setMe } from "../../lib/actions";
+import { doneCount, joinAs, renamePerson, resetAllItems, setMe, setWallets } from "../../lib/actions";
+import { groupLabel, groupOf, headOf, leaveGroup, makeHead, toggleMember } from "../../lib/groups";
 import { useLedger, useListStats } from "../../lib/hooks";
 import { fmtG } from "../../lib/money";
 import { canWriteKey, shareUrl } from "../../lib/pb";
@@ -23,14 +26,14 @@ import {
 import type { Person } from "../../lib/types";
 import { Avatar } from "../../ui/Avatar";
 import { confirmAction, showCopy } from "../../ui/Confirm";
-import { ChevronIcon } from "../../ui/icons";
+import { CheckIcon, ChevronIcon } from "../../ui/icons";
 import { Sheet } from "../../ui/Sheet";
 import { toast } from "../../ui/toast";
 import { exportCsv } from "../totals/csv";
 import { TripSheet } from "../trip/TripSheet";
 import { type PayKind, PayRows } from "./PayForm";
 
-type Sub = "trip" | "people" | null;
+type Sub = "trip" | "people" | "group" | null;
 
 export function ProfileSheet() {
   const open = useUi((s) => s.profileOpen);
@@ -81,6 +84,9 @@ export function ProfileSheet() {
       <TripSheet open={sub === "trip"} onOpenChange={(o) => !o && setSub(null)} />
       <Sheet open={sub === "people"} onOpenChange={(o) => !o && setSub(null)} title={<PeopleTitle />}>
         <PeopleList meId={me?.id} />
+      </Sheet>
+      <Sheet open={sub === "group"} onOpenChange={(o) => !o && setSub(null)} title="Рассчитываемся вместе">
+        {me && <GroupEditor me={me} />}
       </Sheet>
     </Sheet>
   );
@@ -179,6 +185,7 @@ function MainStep({ me, editing, setEditing, renaming, setRenaming, payRef, onSu
       </div>
 
       {me && <Money me={me} />}
+      {me && n > 1 && <Together me={me} onOpen={() => onSub("group")} />}
 
       {showPay && (
         <>
@@ -242,12 +249,20 @@ function MainStep({ me, editing, setEditing, renaming, setRenaming, payRef, onSu
   );
 }
 
-/** My balance in one line; opens «Итоги». */
+/** My balance in one line (my group's when we settle together); opens «Итоги». */
 function Money({ me }: { me: Person }) {
   const L = useLedger();
   const n = useExpenses().size;
-  const b = L.bal.get(me.id) ?? 0;
-  const label = !n ? "Чеков пока нет" : b < 0 ? `Ты должен ${fmtG(-b)}` : b > 0 ? `Тебе должны ${fmtG(b)}` : "Ты в расчёте";
+  const head = L.head.get(me.id) ?? me.id;
+  const we = (L.members.get(head)?.length ?? 1) > 1;
+  const b = L.gbal.get(head) ?? 0;
+  const ids = L.members.get(head) ?? [me.id];
+  const sumOf = (m: Map<string, number>) => ids.reduce((s, id) => s + (m.get(id) ?? 0), 0);
+  const label = !n
+    ? "Чеков пока нет"
+    : we
+      ? b < 0 ? `Вы должны ${fmtG(-b)}` : b > 0 ? `Вам должны ${fmtG(b)}` : "Вы в расчёте"
+      : b < 0 ? `Ты должен ${fmtG(-b)}` : b > 0 ? `Тебе должны ${fmtG(b)}` : "Ты в расчёте";
   return (
     <button
       className="pf-money"
@@ -261,7 +276,7 @@ function Money({ me }: { me: Person }) {
         <span className={`pf-mb num${n && b ? "" : " zero"}`}>{label}</span>
         {n > 0 && (
           <span className="pf-ms num">
-            потратил {fmtG(L.paid.get(me.id) ?? 0)} · доля {fmtG(L.owes.get(me.id) ?? 0)}
+            {we ? "потратили" : "потратил"} {fmtG(sumOf(L.paid))} · доля {fmtG(sumOf(L.owes))}
           </span>
         )}
       </span>
@@ -270,6 +285,114 @@ function Money({ me }: { me: Person }) {
         <ChevronIcon />
       </span>
     </button>
+  );
+}
+
+/** «Рассчитываемся вместе» row: who I'm in a group with; opens the editor. */
+function Together({ me, onOpen }: { me: Person; onOpen: () => void }) {
+  const people = usePeople();
+  const ids = groupOf(people, me.id);
+  const name = (id: string) => people.find((p) => p.id === id)?.name ?? "?";
+  const others = ids.filter((id) => id !== me.id).map(name).join(", ");
+  return (
+    <ul className="list acts pf-tog">
+      <li>
+        <button className="prow" type="button" aria-haspopup="dialog" onClick={onOpen}>
+          <span className="nm">Рассчитываемся вместе</span>
+          <span className="cur">{others ? `с: ${others}` : "нет"}</span>
+          <ChevronIcon />
+        </button>
+      </li>
+    </ul>
+  );
+}
+
+/**
+ * Tick who settles together with me (one group, one balance, one transfer),
+ * pick who transfers for the group, or leave it. Read-only without the key.
+ */
+function GroupEditor({ me }: { me: Person }) {
+  const people = usePeople();
+  const head = headOf(people, me.id);
+  const mine = groupOf(people, me.id);
+  const we = mine.length > 1;
+  const name = (id: string) => people.find((p) => p.id === id)?.name ?? "?";
+  const label = (id: string) => {
+    const h = headOf(people, id);
+    return groupLabel(h, groupOf(people, id), name);
+  };
+  const ro = !canWriteKey;
+  return (
+    <>
+      <p className="lead">
+        Для пары или семьи: долги складываются, и переводит и получает один человек за всех. Доли в чеках остаются у каждого
+        свои.
+      </p>
+      <h2 id="grpH">С кем ты рассчитываешься</h2>
+      <ul className="list pf-people pf-grp" aria-labelledby="grpH">
+        {people
+          .filter((p) => p.id !== me.id)
+          .map((p) => {
+            const on = mine.includes(p.id);
+            const other = !on && groupOf(people, p.id).length > 1;
+            return (
+              <li key={p.id}>
+                <button
+                  className="prow"
+                  type="button"
+                  aria-pressed={on}
+                  disabled={ro}
+                  onClick={() => setWallets(toggleMember(people, me.id, p.id, !on))}
+                >
+                  <span className="pbox" aria-hidden="true">
+                    <CheckIcon />
+                  </span>
+                  <Avatar person={p} size={28} />
+                  <span className="pf-ppt">
+                    <span className="nm">{p.name}</span>
+                    {other && <span className="pf-ppay">сейчас вместе: {label(p.id)}</span>}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+      </ul>
+      {we && (
+        <>
+          <h2 id="grpHead">Кто переводит за всех</h2>
+          <ul className="list pf-people" aria-labelledby="grpHead">
+            {mine.map((id) => {
+              const p = people.find((x) => x.id === id);
+              return (
+                <li key={id}>
+                  <button
+                    className="prow"
+                    type="button"
+                    aria-pressed={id === head}
+                    disabled={ro}
+                    onClick={() => setWallets(makeHead(people, id))}
+                  >
+                    <Avatar person={p} size={28} />
+                    <span className="nm">{p?.name ?? "?"}</span>
+                    {id === head && <span className="cur">переводит</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="note">
+            Его Revolut и BLIK увидят в «Итогах». Отметить перевод может любой из вас — он засчитается всей группе.
+          </p>
+          {!ro && (
+            <div className="foot">
+              <button className="link pf-leave" type="button" onClick={() => setWallets(leaveGroup(people, me.id))}>
+                Рассчитываться отдельно
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </>
   );
 }
 

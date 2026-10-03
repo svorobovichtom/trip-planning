@@ -26,6 +26,9 @@
   line-height: 1.45;
   color: var(--text);
 }
+.t-s.t-we {
+  color: var(--muted);
+}
 .t-card p {
   margin: 6px 0 14px;
   font-size: 14px;
@@ -285,6 +288,10 @@
 }
 .t-tbl .mine th {
   font-weight: 500;
+}
+/* groups that settle together, under the people */
+.t-tbl .t-groups tr:first-child > * {
+  border-top: 1px solid var(--ink);
 }
 .t-foot {
   margin: 8px 14px 6px;

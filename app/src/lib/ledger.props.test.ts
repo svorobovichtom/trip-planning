@@ -1,9 +1,10 @@
 // Property tests for the money math: thousands of random trips (1–12
 // people, all three split modes, discounts, unclaimed lines, deleted people,
-// junk values, random transfers) checked against invariants that must hold
+// junk values, random transfers, groups that settle together) checked against invariants that must hold
 // for every trip. Seeded, so a failure is reproducible: the seed is in the
 // test name.
 import { describe, expect, it, vi } from "vitest";
+import { groupLabel } from "./groups";
 import { computeLedger, expenseShares, indexClaims, participants, settle, splitModeOf, type Transfer } from "./ledger";
 import { grosze, parseAmount, parseG } from "./money";
 import { revolutLink } from "./pay";
@@ -122,6 +123,11 @@ function genTrip(r: R): Trip {
     const amount = r.chance(0.05) ? r.pick([0, -100, 1.5, Number.NaN]) : r.int(1, 30_000);
     settlements.push({ id: `s${k}`, from, to, amount, created: `2026-10-02 1${k}:00:00.000Z` });
   }
+  // groups: a member points at the head; sometimes junk (deleted person, self, a cycle, a chain)
+  for (const p of people) {
+    if (!r.chance(0.3)) continue;
+    p.wallet = r.chance(0.1) ? ghost : r.pick(ids);
+  }
   return { people, expenses, claims, settlements };
 }
 
@@ -157,40 +163,56 @@ describe("random trips: invariants", () => {
         expect(order).toContain(id);
       }
       if (!counts) continue;
-      // same as expenseShares on its own (the UI's per-expense view)
-      expect(s).toEqual(expenseShares(x, order, idx.get(x.id)));
-      // 4. equal: exactly the participants, at most 1 gr apart, extra grosze to the first in list order
+      // same as expenseShares on its own with the luck before it (the UI's per-expense view)
+      expect(s).toEqual(expenseShares(x, order, idx.get(x.id), new Map(L.luckAt.get(x.id))));
+      // 4. equal: exactly the participants, at most 1 gr apart, extra grosze to the least lucky so far
       if (splitModeOf(x, order) === "equal") {
         const pool = participants(x, order);
         for (const id of s.keys()) expect(pool).toContain(id);
         const vs = pool.map((id) => s.get(id) ?? 0);
         expect(Math.max(...vs) - Math.min(...vs)).toBeLessThanOrEqual(1);
-        expect(vs).toEqual([...vs].sort((a, b) => b - a));
+        const luck = L.luckAt.get(x.id)!;
+        const lk = (id: string) => luck.get(id) ?? 0;
+        const top = Math.max(...vs);
+        if (top !== Math.min(...vs)) {
+          for (const a of pool) for (const b of pool) if (s.get(a) === top && s.get(b) !== top) expect(lk(a)).toBeLessThanOrEqual(lk(b));
+        }
       }
     }
 
-    // 5. suggested transfers
-    const tx = settle(L.bal);
-    const after = new Map(L.bal);
+    // 5. groups: every person has a head in the same group, gbal adds up the members
+    for (const id of order) {
+      const h = L.head.get(id)!;
+      expect(L.head.get(h)).toBe(h);
+      expect(L.members.get(h)).toContain(id);
+    }
+    expect(sum(L.gbal.values())).toBe(0);
+    for (const [h, m] of L.members) expect(L.gbal.get(h)).toBe(sum(m.map((id) => L.bal.get(id)!)));
+
+    // 6. suggested transfers: between groups only
+    const tx = settle(L.gbal);
+    const after = new Map(L.gbal);
     for (const x of tx) {
       expect(x.from).not.toBe(x.to);
       expect(Number.isInteger(x.g)).toBe(true);
       expect(x.g).toBeGreaterThan(0);
+      expect(L.head.get(x.from)).toBe(x.from);
+      expect(L.head.get(x.to)).toBe(x.to);
       // only from debtors to creditors, never more than they owe / are owed
-      expect(L.bal.get(x.from)!).toBeLessThan(0);
-      expect(L.bal.get(x.to)!).toBeGreaterThan(0);
+      expect(L.gbal.get(x.from)!).toBeLessThan(0);
+      expect(L.gbal.get(x.to)!).toBeGreaterThan(0);
       after.set(x.from, after.get(x.from)! + x.g);
       after.set(x.to, after.get(x.to)! - x.g);
     }
-    // applying them makes every balance exactly 0
+    // applying them makes every group's balance exactly 0
     for (const v of after.values()) expect(v).toBe(0);
-    const nonzero = [...L.bal.values()].filter((v) => v !== 0).length;
+    const nonzero = [...L.gbal.values()].filter((v) => v !== 0).length;
     expect(tx.length).toBeLessThanOrEqual(Math.max(0, nonzero - 1));
-    expect(tx.length).toBeLessThanOrEqual(Math.max(0, order.length - 1));
+    expect(tx.length).toBeLessThanOrEqual(Math.max(0, L.members.size - 1));
     // at most one transfer per pair
     expect(new Set(tx.map((x) => `${x.from}>${x.to}`)).size).toBe(tx.length);
 
-    // 6. the same on every phone: record order from the server doesn't matter
+    // 7. the same on every phone: record order from the server doesn't matter
     for (let k = 0; k < 3; k++) {
       const t2: Trip = {
         people: sortPeople(r.shuffle(t.people)),
@@ -200,11 +222,12 @@ describe("random trips: invariants", () => {
       };
       const L2 = ledgerOf(t2);
       expect([...L2.bal]).toEqual([...L.bal]);
-      expect(settle(L2.bal)).toEqual(tx);
+      expect([...L2.gbal]).toEqual([...L.gbal]);
+      expect(settle(L2.gbal)).toEqual(tx);
       for (const x of t.expenses) expect([...L2.shares.get(x.id)!].sort()).toEqual([...L.shares.get(x.id)!].sort());
     }
 
-    // 7. what a person sends is exactly the transfer: Revolut link, copied amount, typed back in «Перевёл»
+    // 8. what a person sends is exactly the transfer: Revolut link, copied amount, typed back in «Перевёл»
     for (const x of tx) {
       const link = revolutLink("yulia", x.g)!;
       expect(new URL(link).searchParams.get("amount")).toBe(String(x.g));
@@ -214,7 +237,7 @@ describe("random trips: invariants", () => {
       expect(parseG(fmtDec(x.g))).toBe(x.g);
     }
 
-    // 8. CSV totals match the ledger
+    // 9. CSV totals match the ledger
     checkCsv(t, L, tx);
   });
 });
@@ -245,7 +268,8 @@ function checkCsv(t: Trip, L: ReturnType<typeof ledgerOf>, tx: Transfer[]) {
   });
   const left = rows.slice(rows.findIndex((r) => r[0] === "Осталось перевести") + 2).filter((r) => r.length);
   const name = (id: string) => t.people.find((p) => p.id === id)!.name;
-  expect(left).toEqual(tx.map((x) => [name(x.from), name(x.to), (x.g / 100).toFixed(2).replace(".", ",")]));
+  const group = (h: string) => groupLabel(h, L.members.get(h)!, name);
+  expect(left).toEqual(tx.map((x) => [group(x.from), group(x.to), (x.g / 100).toFixed(2).replace(".", ",")]));
 }
 
 describe("parseG: exact for every amount", () => {

@@ -364,6 +364,42 @@ h2 {
   cursor: default;
 }
 
+/* checkbox square (payments' «на кого», the profile's «вместе») */
+.pbox {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 5px;
+  color: var(--bg);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.pbox svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s, transform 0.3s var(--ease);
+}
+[aria-pressed="true"] > .pbox {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+[aria-pressed="true"] > .pbox svg {
+  opacity: 1;
+  transform: none;
+}
+.pbox svg path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s var(--ease) 0.04s;
+}
+[aria-pressed="true"] > .pbox svg path {
+  stroke-dashoffset: 0;
+}
+
 @keyframes pin {
   from {
     opacity: 0;

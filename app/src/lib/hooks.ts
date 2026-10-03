@@ -1,6 +1,6 @@
 // Derived data shared by features. Memoized on the store slices they read.
 import { useMemo } from "react";
-import { computeLedger, type Ledger } from "./ledger";
+import { computeLedger, type Ledger, type Luck } from "./ledger";
 import { grosze } from "./money";
 import { aggregateLines } from "./receipt";
 import { useClaims, useExpenses, useItems, usePeople, useSettlements } from "./stores";
@@ -16,6 +16,15 @@ export function useLedger(): Ledger {
     () => computeLedger({ people, expenses: expenses.values(), claims: claims.values(), settlements: settlements.values() }),
     [people, expenses, claims, settlements],
   );
+}
+
+/**
+ * Who gets the leftover grosze when expense `id` is split: its luck in the
+ * ledger (a new expense comes last). Shared — pass a copy to splitEven.
+ */
+export function useLuck(id?: string): Luck {
+  const L = useLedger();
+  return (id && L.luckAt.get(id)) || L.luck;
 }
 
 /** Sum of all expense amounts, grosze. */

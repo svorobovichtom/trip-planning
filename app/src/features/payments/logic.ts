@@ -2,7 +2,7 @@
 // reconciliation, the payload that is sent), scan status, receipt lines
 // grouped for display and claiming. No React, no network — see logic.test.ts.
 
-import { byOrder, linesOk, receiptRows, splitEven } from "../../lib/ledger";
+import { byOrder, linesOk, type Luck, receiptRows, splitEven } from "../../lib/ledger";
 import { grosze, parseAmount, parseG } from "../../lib/money";
 import { lineQty } from "../../lib/receipt";
 import { CATEGORIES, type Expense, type ReceiptLine, type SplitMode } from "../../lib/types";
@@ -83,7 +83,7 @@ export interface AmountsState {
  * `amountG` is the typed total (0 = none). `photo` = a readable receipt will
  * fill the total later. Without both, the total is what is written down.
  */
-export function amountsState(ids: readonly string[], amts: Readonly<Record<string, string>>, amountG: number, photo: boolean): AmountsState {
+export function amountsState(ids: readonly string[], amts: Readonly<Record<string, string>>, amountG: number, photo: boolean, luck?: Luck): AmountsState {
   let fixed = 0;
   const autos: string[] = [];
   const bad: string[] = [];
@@ -100,7 +100,7 @@ export function amountsState(ids: readonly string[], amts: Readonly<Record<strin
   const total = amountG || (!photo && !autos.length ? fixed : 0);
   const rem = total - fixed;
   const auto = new Map<string, number>();
-  if (total && rem > 0) splitEven(rem, autos, auto);
+  if (total && rem > 0) splitEven(rem, autos, auto, luck && new Map(luck));
   for (const id of autos) if (!auto.has(id)) auto.set(id, 0);
   let err = "";
   if (!ids.length) err = "Отметь, на кого делим";

@@ -19,29 +19,49 @@
 // share would still come out negative, e.g. someone claimed only a discount
 // row, the amount is split in proportion to the positive shares instead).
 // Rounding: leftover grosze go one each to the first people in list order
-// (proportional splits: largest remainder first, ties in list order).
+// (proportional splits: largest remainder first, ties in list order). In the
+// ledger (and every view of an expense, see luckAt) the even splits are fair
+// across the trip: the leftover grosze go to whoever got the fewest of them
+// so far (`luck`, expenses in created order), ties in list order — so equal
+// shares never drift more than 1 gr apart however many receipts come in.
 // Amount 0 (still being scanned) counts for nobody. Unknown person ids are
 // ignored; an expense whose payer is unknown (deleted person) counts for
 // nobody's balance, so the balances always add up to 0.
 //
 // Settlements (transfers marked «переведено», grosze) count like a payment
 // between two people: bal[from] += g, bal[to] −= g. paid/owes stay trip
-// spending; sent/received/settled show the transfers, so settle(bal) is
-// what's left to transfer.
+// spending; sent/received/settled show the transfers.
+//
+// Groups («рассчитываемся вместе»): people.wallet points at the person who
+// transfers and receives for them (empty = themselves). Shares and balances
+// stay per person; the balances of a group add up into its head (gbal), and
+// settle(gbal) is what's left to transfer — never inside a group. A transfer
+// any member marks counts for the whole group.
 
 import { grosze } from "./money";
 import type { Claim, Expense, Person, ReceiptLine, Settlement } from "./types";
 
 export type Shares = Map<string, number>;
+/** person id -> leftover grosze of even splits they got so far */
+export type Luck = Map<string, number>;
 
-/** Adds `g` split evenly between `ids` (already in list order) into `into`. */
-export function splitEven(g: number, ids: readonly string[], into: Shares): void {
+/**
+ * Adds `g` split evenly between `ids` (already in list order) into `into`.
+ * The leftover grosze go one each to the first in list order — or, with
+ * `luck`, to those with the fewest so far (ties in list order); `luck` is
+ * updated.
+ */
+export function splitEven(g: number, ids: readonly string[], into: Shares, luck?: Luck): void {
   if (!ids.length || !g) return;
   const base = Math.floor(g / ids.length);
   const rem = g - base * ids.length;
-  ids.forEach((id, i) => {
-    into.set(id, (into.get(id) ?? 0) + base + (i < rem ? 1 : 0));
-  });
+  // stable sort: ties keep list order
+  const extra = new Set((luck ? [...ids].sort((a, b) => (luck.get(a) ?? 0) - (luck.get(b) ?? 0)) : ids).slice(0, rem));
+  for (const id of ids) {
+    const one = extra.has(id) ? 1 : 0;
+    into.set(id, (into.get(id) ?? 0) + base + one);
+    if (one && luck) luck.set(id, (luck.get(id) ?? 0) + 1);
+  }
 }
 
 /**
@@ -138,20 +158,28 @@ export function indexClaims(claims: Iterable<Pick<Claim, "expense" | "line" | "p
   return raw;
 }
 
-export function expenseShares(x: Expense, order: readonly string[], claims?: Map<number, string[]>): Shares {
+/**
+ * One expense's shares. `luck` (see splitEven) decides who gets the leftover
+ * grosze and is updated; the ledger passes the trip's, views pass a copy of
+ * luckAt so they show exactly what the ledger counts.
+ */
+export function expenseShares(x: Expense, order: readonly string[], claims?: Map<number, string[]>, luck?: Luck): Shares {
   const g = grosze(x.amount);
   if (g <= 0 || !order.length) return new Map();
-  const out = rawShares(x, g, order, claims);
+  let l = luck && new Map(luck);
+  let out = rawShares(x, g, order, claims, l);
   // never charge anyone a negative share: fall back to the positive parts
   if ([...out.values()].some((v) => v < 0)) {
     const fixed: Shares = new Map();
-    if (!splitProp(g, out, order, fixed)) splitEven(g, participants(x, order), fixed);
-    return fixed;
+    l = luck && new Map(luck);
+    if (!splitProp(g, out, order, fixed)) splitEven(g, participants(x, order), fixed, l);
+    out = fixed;
   }
+  if (luck && l) for (const [id, v] of l) luck.set(id, v);
   return out;
 }
 
-function rawShares(x: Expense, g: number, order: readonly string[], claims?: Map<number, string[]>): Shares {
+function rawShares(x: Expense, g: number, order: readonly string[], claims: Map<number, string[]> | undefined, luck: Luck | undefined): Shares {
   const out: Shares = new Map();
   const pool = participants(x, order);
   const sa = x.split_amounts;
@@ -175,7 +203,7 @@ function rawShares(x: Expense, g: number, order: readonly string[], claims?: Map
         const scaled: Shares = new Map();
         if (splitProp(g, out, order, scaled)) return scaled;
       }
-      splitEven(g - fixed, autos.length ? autos : pool, out);
+      splitEven(g - fixed, autos.length ? autos : pool, out, luck);
       return out;
     }
   } else if (x.split_mode === "claims" && linesOk(x)) {
@@ -183,7 +211,7 @@ function rawShares(x: Expense, g: number, order: readonly string[], claims?: Map
     for (const r of receiptRows(x.lines)) {
       const who = claims?.get(r.idx);
       if (r.g && who && who.length) {
-        splitEven(r.g, who, out);
+        splitEven(r.g, who, out, luck);
         claimed += r.g;
       }
     }
@@ -193,10 +221,10 @@ function rawShares(x: Expense, g: number, order: readonly string[], claims?: Map
       const scaled: Shares = new Map();
       if (splitProp(g, out, order, scaled)) return scaled;
     }
-    splitEven(rest, pool, out);
+    splitEven(rest, pool, out, luck);
     return out;
   }
-  splitEven(g, pool, out);
+  splitEven(g, pool, out, luck);
   return out;
 }
 
@@ -270,6 +298,25 @@ export function sortedCats(cats: Map<string, number>): [string, number][] {
   return [...cats].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ru"));
 }
 
+/**
+ * Groups («рассчитываемся вместе»): person id -> the head who transfers for
+ * them (themselves when alone). wallet chains resolve to their end; a cycle
+ * or an unknown id counts as alone.
+ */
+export function groupHeads(people: readonly Pick<Person, "id" | "wallet">[]): Map<string, string> {
+  const wallet = new Map(people.map((p) => [p.id, p.wallet || ""]));
+  const head = new Map<string, string>();
+  for (const p of people) {
+    let h = p.id;
+    const seen = new Set([h]);
+    for (let w = wallet.get(h); w && wallet.has(w) && !seen.has(w); w = wallet.get(h)) seen.add((h = w));
+    // a cycle (A -> B -> A) is nobody's head
+    const w = wallet.get(h);
+    head.set(p.id, w && seen.has(w) ? p.id : h);
+  }
+  return head;
+}
+
 export interface Ledger {
   /** sum of all amounts */
   total: number;
@@ -282,16 +329,30 @@ export interface Ledger {
   received: Map<string, number>;
   /** sent − received */
   settled: Map<string, number>;
-  /** paid − owes + settled: > 0 gets money back, < 0 owes; settle(bal) = what's left */
+  /** paid − owes + settled: > 0 gets money back, < 0 owes */
   bal: Map<string, number>;
+  /** person id -> head of their group (themselves when alone) */
+  head: Map<string, string>;
+  /** head -> the group's members, list order (just the head when alone) */
+  members: Map<string, string[]>;
+  /** head -> sum of the members' bal; settle(gbal) = what's left to transfer */
+  gbal: Map<string, number>;
   /** category -> total, from receipt lines when an expense has them (expenseCats) */
   cats: Map<string, number>;
   /** expense id -> shares */
   shares: Map<string, Shares>;
+  /** leftover grosze per person after all expenses (for a new expense) */
+  luck: Luck;
+  /** expense id -> luck before it (a view or an edit form of that expense) */
+  luckAt: Map<string, Luck>;
 }
 
+/** Created order (ties by id); not yet saved (no created) last. */
+const byCreated = (a: Expense, b: Expense) =>
+  (a.created || "\uffff").localeCompare(b.created || "\uffff") || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
 export function computeLedger(input: {
-  people: readonly Pick<Person, "id">[];
+  people: readonly Pick<Person, "id" | "wallet">[];
   expenses: Iterable<Expense>;
   claims: Iterable<Pick<Claim, "expense" | "line" | "person">>;
   /** transfers between people, amount in grosze; count like a payment from → to */
@@ -303,8 +364,11 @@ export function computeLedger(input: {
   const owes = new Map(order.map((id) => [id, 0]));
   const cats = new Map<string, number>();
   const shares = new Map<string, Shares>();
+  const luck: Luck = new Map();
+  const luckAt = new Map<string, Luck>();
   let total = 0;
-  for (const x of input.expenses) {
+  for (const x of [...input.expenses].sort(byCreated)) {
+    luckAt.set(x.id, new Map(luck));
     const g = grosze(x.amount);
     if (g <= 0) {
       shares.set(x.id, new Map());
@@ -314,7 +378,7 @@ export function computeLedger(input: {
     for (const [c, v] of expenseCats(x)) cats.set(c, (cats.get(c) ?? 0) + v);
     // a payer that isn't in the list (deleted) can't be paid back: the expense
     // counts for nobody's balance, so the balances still add up to 0
-    const s = paid.has(x.paid_by) ? expenseShares(x, order, idx.get(x.id)) : new Map<string, number>();
+    const s = paid.has(x.paid_by) ? expenseShares(x, order, idx.get(x.id), luck) : new Map<string, number>();
     shares.set(x.id, s);
     if (!s.size) continue;
     paid.set(x.paid_by, paid.get(x.paid_by)! + g);
@@ -331,7 +395,17 @@ export function computeLedger(input: {
   }
   const settled = new Map(order.map((id) => [id, sent.get(id)! - received.get(id)!]));
   const bal = new Map(order.map((id) => [id, paid.get(id)! - owes.get(id)! + settled.get(id)!]));
-  return { total, paid, owes, sent, received, settled, bal, cats, shares };
+  const head = groupHeads(input.people);
+  const members = new Map<string, string[]>();
+  const gbal = new Map<string, number>();
+  for (const id of order) {
+    const h = head.get(id)!;
+    const m = members.get(h);
+    if (m) m.push(id);
+    else members.set(h, [id]);
+    gbal.set(h, (gbal.get(h) ?? 0) + bal.get(id)!);
+  }
+  return { total, paid, owes, sent, received, settled, bal, head, members, gbal, cats, shares, luck, luckAt };
 }
 
 export interface Transfer {

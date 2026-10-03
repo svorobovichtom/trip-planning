@@ -44,12 +44,19 @@ describe("buildCsv", () => {
     expect(rest[2]).toBe('"Когда";"Кто";"Кому";"Сумма";"Комментарий"');
     expect(rest[3]).toMatch(/^"2026-10-02 \d\d:05";"Боря";"Аня";"10,00";"BLIK ""быстро"""$/);
     expect(rest[4]).toBe("");
-    expect(rest[5]).toBe('"Кто";"Заплатил";"Доля";"Перевёл";"Получил";"Баланс"');
+    expect(rest[5]).toBe('"Кто";"Заплатил";"Доля";"Перевёл";"Получил";"Баланс";"Рассчитывается"');
     // Аня: paid 90, share 30+0+7,34 = 37,34, received 10 -> 42,66
-    expect(rest[6]).toBe('"Аня";"90,00";"37,34";"0,00";"10,00";"42,66"');
-    expect(rest[7]).toBe('"Боря";"30,00";"41,33";"10,00";"0,00";"-1,33"');
-    expect(rest[8]).toBe('"Вика";"10,00";"51,33";"0,00";"0,00";"-41,33"');
+    expect(rest[6]).toBe('"Аня";"90,00";"37,34";"0,00";"10,00";"42,66";""');
+    expect(rest[7]).toBe('"Боря";"30,00";"41,33";"10,00";"0,00";"-1,33";""');
+    expect(rest[8]).toBe('"Вика";"10,00";"51,33";"0,00";"0,00";"-41,33";""');
     expect(rest[10]).toBe('"Осталось перевести"');
     expect(rest.slice(12)).toEqual(['"Вика";"Аня";"41,33"', '"Боря";"Аня";"1,33"']);
+  });
+  it("a group settles as one: Вика transfers for Боря too", () => {
+    const grouped = [people[0]!, { ...people[1]!, wallet: "c" }, people[2]!];
+    const rest = buildCsv({ people: grouped, expenses, claims: [{ expense: "3", line: 0, person: "a" }], settlements }).slice(1).split("\r\n").slice(4);
+    // personal balances stay as they are
+    expect(rest[7]).toBe('"Боря";"30,00";"41,33";"10,00";"0,00";"-1,33";"Вика"');
+    expect(rest.slice(12)).toEqual(['"Вика и Боря";"Аня";"42,66"']);
   });
 });

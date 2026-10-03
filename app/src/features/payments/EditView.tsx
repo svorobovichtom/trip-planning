@@ -3,7 +3,8 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { requireWriter } from "../../lib/actions";
 import { compressImage, isPdf, MAX_BYTES, SCANNABLE_TYPE } from "../../lib/image";
-import { byOrder, expenseCats, sortedCats, splitEven } from "../../lib/ledger";
+import { useLuck } from "../../lib/hooks";
+import { byOrder, expenseCats, type Luck, sortedCats, splitEven } from "../../lib/ledger";
 import { fmtG, grosze } from "../../lib/money";
 import { plural } from "../../lib/plural";
 import { sessionStore, usePeople, useStore } from "../../lib/stores";
@@ -178,7 +179,9 @@ export function EditView({ x, initialFile, manual, amountRef }: {
   const A = formAmountG(f);
   const canClaims = claimsAvailable(f, x);
   const mode: Mode = f.mode === "claims" && !canClaims && x?.split_mode !== "claims" ? "equal" : f.mode;
-  const st = mode === "amounts" ? amountsState(part, f.amts, A, readable) : null;
+  // previews give out the leftover grosze exactly as the ledger will
+  const luck = useLuck(x?.id);
+  const st = mode === "amounts" ? amountsState(part, f.amts, A, readable, luck) : null;
   const togglePart = (id: string) =>
     setF((prev) => ({ ...prev, part: prev.part.includes(id) ? prev.part.filter((p) => p !== id) : [...prev.part, id] }));
 
@@ -268,7 +271,7 @@ export function EditView({ x, initialFile, manual, amountRef }: {
         {hint && mode !== "claims" && <p className="hint mode-hint">{claimsHint(f, x)}</p>}
 
         {mode === "equal" && (
-          <EqualPanel people={people} part={part} total={A || (x && !f.touched.amount ? grosze(x.amount) : 0)} photo={readable} onToggle={togglePart} all={() => set({ part: [...order] })} />
+          <EqualPanel people={people} part={part} luck={luck} total={A || (x && !f.touched.amount ? grosze(x.amount) : 0)} photo={readable} onToggle={togglePart} all={() => set({ part: [...order] })} />
         )}
         {mode === "amounts" && st && (
           <AmountsPanel
@@ -449,16 +452,17 @@ function ReceiptBlock({ x, f, preview, processing, onPick, onCamera, onRemove, o
 
 type P = { id: string; name: string };
 
-function EqualPanel({ people, part, total, photo, onToggle, all }: {
+function EqualPanel({ people, part, luck, total, photo, onToggle, all }: {
   people: readonly P[];
   part: string[];
+  luck: Luck;
   total: number;
   photo: boolean;
   onToggle: (id: string) => void;
   all: () => void;
 }) {
   const shares = new Map<string, number>();
-  splitEven(total, part, shares);
+  splitEven(total, part, shares, new Map(luck));
   const n = part.length;
   let sum = n ? `${n === people.length ? "На всех" : `На ${n} из ${people.length}`} · ` : "Отметь, на кого делим";
   if (n) sum += total ? `по ${fmtG(Math.floor(total / n))}` : photo ? "сумма подставится из чека" : "впиши сумму";

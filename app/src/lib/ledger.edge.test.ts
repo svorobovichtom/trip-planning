@@ -1,14 +1,14 @@
 // Edge cases of the money math with hand-computed expectations (grosze).
 // People a, b, c in list order unless said otherwise.
 import { describe, expect, it } from "vitest";
-import { computeLedger, expenseShares, indexClaims, receiptRows, settle, splitProp } from "./ledger";
+import { computeLedger, expenseShares, groupHeads, indexClaims, receiptRows, settle, splitProp } from "./ledger";
 import { sortPeople } from "./stores";
 import type { Claim, Expense, Person, Settlement } from "./types";
 
 const order = ["a", "b", "c"];
 const people = order.map((id) => ({ id }));
 const X = (p: Partial<Expense>): Expense => ({ id: "x", amount: 0, paid_by: "a", ...p });
-const obj = (m: Map<string, number>) => Object.fromEntries(m);
+const obj = <V>(m: Map<string, V>) => Object.fromEntries(m);
 const C = (line: number, person: string, expense = "x"): Pick<Claim, "expense" | "line" | "person"> => ({ expense, line, person });
 const shares = (x: Expense, claims: Pick<Claim, "expense" | "line" | "person">[] = [], o = order) =>
   obj(expenseShares(x, o, indexClaims(claims, o).get(x.id)));
@@ -220,5 +220,67 @@ describe("splitProp", () => {
     const into = new Map<string, number>();
     expect(splitProp(100, new Map([["a", 0], ["b", -5]]), order, into)).toBe(false);
     expect(into.size).toBe(0);
+  });
+});
+
+describe("leftover grosze: fair across the trip", () => {
+  it("rotate to whoever got the fewest so far, in created order", () => {
+    const xs = [1, 2, 3].map((k) => X({ id: `x${k}`, amount: 0.01, created: `2026-10-01 1${k}:00:00.000Z` }));
+    const L = computeLedger({ people, expenses: [...xs].reverse(), claims: [] });
+    expect(xs.map((x) => obj(L.shares.get(x.id)!))).toEqual([{ a: 1, b: 0, c: 0 }, { a: 0, b: 1, c: 0 }, { a: 0, b: 0, c: 1 }]);
+    expect(obj(L.owes)).toEqual({ a: 1, b: 1, c: 1 });
+    expect(obj(L.luck)).toEqual({ a: 1, b: 1, c: 1 });
+    // luckAt reproduces each expense's shares on its own (what its details show)
+    expect(obj(expenseShares(xs[1]!, order, undefined, new Map(L.luckAt.get("x2"))))).toEqual({ a: 0, b: 1, c: 0 });
+  });
+  it("the trip of 2026-10-03: 9 people, 5 receipts split equally — shares at most 1 gr apart", () => {
+    const ids = ["yu", "tom", "f1", "f2", "lika", "anton", "serg", "ulj", "oks"];
+    const amounts: [number, string][] = [[352.35, "tom"], [128.06, "serg"], [714.13, "f2"], [200, "anton"], [85.37, "f1"]];
+    const expenses = amounts.map(([amount, paid_by], k) => X({ id: `e${k}`, amount, paid_by, created: `2026-10-0${k + 1} 10:00:00.000Z` }));
+    const L = computeLedger({ people: ids.map((id) => ({ id })), expenses, claims: [] });
+    const owes = [...L.owes.values()];
+    expect(owes.reduce((s, v) => s + v, 0)).toBe(147991);
+    // exactly 164,43(4) each: four people pay 164,44, five 164,43 (it used to be 164,41…164,45)
+    expect(Math.max(...owes) - Math.min(...owes)).toBe(1);
+    expect(owes.filter((v) => v === 16444)).toHaveLength(4);
+  });
+  it("claims rows and «авто» use the same luck", () => {
+    const L = computeLedger({
+      people,
+      expenses: [
+        X({ id: "1", amount: 0.01, created: "2026-10-01 10:00:00.000Z" }),
+        X({ id: "2", amount: 10, split_mode: "amounts", split_amounts: { a: 999, b: null, c: null }, created: "2026-10-01 11:00:00.000Z" }),
+      ],
+      claims: [],
+    });
+    // 1 gr left for b and c: b (no leftover yet, list order before c)
+    expect(obj(L.shares.get("2")!)).toEqual({ a: 999, b: 1, c: 0 });
+  });
+});
+
+describe("groups («рассчитываемся вместе»)", () => {
+  const P = (wallets: Record<string, string>): Pick<Person, "id" | "wallet">[] => order.map((id) => ({ id, wallet: wallets[id] ?? "" }));
+  it("balances stay per person, a group's add up into its head; transfers only between groups", () => {
+    // a paid 90 for everyone; b settles together with c (c transfers)
+    const L = computeLedger({ people: P({ b: "c" }), expenses: [X({ amount: 90 })], claims: [] });
+    expect(obj(L.bal)).toEqual({ a: 6000, b: -3000, c: -3000 });
+    expect(obj(L.gbal)).toEqual({ a: 6000, c: -6000 });
+    expect(L.members.get("c")).toEqual(["b", "c"]);
+    expect(settle(L.gbal)).toEqual([{ from: "c", to: "a", g: 6000 }]);
+  });
+  it("a transfer by any member counts for the group", () => {
+    const L = computeLedger({ people: P({ b: "c" }), expenses: [X({ amount: 90 })], claims: [], settlements: [{ from: "b", to: "a", amount: 2000 }] });
+    expect(obj(L.gbal)).toEqual({ a: 4000, c: -4000 });
+  });
+  it("money inside a group never shows up as a transfer", () => {
+    // c paid for a and b; a and c are a group: only b owes
+    const L = computeLedger({ people: P({ a: "c" }), expenses: [X({ amount: 90, paid_by: "c" })], claims: [] });
+    expect(settle(L.gbal)).toEqual([{ from: "b", to: "c", g: 3000 }]);
+  });
+  it("chains resolve, cycles and deleted heads count as alone", () => {
+    expect(obj(groupHeads(P({ a: "b", b: "c" })))).toEqual({ a: "c", b: "c", c: "c" });
+    expect(obj(groupHeads(P({ a: "b", b: "a" })))).toEqual({ a: "a", b: "b", c: "c" });
+    expect(obj(groupHeads(P({ a: "a" })))).toEqual({ a: "a", b: "b", c: "c" });
+    expect(obj(groupHeads(P({ a: "deleted0000000" })))).toEqual({ a: "a", b: "b", c: "c" });
   });
 });
